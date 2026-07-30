@@ -4,6 +4,7 @@ import * as bookingProcess from './transactionProcessBooking';
 import * as inquiryProcess from './transactionProcessInquiry';
 import * as negotiationProcess from './transactionProcessNegotiation';
 import * as downloadProcess from './transactionProcessDownload';
+import * as cgcUGCProcess from './transactionProcessCGCUGC';
 
 // Supported unit types
 // Note: These are passed to translations/microcopy in certain cases.
@@ -26,6 +27,7 @@ export const BOOKING_PROCESS_NAME = 'default-booking';
 export const INQUIRY_PROCESS_NAME = 'default-inquiry';
 export const NEGOTIATION_PROCESS_NAME = 'default-negotiation';
 export const DOWNLOAD_PROCESS_NAME = 'default-download';
+export const CGC_UGC_PROCESS_NAME = 'cgc-ugc-approval';
 
 /**
  * A process should export:
@@ -41,6 +43,12 @@ export const DOWNLOAD_PROCESS_NAME = 'default-download';
  * - statesNeedingCustomerAttention
  */
 const PROCESSES = [
+  {
+    name: CGC_UGC_PROCESS_NAME,
+    alias: `${CGC_UGC_PROCESS_NAME}/release-1`,
+    process: cgcUGCProcess,
+    unitTypes: [ITEM],
+  },
   {
     name: PURCHASE_PROCESS_NAME,
     alias: `${PURCHASE_PROCESS_NAME}/release-1`,
@@ -227,6 +235,8 @@ const hasPassedState = process => (stateName, tx) => {
  */
 export const resolveLatestProcessName = processName => {
   switch (processName) {
+    case CGC_UGC_PROCESS_NAME:
+      return CGC_UGC_PROCESS_NAME;
     case 'flex-product-default-process':
     case 'default-buying-products':
     case PURCHASE_PROCESS_NAME:

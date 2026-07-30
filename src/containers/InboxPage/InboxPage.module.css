@@ -216,6 +216,7 @@
     'dot name    state'
     '... item    state'
     '... details state'
+    '... meta    state'
     '... seats   state';
   padding: 2px 0 6px;
   gap: 4px 0;
@@ -293,6 +294,15 @@
   composes: marketplaceTinyFontStyles from global;
   grid-area: details;
   color: var(--colorGrey700);
+
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.itemMeta {
+  composes: marketplaceTinyFontStyles from global;
+  grid-area: meta;
+  color: var(--colorAttentionDark);
 
   margin-top: 0;
   margin-bottom: 0;

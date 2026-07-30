@@ -29,6 +29,11 @@ import css from './EditListingDetailsForm.module.css';
 
 const TITLE_MAX_LENGTH = 60;
 
+// Brands post project briefs through the same wizard creators use to post their
+// profile — this reads the title/description copy as "post a project" for that
+// listing type only (CGC-FRONTEND-PLAN.md Phase 6).
+const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+
 // Show various error messages
 const ErrorMessage = props => {
   const { fetchErrors } = props;
@@ -383,6 +388,8 @@ const EditListingDetailsForm = props => (
 
       const showListingFields = hasCategories ? allCategoriesChosen : listingType;
 
+      const isProjectBrief = listingType === PROJECT_BRIEF_LISTING_TYPE;
+
       const classes = classNames(css.root, className);
       const submitReady = (updated && pristine) || ready;
       const submitInProgress = updateInProgress;
@@ -426,9 +433,15 @@ const EditListingDetailsForm = props => (
               name="title"
               className={css.title}
               type="text"
-              label={intl.formatMessage({ id: 'EditListingDetailsForm.title' })}
+              label={intl.formatMessage({
+                id: isProjectBrief
+                  ? 'EditListingDetailsForm.projectBrief.title'
+                  : 'EditListingDetailsForm.title',
+              })}
               placeholder={intl.formatMessage({
-                id: 'EditListingDetailsForm.titlePlaceholder',
+                id: isProjectBrief
+                  ? 'EditListingDetailsForm.projectBrief.titlePlaceholder'
+                  : 'EditListingDetailsForm.titlePlaceholder',
               })}
               maxLength={TITLE_MAX_LENGTH}
               validate={composeValidators(required(titleRequiredMessage), maxLength60Message)}
@@ -442,9 +455,15 @@ const EditListingDetailsForm = props => (
               name="description"
               className={css.description}
               type="textarea"
-              label={intl.formatMessage({ id: 'EditListingDetailsForm.description' })}
+              label={intl.formatMessage({
+                id: isProjectBrief
+                  ? 'EditListingDetailsForm.projectBrief.description'
+                  : 'EditListingDetailsForm.description',
+              })}
               placeholder={intl.formatMessage({
-                id: 'EditListingDetailsForm.descriptionPlaceholder',
+                id: isProjectBrief
+                  ? 'EditListingDetailsForm.projectBrief.descriptionPlaceholder'
+                  : 'EditListingDetailsForm.descriptionPlaceholder',
               })}
               validate={required(
                 intl.formatMessage({

@@ -212,6 +212,11 @@ describe('auth duck', () => {
         currentUser: { show: jest.fn(() => Promise.resolve(fakeCurrentUserResponse)) },
         transactions: { query: jest.fn(() => Promise.resolve(fakeTransactionsResponse)) },
       };
+      // fetchBrandSubscription (dispatched for authorized users, see user.duck.js)
+      // hits window.fetch directly rather than the SDK. A never-resolving mock
+      // keeps its /pending action deterministic without racing the assertions below.
+      const previousFetch = global.fetch;
+      global.fetch = jest.fn(() => new Promise(() => {}));
       let actions = [];
       const store = configureStore({
         initialState: {
@@ -226,23 +231,28 @@ describe('auth duck', () => {
       const username = 'x.x@example.com';
       const password = 'pass';
 
-      return login(username, password)(dispatch, getState, sdk).then(() => {
-        expect(sdk.login.mock.calls).toEqual([[{ username, password }]]);
+      return login(username, password)(dispatch, getState, sdk)
+        .then(() => {
+          expect(sdk.login.mock.calls).toEqual([[{ username, password }]]);
 
-        // Check that the expected action types are present
-        expect(actions[0].type).toBe('auth/login/pending');
-        expect(actions[0].meta.arg).toEqual({ username, password });
+          // Check that the expected action types are present
+          expect(actions[0].type).toBe('auth/login/pending');
+          expect(actions[0].meta.arg).toEqual({ username, password });
 
-        expect(actions[1].type).toEqual('user/fetchCurrentUser/pending');
-        expect(actions[2].type).toEqual('user/fetchCurrentUserNotifications/pending');
-        expect(actions[3].type).toBe('auth/authInfo/pending');
-        expect(actions[4].type).toBe('auth/authInfo/fulfilled');
-        expect(actions[5].type).toEqual('user/fetchCurrentUser/fulfilled');
-        expect(actions[5].payload).toEqual(fakeCurrentUser);
+          expect(actions[1].type).toEqual('user/fetchCurrentUser/pending');
+          expect(actions[2].type).toEqual('user/fetchCurrentUserNotifications/pending');
+          expect(actions[3].type).toBe('app/brandSubscription/fetch/pending');
+          expect(actions[4].type).toBe('auth/authInfo/pending');
+          expect(actions[5].type).toBe('auth/authInfo/fulfilled');
+          expect(actions[6].type).toEqual('user/fetchCurrentUser/fulfilled');
+          expect(actions[6].payload).toEqual(fakeCurrentUser);
 
-        expect(actions[6].type).toEqual('user/fetchCurrentUserNotifications/fulfilled');
-        expect(actions[7].type).toBe('auth/login/fulfilled');
-      });
+          expect(actions[7].type).toEqual('user/fetchCurrentUserNotifications/fulfilled');
+          expect(actions[8].type).toBe('auth/login/fulfilled');
+        })
+        .finally(() => {
+          global.fetch = previousFetch;
+        });
     });
     it('should dispatch error', () => {
       const initialState = reducer(undefined, { type: '@@INIT' });
@@ -432,6 +442,11 @@ describe('auth duck', () => {
         authInfo: jest.fn(() => Promise.resolve({})),
         transactions: { query: jest.fn(() => Promise.resolve(fakeTransactionsResponse)) },
       };
+      // fetchBrandSubscription (dispatched for authorized users, see user.duck.js)
+      // hits window.fetch directly rather than the SDK. A never-resolving mock
+      // keeps its /pending action deterministic without racing the assertions below.
+      const previousFetch = global.fetch;
+      global.fetch = jest.fn(() => new Promise(() => {}));
       const initialState = reducer(undefined, { type: '@@INIT' });
       let actions = [];
       const store = configureStore({
@@ -454,21 +469,26 @@ describe('auth duck', () => {
         },
       };
 
-      return signup(params)(dispatch, getState, sdk).then(() => {
-        // signup > login > fetchCurrentUser
-        expect(sdk.currentUser.create.mock.calls).toEqual([[params]]);
-        expect(actions[0].type).toBe('auth/signup/pending');
-        expect(actions[1].type).toBe('auth/login/pending');
-        expect(actions[2].type).toBe('user/fetchCurrentUser/pending');
-        expect(actions[3].type).toBe('user/fetchCurrentUserHasListings/pending');
-        expect(actions[4].type).toBe('user/fetchCurrentUserNotifications/pending');
-        expect(actions[5].type).toBe('auth/authInfo/pending');
-        expect(actions[6].type).toBe('user/fetchCurrentUserHasListings/fulfilled');
-        expect(actions[7].type).toBe('auth/authInfo/fulfilled');
-        expect(actions[8].type).toBe('user/fetchCurrentUser/fulfilled');
-        expect(actions[9].type).toBe('user/fetchCurrentUserNotifications/fulfilled');
-        expect(actions[10].type).toBe('auth/login/fulfilled');
-      });
+      return signup(params)(dispatch, getState, sdk)
+        .then(() => {
+          // signup > login > fetchCurrentUser
+          expect(sdk.currentUser.create.mock.calls).toEqual([[params]]);
+          expect(actions[0].type).toBe('auth/signup/pending');
+          expect(actions[1].type).toBe('auth/login/pending');
+          expect(actions[2].type).toBe('user/fetchCurrentUser/pending');
+          expect(actions[3].type).toBe('user/fetchCurrentUserHasListings/pending');
+          expect(actions[4].type).toBe('user/fetchCurrentUserNotifications/pending');
+          expect(actions[5].type).toBe('app/brandSubscription/fetch/pending');
+          expect(actions[6].type).toBe('auth/authInfo/pending');
+          expect(actions[7].type).toBe('user/fetchCurrentUserHasListings/fulfilled');
+          expect(actions[8].type).toBe('auth/authInfo/fulfilled');
+          expect(actions[9].type).toBe('user/fetchCurrentUser/fulfilled');
+          expect(actions[10].type).toBe('user/fetchCurrentUserNotifications/fulfilled');
+          expect(actions[11].type).toBe('auth/login/fulfilled');
+        })
+        .finally(() => {
+          global.fetch = previousFetch;
+        });
     });
     it('should dispatch error', () => {
       const error = new Error('test signup error');

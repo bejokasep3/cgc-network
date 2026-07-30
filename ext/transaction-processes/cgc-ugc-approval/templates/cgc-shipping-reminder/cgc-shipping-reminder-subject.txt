@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcShippingReminder.Subject" "Reminder: ship your product for {listingTitle}" listingTitle=listing.title}}{{/with}}

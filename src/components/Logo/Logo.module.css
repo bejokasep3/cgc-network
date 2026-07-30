@@ -36,3 +36,35 @@
 .logo48 {
   max-height: 48px;
 }
+
+/**
+ * Coded fallback mark, shown until the client uploads a real logo in
+ * Console. Always yields to the image-asset branches above.
+ */
+.fallbackRoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.fallbackMarkFill {
+  stop-color: var(--marketplaceColor);
+}
+.fallbackMarkFillDark {
+  stop-color: var(--marketplaceColorDark);
+}
+
+.fallbackWordmark {
+  font-family: var(--fontFamily);
+  font-weight: var(--fontWeightHeavy);
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  color: var(--colorGrey900);
+  white-space: nowrap;
+}
+
+.fallbackWordmarkAccent {
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+}

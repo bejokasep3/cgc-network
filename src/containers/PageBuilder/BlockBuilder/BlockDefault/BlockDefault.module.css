@@ -3,8 +3,17 @@
 
 .media {
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--borderRadius);
   margin-bottom: 0;
+  overflow: hidden;
+
+  & img {
+    transition: var(--transitionStyle);
+  }
+
+  &:hover img {
+    transform: scale(1.03);
+  }
 }
 
 .text {

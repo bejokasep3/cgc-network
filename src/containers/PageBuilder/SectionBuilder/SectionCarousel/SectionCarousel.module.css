@@ -39,17 +39,17 @@
   border-radius: 100%;
   border: none;
 
-  background-color: lightgrey;
-  opacity: 0.9;
-  font-size: 30px;
-  color: black;
-  transition: all ease-in-out 100ms;
+  background-color: var(--colorWhite);
+  box-shadow: var(--boxShadowSm);
+  font-size: 28px;
+  color: var(--colorGrey700);
+  transition: var(--transitionStyleButton);
 
   &:hover {
-    opacity: 1;
     cursor: pointer;
-    background: black;
-    color: white;
+    background-color: var(--marketplaceColor);
+    color: var(--colorWhite);
+    box-shadow: var(--boxShadowMd);
   }
 }
 

@@ -151,3 +151,23 @@ export const createUserWithIdp = body => {
 export const deleteUserAccount = body => {
   return post('/api/delete-account', body);
 };
+
+// Brand subscriptions. Stripe stays the source of truth for whether a brand's
+// subscription is active, so this is read live rather than cached in the store.
+//
+// See `server/api/subscription.js`.
+export const fetchSubscriptionStatus = () => {
+  return request('/api/subscription/status');
+};
+
+// Returns a Stripe-hosted Checkout URL. Card details are entered on Stripe's
+// domain, never in this app.
+export const createSubscriptionCheckoutSession = () => {
+  return post('/api/subscription/create-checkout-session', {});
+};
+
+// Returns a Stripe billing portal URL where the brand can update their card or
+// cancel the subscription.
+export const createBillingPortalSession = () => {
+  return post('/api/subscription/billing-portal', {});
+};

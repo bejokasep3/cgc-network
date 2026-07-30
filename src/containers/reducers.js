@@ -18,6 +18,7 @@ import ManageAccountPage from './ManageAccountPage/ManageAccountPage.duck';
 import ProfilePage from './ProfilePage/ProfilePage.duck';
 import ProfileSettingsPage from './ProfileSettingsPage/ProfileSettingsPage.duck';
 import RequestQuotePage from './RequestQuotePage/RequestQuotePage.duck';
+import RosterPage from './RosterPage/RosterPage.duck';
 import SearchPage from './SearchPage/SearchPage.duck';
 import StripePayoutPage from './StripePayoutPage/StripePayoutPage.duck';
 import TransactionPage from './TransactionPage/TransactionPage.duck';
@@ -38,6 +39,7 @@ export {
   ProfilePage,
   ProfileSettingsPage,
   RequestQuotePage,
+  RosterPage,
   SearchPage,
   StripePayoutPage,
   TransactionPage,

@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
 import { FormattedMessage } from '../../util/reactIntl';
 import {
   isInquiryProcessAlias,
@@ -9,10 +11,12 @@ import {
 import { Heading, Modal } from '../../components';
 import UserCard from './UserCard/UserCard';
 import InquiryForm from './InquiryForm/InquiryForm';
+import { fetchOwnProjectBriefs } from './ListingPage.duck';
 
 import css from './ListingPage.module.css';
 
 const CONTACT_USER_LINK = 'inquiryModalContactUserLink';
+const CREATOR_PROFILE_LISTING_TYPE = 'creator-profile';
 
 const SectionAuthorMaybe = props => {
   const {
@@ -29,6 +33,23 @@ const SectionAuthorMaybe = props => {
     onManageDisableScrolling,
   } = props;
 
+  const dispatch = useDispatch();
+  const { ownProjectBriefs, fetchOwnProjectBriefsInProgress } = useSelector(
+    state => state.ListingPage
+  );
+
+  // The "invite creator to collaborate" flow (CGC-FRONTEND-PLAN.md §3.3) lets a
+  // brand attach one of its own open project-brief listings to the inquiry, so
+  // fetch that list once the brand actually opens the modal on a creator's
+  // listing rather than on every ListingPage visit.
+  const isCreatorProfileListing =
+    listing?.attributes?.publicData?.listingType === CREATOR_PROFILE_LISTING_TYPE;
+  useEffect(() => {
+    if (isInquiryModalOpen && isCreatorProfileListing && currentUser?.id) {
+      dispatch(fetchOwnProjectBriefs());
+    }
+  }, [isInquiryModalOpen, isCreatorProfileListing, currentUser?.id, dispatch]);
+
   if (!listing.author) {
     return null;
   }
@@ -38,6 +59,10 @@ const SectionAuthorMaybe = props => {
   const isInquiryProcess = isInquiryProcessAlias(transactionProcessAlias);
   const isNegotiationProcess = isNegotiationProcessAlias(transactionProcessAlias);
   const showContact = !(isInquiryProcess || (isNegotiationProcess && unitType === OFFER));
+
+  const briefOptions = isCreatorProfileListing
+    ? ownProjectBriefs.map(l => ({ id: l.id.uuid, title: l.attributes.title }))
+    : [];
 
   return (
     <section id="author" className={css.sectionAuthor}>
@@ -68,6 +93,9 @@ const SectionAuthorMaybe = props => {
           sendInquiryError={sendInquiryError}
           onSubmit={onSubmitInquiry}
           inProgress={sendInquiryInProgress}
+          isInviteFlow={isCreatorProfileListing}
+          briefOptions={briefOptions}
+          briefOptionsInProgress={fetchOwnProjectBriefsInProgress}
         />
       </Modal>
     </section>

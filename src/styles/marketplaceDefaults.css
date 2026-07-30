@@ -56,17 +56,17 @@
   * In the future, we are planning to bring more --marketplace* CSS Properties
   * from hosted assets, which means that they could be managed through Console.
   */
-  --marketplaceColor: #6938ef; /* hsl(256, 85%, 58%) */
-  --marketplaceColorLight: #4a12e2; /* hsl(256, 85%, 48%) */
-  --marketplaceColorDark: #8d68f3; /* hsl(256, 85%, 68% */
+  --marketplaceColor: #6366f1; /* Electric Violet Indigo */
+  --marketplaceColorLight: #4f46e5;
+  --marketplaceColorDark: #4338ca;
 
   /** 
    * The fill color used by <PrimaryButton>
    * These might be overwritten by values from hosted assets
    */
-  --colorPrimaryButton: #138041;
-  --colorPrimaryButtonDark: #0d542a;
-  --colorPrimaryButtonLight: #1aad57;
+  --colorPrimaryButton: #6366f1;
+  --colorPrimaryButtonDark: #4f46e5;
+  --colorPrimaryButtonLight: #818cf8;
 
   /** 
    * The fill color used by <SecondaryButton>
@@ -108,19 +108,29 @@
   --spacingUnitDesktop: 8px;
 
   /* Shadows */
-  --boxShadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-  --boxShadowTop: 0 -2px 4px 0 rgba(0, 0, 0, 0.1);
-  --boxShadowLight: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-  --boxShadowPopup: 0 8px 16px 0 rgba(0, 0, 0, 0.3);
-  --boxShadowPopupLight: 0 3px 6px 0 rgba(0, 0, 0, 0.2);
-  --boxShadowBreakdown: 0 3px 6px 0 rgba(0, 0, 0, 0.2);
-  --boxShadowButton: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
-  --boxShadowListingCard: 0 0 50px 0 rgba(0, 0, 0, 0.1);
-  --boxShadowFeaturedListingCard: 0 0 30px 0px rgba(0, 0, 0, 0.1);
-  --boxShadowNotFoundPageSearch: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
-  --boxShadowSectionLocationHover: 0 10px 30px 0 rgba(0, 0, 0, 0.1);
-  --boxShadowBottomForm: 0 -2px 4px 0 rgba(0, 0, 0, 0.05);
-  --boxShadowFilterButton: 0 4px 16px 0 rgba(0, 0, 0, 0.2);
+  /**
+   * Elevation ramp: each level pairs a tight ambient shadow with a
+   * softer, larger directional one. Every --boxShadow* variable below
+   * is defined in terms of these three levels so elevation stays
+   * consistent across components.
+   */
+  --boxShadowXs: 0 1px 2px 0 rgba(16, 24, 40, 0.06), 0 1px 3px 0 rgba(16, 24, 40, 0.04);
+  --boxShadowSm: 0 2px 4px -1px rgba(16, 24, 40, 0.08), 0 6px 12px -4px rgba(16, 24, 40, 0.06);
+  --boxShadowMd: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 16px 32px -8px rgba(16, 24, 40, 0.1);
+
+  --boxShadow: var(--boxShadowSm);
+  --boxShadowTop: 0 -2px 4px -1px rgba(16, 24, 40, 0.08), 0 -6px 12px -4px rgba(16, 24, 40, 0.06);
+  --boxShadowLight: var(--boxShadowXs);
+  --boxShadowPopup: var(--boxShadowMd);
+  --boxShadowPopupLight: var(--boxShadowSm);
+  --boxShadowBreakdown: var(--boxShadowSm);
+  --boxShadowButton: var(--boxShadowXs);
+  --boxShadowListingCard: var(--boxShadowSm);
+  --boxShadowFeaturedListingCard: var(--boxShadowMd);
+  --boxShadowNotFoundPageSearch: var(--boxShadowSm);
+  --boxShadowSectionLocationHover: var(--boxShadowMd);
+  --boxShadowBottomForm: 0 -2px 4px -1px rgba(16, 24, 40, 0.06), 0 -1px 2px 0 rgba(16, 24, 40, 0.04);
+  --boxShadowFilterButton: var(--boxShadowSm);
 
   /* ================ Z-index base levels ================ */
 
@@ -135,8 +145,9 @@
 
   /* ================ Border radius ================ */
 
-  --borderRadius: 2px;
-  --borderRadiusMedium: 4px;
+  --borderRadius: 8px;
+  --borderRadiusMedium: 12px;
+  --borderRadiusLarge: 20px;
 
   /* ================ Transition styles ================ */
 
@@ -276,8 +287,9 @@ h1 {
   margin-bottom: 18px;
 
   @media (--viewportMedium) {
-    font-size: 64px;
-    line-height: 64px;
+    font-size: 72px;
+    line-height: 72px;
+    letter-spacing: -1.5px;
     padding: 0;
     /* margin-top + n * line-height + margin-bottom => x * 8px */
     margin-top: 24px;
@@ -296,8 +308,9 @@ h2 {
   margin-bottom: 18px;
 
   @media (--viewportMedium) {
-    font-size: 40px;
+    font-size: 44px;
     line-height: 56px;
+    letter-spacing: -0.75px;
     padding: 5px 0 3px 0;
     /* x * 8px */
     margin-top: 24px;
@@ -636,8 +649,9 @@ textarea {
   margin-bottom: 18px;
 
   @media (--viewportMedium) {
-    font-size: 64px;
-    line-height: 64px;
+    font-size: 72px;
+    line-height: 72px;
+    letter-spacing: -1.5px;
     padding: 0;
     /* margin-top + n * line-height + margin-bottom => x * 8px */
     margin-top: 24px;
@@ -656,8 +670,9 @@ textarea {
   margin-bottom: 18px;
 
   @media (--viewportMedium) {
-    font-size: 40px;
+    font-size: 44px;
     line-height: 56px;
+    letter-spacing: -0.75px;
     padding: 5px 0 3px 0;
     /* x * 8px */
     margin-top: 24px;

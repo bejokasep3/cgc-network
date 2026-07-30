@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcCanceledCustomer.Subject" "Your collaboration for {listingTitle} was canceled" listingTitle=listing.title}}{{/with}}

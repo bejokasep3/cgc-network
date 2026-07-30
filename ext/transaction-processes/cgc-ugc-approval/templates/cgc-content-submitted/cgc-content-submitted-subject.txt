@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcContentSubmitted.Subject" "{creatorName} submitted content for review" creatorName=provider.display-name}}{{/with}}

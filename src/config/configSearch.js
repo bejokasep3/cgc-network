@@ -12,8 +12,11 @@
 // This can be either 'keywords' or 'location'.
 // Note: The mainSearch comes from the listing-search asset nowadays by default.
 //       To use this built-in configuration, you need to remove the overwrite from configHelper.js (mergeSearchConfig func)
+// CGC creators are not location-bound — brands search by niche, platform and
+// keyword, not by city. Location search would also hide every creator who hasn't
+// set a location on their profile.
 export const mainSearch = {
-  searchType: 'location',
+  searchType: 'keywords',
 };
 
 /**
@@ -36,7 +39,15 @@ export const categoryFilter = {
   // schemaType, key, and other built-in config values are completely filled in configHelper.js
 };
 
+// Disabled for CGC: creator-profile listings are item-based (unit type 'item' on
+// the cgc-ugc-approval process) and carry no availability data, so a date picker
+// in the search bar can only ever return empty results.
+// Note: this export must stay in place even though it's disabled —
+// validDefaultFilters in util/configHelpers.js reads `data.schemaType` without a
+// guard, so removing the export crashes the app. `enabled: false` is the
+// supported way to drop a default filter.
 export const dateRangeFilter = {
+  enabled: false,
   schemaType: 'dates',
   // Should the entire date range be available, or just part of it
   // Note: Since we don't enforce location search for dates filtering,

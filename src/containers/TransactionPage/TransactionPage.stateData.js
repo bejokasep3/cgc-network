@@ -5,6 +5,7 @@ import {
   PURCHASE_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
   DOWNLOAD_PROCESS_NAME,
+  CGC_UGC_PROCESS_NAME,
   resolveLatestProcessName,
 } from '../../transactions/transaction';
 import { getStateDataForBookingProcess } from './TransactionPage.stateDataBooking.js';
@@ -12,6 +13,7 @@ import { getStateDataForInquiryProcess } from './TransactionPage.stateDataInquir
 import { getStateDataForPurchaseProcess } from './TransactionPage.stateDataPurchase.js';
 import { getStateDataForNegotiationProcess } from './TransactionPage.stateDataNegotiation.js';
 import { getStateDataForDownloadProcess } from './TransactionPage.stateDataDownload.js';
+import { getStateDataForCGCUGCProcess } from './TransactionPage.stateDataCGCUGC.js';
 
 const errorShape = shape({
   type: oneOf(['error']).isRequired,
@@ -36,10 +38,16 @@ export const stateDataShape = shape({
   showActionButtons: bool,
   showDetailCardHeadings: bool,
   showDispute: bool,
+  // Overrides which transition the DisputeModal triggers. Needed by processes
+  // where the dispute transition depends on the current state.
+  disputeTransition: string,
   showOrderPanel: bool,
   showReviewAsFirstLink: bool,
   showReviewAsSecondLink: bool,
   showReviews: bool,
+  // cgc-ugc-approval only: renders ApprovalDecisionPanel instead of the
+  // generic action buttons for the content-review states.
+  showApprovalDecisionPanel: bool,
 });
 
 // Transitions are following process.edn format: "transition/my-transtion-name"
@@ -151,7 +159,9 @@ export const getStateData = (params, process) => {
     };
   };
 
-  if (processName === PURCHASE_PROCESS_NAME) {
+  if (processName === CGC_UGC_PROCESS_NAME) {
+    return getStateDataForCGCUGCProcess(params, processInfo());
+  } else if (processName === PURCHASE_PROCESS_NAME) {
     return getStateDataForPurchaseProcess(params, processInfo());
   } else if (processName === DOWNLOAD_PROCESS_NAME) {
     return getStateDataForDownloadProcess(params, processInfo());

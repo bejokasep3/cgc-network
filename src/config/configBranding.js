@@ -18,7 +18,10 @@ import twitterImage from '../assets/biketribe-twitter-sharing-600x314.jpg';
 // This is saved as CSS Property: --marketplaceColor in src/app.js
 // Also --marketplaceColorDark and --marketplaceColorLight are generated from this one
 // by adding +/- 10% to lightness.
-export const marketplaceColor = '#7c3aed';
+// NOTE: this is only the fallback. If a main colour is set in Console
+// (Build > Branding), that value wins — see mergeBranding in util/configHelpers.js.
+// Set it in Console for the real marketplace; this keeps local dev sensible.
+export const marketplaceColor = '#2c5cf0';
 
 // Logo is used in Topbar on mobile and desktop, where height is the limiting factor.
 // Therefore, we strongly suggest that your image file for desktop logo is in landscape!

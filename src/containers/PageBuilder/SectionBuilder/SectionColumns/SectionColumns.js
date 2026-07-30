@@ -85,6 +85,18 @@ const SectionColumns = props => {
   const hasHeaderFields = hasDataInFields([title, description, callToAction], fieldOptions);
   const hasBlocks = blocks?.length > 0;
 
+  // Render each block as a card. A single column is a full-width band rather than
+  // a card, so it keeps the plain treatment. On a section that already has a
+  // background colour or a dark theme set in Console, swap the fill for a hairline
+  // so the card doesn't disappear into the ground or fight it.
+  const hasSectionBackground =
+    appearance?.fieldType === 'customAppearance' &&
+    (!!appearance.backgroundColor || !!appearance.backgroundImage);
+  const blockClassName =
+    numColumns > 1
+      ? classNames(css.columnCard, { [css.columnCardOnTint]: hasSectionBackground })
+      : null;
+
   return (
     <SectionContainer
       id={sectionId}
@@ -107,6 +119,7 @@ const SectionColumns = props => {
           })}
         >
           <BlockBuilder
+            className={blockClassName}
             ctaButtonClass={defaultClasses.ctaButton}
             blocks={blocks}
             sectionId={sectionId}

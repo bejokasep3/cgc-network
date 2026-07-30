@@ -1,0 +1,741 @@
+;; The CGC Network - UGC licensing & content approval process
+;;
+;; Roles:
+;;   customer = BRAND  (pays, optionally ships a product, reviews & approves content)
+;;   provider = CREATOR (receives the product, produces UGC, gets paid on approval)
+;;
+;; Money flow: the brand's payment is captured up front and held. The payout to
+;; the creator is released only when the brand approves the content (or when the
+;; approval window lapses, or when an operator resolves a dispute in the
+;; creator's favour). Every non-terminal state has a way out, so funds can never
+;; be locked indefinitely.
+{:format :v3,
+ :transitions
+ [;; ---------------------------------------------------------------------------
+  ;; Inquiry & payment
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/inquire,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :to :state/inquiry}
+  {:name :transition/request-payment,
+   :actor :actor.role/customer,
+   :privileged? true,
+   :actions
+   [{:name :action/update-protected-data}
+    {:name :action/create-pending-stock-reservation}
+    {:name :action/privileged-set-line-items}
+    {:name :action/stripe-create-payment-intent}],
+   :to :state/pending-payment}
+  {:name :transition/request-payment-after-inquiry,
+   :actor :actor.role/customer,
+   :privileged? true,
+   :actions
+   [{:name :action/update-protected-data}
+    {:name :action/create-pending-stock-reservation}
+    {:name :action/privileged-set-line-items}
+    {:name :action/stripe-create-payment-intent}],
+   :from :state/inquiry,
+   :to :state/pending-payment}
+  {:name :transition/confirm-payment,
+   :actor :actor.role/customer,
+   :actions
+   [{:name :action/accept-stock-reservation}
+    {:name :action/stripe-confirm-payment-intent}
+    {:name :action/stripe-capture-payment-intent}],
+   :from :state/pending-payment,
+   :to :state/purchased}
+  {:name :transition/expire-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/pending-payment]}
+     {:fn/period ["PT15M"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/decline-stock-reservation}],
+   :from :state/pending-payment,
+   :to :state/payment-expired}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Product shipping (BRAND -> CREATOR). Optional: only used when the
+  ;; creator-profile listing's `requiresProduct` field is set. The creator
+  ;; supplies their own delivery address first (self-transition: this never
+  ;; changes state, it only records data), since Sharetribe has no other way
+  ;; to collect it, then the brand ships and writes tracking details to
+  ;; protected data.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/provider-add-shipping-address,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/purchased,
+   :to :state/purchased}
+  {:name :transition/mark-shipped,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/purchased,
+   :to :state/shipped}
+  {:name :transition/mark-product-received,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/shipped,
+   :to :state/product-received}
+  ;; If the creator never confirms delivery, assume it arrived so the project
+  ;; can move forward instead of stalling in :state/shipped.
+  {:name :transition/auto-mark-product-received,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/shipped]}
+     {:fn/period ["P7D"]}]},
+   :actions [],
+   :from :state/shipped,
+   :to :state/product-received}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Content submission (CREATOR -> BRAND)
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/submit-content,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/purchased,
+   :to :state/content-submitted}
+  {:name :transition/submit-content-after-shipping,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/product-received,
+   :to :state/content-submitted}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Revision requests (maximum of two, per the brief)
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/request-revision-1,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted,
+   :to :state/revision-requested-1}
+  {:name :transition/resubmit-content-1,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/revision-requested-1,
+   :to :state/content-submitted-revised-1}
+  {:name :transition/request-revision-2,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted-revised-1,
+   :to :state/revision-requested-2}
+  {:name :transition/resubmit-content-2,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/revision-requested-2,
+   :to :state/content-submitted-revised-2}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Approval & payout release
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/approve-content,
+   :actor :actor.role/customer,
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted,
+   :to :state/received}
+  {:name :transition/approve-content-revised-1,
+   :actor :actor.role/customer,
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted-revised-1,
+   :to :state/received}
+  {:name :transition/approve-content-revised-2,
+   :actor :actor.role/customer,
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted-revised-2,
+   :to :state/received}
+
+  ;; Creator protection: if the brand neither approves, requests a revision, nor
+  ;; disputes within the review window, the content is approved automatically
+  ;; and the creator is paid.
+  {:name :transition/auto-approve-content,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/content-submitted]}
+     {:fn/period ["P7D"]}]},
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted,
+   :to :state/received}
+  {:name :transition/auto-approve-content-revised-1,
+   :at
+   {:fn/plus
+    [{:fn/timepoint
+      [:time/first-entered-state :state/content-submitted-revised-1]}
+     {:fn/period ["P7D"]}]},
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted-revised-1,
+   :to :state/received}
+  {:name :transition/auto-approve-content-revised-2,
+   :at
+   {:fn/plus
+    [{:fn/timepoint
+      [:time/first-entered-state :state/content-submitted-revised-2]}
+     {:fn/period ["P7D"]}]},
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/content-submitted-revised-2,
+   :to :state/received}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Disputes. The brand escalates to the operator instead of being stuck with
+  ;; content it cannot use once the revision allowance is exhausted.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/dispute,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted,
+   :to :state/disputed}
+  {:name :transition/dispute-revised-1,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted-revised-1,
+   :to :state/disputed}
+  {:name :transition/dispute-revised-2,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted-revised-2,
+   :to :state/disputed}
+  {:name :transition/operator-dispute,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/content-submitted,
+   :to :state/disputed}
+  ;; Operator resolves in the creator's favour: content stands, payout released.
+  {:name :transition/mark-received-from-disputed,
+   :actor :actor.role/operator,
+   :actions [{:name :action/stripe-create-payout}],
+   :from :state/disputed,
+   :to :state/received}
+  ;; Operator resolves in the brand's favour: full refund.
+  {:name :transition/cancel-from-disputed,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/disputed,
+   :to :state/canceled}
+  {:name :transition/auto-cancel-from-disputed,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/disputed]}
+     {:fn/period ["P60D"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/disputed,
+   :to :state/canceled}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Cancellation. Every pre-payout state has both an operator exit and an
+  ;; automatic exit, so a party going silent always resolves to a refund.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/cancel,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/purchased,
+   :to :state/canceled}
+  ;; Creator never started work (and no product was shipped).
+  {:name :transition/auto-cancel,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["P14D"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/purchased,
+   :to :state/canceled}
+  {:name :transition/cancel-from-shipped,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/shipped,
+   :to :state/canceled}
+  {:name :transition/cancel-from-product-received,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/product-received,
+   :to :state/canceled}
+  ;; Creator received the product but never delivered any content.
+  {:name :transition/auto-cancel-from-product-received,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/product-received]}
+     {:fn/period ["P21D"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/product-received,
+   :to :state/canceled}
+  {:name :transition/cancel-from-revision-1,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/revision-requested-1,
+   :to :state/canceled}
+  {:name :transition/cancel-from-revision-2,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/revision-requested-2,
+   :to :state/canceled}
+  ;; Creator abandoned the project after a revision was requested.
+  {:name :transition/auto-cancel-from-revision-1,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/revision-requested-1]}
+     {:fn/period ["P14D"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/revision-requested-1,
+   :to :state/canceled}
+  {:name :transition/auto-cancel-from-revision-2,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/revision-requested-2]}
+     {:fn/period ["P14D"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/cancel-stock-reservation}],
+   :from :state/revision-requested-2,
+   :to :state/canceled}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Completion & two-way public reviews
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/auto-complete,
+   :at {:fn/timepoint [:time/first-entered-state :state/received]},
+   :actions [],
+   :from :state/received,
+   :to :state/completed}
+  {:name :transition/review-1-by-provider,
+   :actor :actor.role/provider,
+   :actions [{:name :action/post-review-by-provider}],
+   :from :state/completed,
+   :to :state/reviewed-by-provider}
+  {:name :transition/review-2-by-provider,
+   :actor :actor.role/provider,
+   :actions
+   [{:name :action/post-review-by-provider}
+    {:name :action/publish-reviews}],
+   :from :state/reviewed-by-customer,
+   :to :state/reviewed}
+  {:name :transition/review-1-by-customer,
+   :actor :actor.role/customer,
+   :actions [{:name :action/post-review-by-customer}],
+   :from :state/completed,
+   :to :state/reviewed-by-customer}
+  {:name :transition/review-2-by-customer,
+   :actor :actor.role/customer,
+   :actions
+   [{:name :action/post-review-by-customer}
+    {:name :action/publish-reviews}],
+   :from :state/reviewed-by-provider,
+   :to :state/reviewed}
+  ;; Without these three the transaction would never leave :state/completed or
+  ;; :state/reviewed-by-* when a party declines to leave a review.
+  {:name :transition/expire-review-period,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/received]}
+     {:fn/period ["P7D"]}]},
+   :actions [],
+   :from :state/completed,
+   :to :state/reviewed}
+  {:name :transition/expire-provider-review-period,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/received]}
+     {:fn/period ["P7D"]}]},
+   :actions [{:name :action/publish-reviews}],
+   :from :state/reviewed-by-customer,
+   :to :state/reviewed}
+  {:name :transition/expire-customer-review-period,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/received]}
+     {:fn/period ["P7D"]}]},
+   :actions [{:name :action/publish-reviews}],
+   :from :state/reviewed-by-provider,
+   :to :state/reviewed}],
+
+ ;; =============================================================================
+ ;; Automated status updates & reminders
+ ;; Delayed notifications (those with :at) are dropped automatically if the
+ ;; transaction has already moved on from the state they were scheduled in, which
+ ;; is what makes them work as reminders.
+ ;; =============================================================================
+ :notifications
+ [;; --- Order confirmation -----------------------------------------------------
+  {:name :notification/order-receipt,
+   :on :transition/confirm-payment,
+   ;; Delayed to give a brand-new brand account time to verify its email.
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["PT15M"]}]},
+   :to :actor.role/customer,
+   :template :cgc-order-receipt}
+  {:name :notification/new-collaboration,
+   :on :transition/confirm-payment,
+   :to :actor.role/provider,
+   :template :cgc-new-collaboration}
+
+  ;; --- Shipping confirmation, tracking info, delivery confirmation ------------
+  {:name :notification/shipping-address-added,
+   :on :transition/provider-add-shipping-address,
+   :to :actor.role/customer,
+   :template :cgc-shipping-address-added}
+  ;; Reminds the brand to ship if it still hasn't after 3 days.
+  {:name :notification/shipping-reminder,
+   :on :transition/confirm-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["P3D"]}]},
+   :to :actor.role/customer,
+   :template :cgc-shipping-reminder}
+  {:name :notification/product-shipped-provider,
+   :on :transition/mark-shipped,
+   :to :actor.role/provider,
+   :template :cgc-product-shipped}
+  {:name :notification/product-shipped-customer,
+   :on :transition/mark-shipped,
+   :to :actor.role/customer,
+   :template :cgc-product-shipped-confirmation}
+  {:name :notification/product-received-customer,
+   :on :transition/mark-product-received,
+   :to :actor.role/customer,
+   :template :cgc-product-received}
+  {:name :notification/product-auto-received-customer,
+   :on :transition/auto-mark-product-received,
+   :to :actor.role/customer,
+   :template :cgc-product-received}
+
+  ;; --- Due date reminders -----------------------------------------------------
+  ;; Creator hasn't submitted anything yet: nudge before the auto-cancel window.
+  {:name :notification/content-due-reminder-purchased,
+   :on :transition/confirm-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["P7D"]}]},
+   :to :actor.role/provider,
+   :template :cgc-content-due-reminder}
+  {:name :notification/content-due-reminder-received-product,
+   :on :transition/mark-product-received,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/product-received]}
+     {:fn/period ["P10D"]}]},
+   :to :actor.role/provider,
+   :template :cgc-content-due-reminder}
+  {:name :notification/revision-due-reminder-1,
+   :on :transition/request-revision-1,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/revision-requested-1]}
+     {:fn/period ["P7D"]}]},
+   :to :actor.role/provider,
+   :template :cgc-revision-due-reminder}
+  {:name :notification/revision-due-reminder-2,
+   :on :transition/request-revision-2,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/revision-requested-2]}
+     {:fn/period ["P7D"]}]},
+   :to :actor.role/provider,
+   :template :cgc-revision-due-reminder}
+
+  ;; --- Content submission -----------------------------------------------------
+  {:name :notification/content-submitted,
+   :on :transition/submit-content,
+   :to :actor.role/customer,
+   :template :cgc-content-submitted}
+  {:name :notification/content-submitted-after-shipping,
+   :on :transition/submit-content-after-shipping,
+   :to :actor.role/customer,
+   :template :cgc-content-submitted}
+  {:name :notification/content-resubmitted-1,
+   :on :transition/resubmit-content-1,
+   :to :actor.role/customer,
+   :template :cgc-content-resubmitted}
+  {:name :notification/content-resubmitted-2,
+   :on :transition/resubmit-content-2,
+   :to :actor.role/customer,
+   :template :cgc-content-resubmitted}
+
+  ;; --- Review reminders for the brand ----------------------------------------
+  {:name :notification/approval-reminder,
+   :on :transition/submit-content,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/content-submitted]}
+     {:fn/period ["P5D"]}]},
+   :to :actor.role/customer,
+   :template :cgc-approval-reminder}
+  {:name :notification/approval-reminder-after-shipping,
+   :on :transition/submit-content-after-shipping,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/content-submitted]}
+     {:fn/period ["P5D"]}]},
+   :to :actor.role/customer,
+   :template :cgc-approval-reminder}
+  {:name :notification/approval-reminder-revised-1,
+   :on :transition/resubmit-content-1,
+   :at
+   {:fn/plus
+    [{:fn/timepoint
+      [:time/first-entered-state :state/content-submitted-revised-1]}
+     {:fn/period ["P5D"]}]},
+   :to :actor.role/customer,
+   :template :cgc-approval-reminder}
+  {:name :notification/approval-reminder-revised-2,
+   :on :transition/resubmit-content-2,
+   :at
+   {:fn/plus
+    [{:fn/timepoint
+      [:time/first-entered-state :state/content-submitted-revised-2]}
+     {:fn/period ["P5D"]}]},
+   :to :actor.role/customer,
+   :template :cgc-approval-reminder}
+
+  ;; --- Revision requests ------------------------------------------------------
+  {:name :notification/revision-requested-1,
+   :on :transition/request-revision-1,
+   :to :actor.role/provider,
+   :template :cgc-revision-requested}
+  {:name :notification/revision-requested-2,
+   :on :transition/request-revision-2,
+   :to :actor.role/provider,
+   :template :cgc-revision-requested-final}
+
+  ;; --- Approval & final payment ----------------------------------------------
+  {:name :notification/content-approved-provider,
+   :on :transition/approve-content,
+   :to :actor.role/provider,
+   :template :cgc-content-approved-provider}
+  {:name :notification/content-approved-provider-revised-1,
+   :on :transition/approve-content-revised-1,
+   :to :actor.role/provider,
+   :template :cgc-content-approved-provider}
+  {:name :notification/content-approved-provider-revised-2,
+   :on :transition/approve-content-revised-2,
+   :to :actor.role/provider,
+   :template :cgc-content-approved-provider}
+  {:name :notification/content-approved-customer,
+   :on :transition/approve-content,
+   :to :actor.role/customer,
+   :template :cgc-content-approved-customer}
+  {:name :notification/content-approved-customer-revised-1,
+   :on :transition/approve-content-revised-1,
+   :to :actor.role/customer,
+   :template :cgc-content-approved-customer}
+  {:name :notification/content-approved-customer-revised-2,
+   :on :transition/approve-content-revised-2,
+   :to :actor.role/customer,
+   :template :cgc-content-approved-customer}
+  {:name :notification/content-auto-approved-provider,
+   :on :transition/auto-approve-content,
+   :to :actor.role/provider,
+   :template :cgc-content-auto-approved-provider}
+  {:name :notification/content-auto-approved-provider-revised-1,
+   :on :transition/auto-approve-content-revised-1,
+   :to :actor.role/provider,
+   :template :cgc-content-auto-approved-provider}
+  {:name :notification/content-auto-approved-provider-revised-2,
+   :on :transition/auto-approve-content-revised-2,
+   :to :actor.role/provider,
+   :template :cgc-content-auto-approved-provider}
+  {:name :notification/content-auto-approved-customer,
+   :on :transition/auto-approve-content,
+   :to :actor.role/customer,
+   :template :cgc-content-auto-approved-customer}
+  {:name :notification/content-auto-approved-customer-revised-1,
+   :on :transition/auto-approve-content-revised-1,
+   :to :actor.role/customer,
+   :template :cgc-content-auto-approved-customer}
+  {:name :notification/content-auto-approved-customer-revised-2,
+   :on :transition/auto-approve-content-revised-2,
+   :to :actor.role/customer,
+   :template :cgc-content-auto-approved-customer}
+
+  ;; --- Disputes ---------------------------------------------------------------
+  {:name :notification/disputed-provider,
+   :on :transition/dispute,
+   :to :actor.role/provider,
+   :template :cgc-disputed-provider}
+  {:name :notification/disputed-provider-revised-1,
+   :on :transition/dispute-revised-1,
+   :to :actor.role/provider,
+   :template :cgc-disputed-provider}
+  {:name :notification/disputed-provider-revised-2,
+   :on :transition/dispute-revised-2,
+   :to :actor.role/provider,
+   :template :cgc-disputed-provider}
+  {:name :notification/disputed-customer,
+   :on :transition/dispute,
+   :to :actor.role/customer,
+   :template :cgc-disputed-customer}
+  {:name :notification/disputed-customer-revised-1,
+   :on :transition/dispute-revised-1,
+   :to :actor.role/customer,
+   :template :cgc-disputed-customer}
+  {:name :notification/disputed-customer-revised-2,
+   :on :transition/dispute-revised-2,
+   :to :actor.role/customer,
+   :template :cgc-disputed-customer}
+  {:name :notification/operator-disputed-provider,
+   :on :transition/operator-dispute,
+   :to :actor.role/provider,
+   :template :cgc-disputed-provider}
+  {:name :notification/operator-disputed-customer,
+   :on :transition/operator-dispute,
+   :to :actor.role/customer,
+   :template :cgc-disputed-customer}
+  {:name :notification/received-from-disputed-provider,
+   :on :transition/mark-received-from-disputed,
+   :to :actor.role/provider,
+   :template :cgc-dispute-resolved-provider}
+  {:name :notification/received-from-disputed-customer,
+   :on :transition/mark-received-from-disputed,
+   :to :actor.role/customer,
+   :template :cgc-dispute-resolved-customer}
+  {:name :notification/canceled-from-disputed-provider,
+   :on :transition/cancel-from-disputed,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-from-disputed-customer,
+   :on :transition/cancel-from-disputed,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/auto-canceled-from-disputed-provider,
+   :on :transition/auto-cancel-from-disputed,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/auto-canceled-from-disputed-customer,
+   :on :transition/auto-cancel-from-disputed,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+
+  ;; --- Cancellations ----------------------------------------------------------
+  {:name :notification/canceled-provider,
+   :on :transition/cancel,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-customer,
+   :on :transition/cancel,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/auto-canceled-provider,
+   :on :transition/auto-cancel,
+   :to :actor.role/provider,
+   :template :cgc-expired-provider}
+  {:name :notification/auto-canceled-customer,
+   :on :transition/auto-cancel,
+   :to :actor.role/customer,
+   :template :cgc-expired-customer}
+  {:name :notification/canceled-from-shipped-provider,
+   :on :transition/cancel-from-shipped,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-from-shipped-customer,
+   :on :transition/cancel-from-shipped,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/canceled-from-product-received-provider,
+   :on :transition/cancel-from-product-received,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-from-product-received-customer,
+   :on :transition/cancel-from-product-received,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/auto-canceled-from-product-received-provider,
+   :on :transition/auto-cancel-from-product-received,
+   :to :actor.role/provider,
+   :template :cgc-expired-provider}
+  {:name :notification/auto-canceled-from-product-received-customer,
+   :on :transition/auto-cancel-from-product-received,
+   :to :actor.role/customer,
+   :template :cgc-expired-customer}
+  {:name :notification/canceled-from-revision-1-provider,
+   :on :transition/cancel-from-revision-1,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-from-revision-1-customer,
+   :on :transition/cancel-from-revision-1,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/canceled-from-revision-2-provider,
+   :on :transition/cancel-from-revision-2,
+   :to :actor.role/provider,
+   :template :cgc-canceled-provider}
+  {:name :notification/canceled-from-revision-2-customer,
+   :on :transition/cancel-from-revision-2,
+   :to :actor.role/customer,
+   :template :cgc-canceled-customer}
+  {:name :notification/auto-canceled-from-revision-1-provider,
+   :on :transition/auto-cancel-from-revision-1,
+   :to :actor.role/provider,
+   :template :cgc-expired-provider}
+  {:name :notification/auto-canceled-from-revision-1-customer,
+   :on :transition/auto-cancel-from-revision-1,
+   :to :actor.role/customer,
+   :template :cgc-expired-customer}
+  {:name :notification/auto-canceled-from-revision-2-provider,
+   :on :transition/auto-cancel-from-revision-2,
+   :to :actor.role/provider,
+   :template :cgc-expired-provider}
+  {:name :notification/auto-canceled-from-revision-2-customer,
+   :on :transition/auto-cancel-from-revision-2,
+   :to :actor.role/customer,
+   :template :cgc-expired-customer}
+
+  ;; --- Two-way public reviews -------------------------------------------------
+  {:name :notification/review-period-start-provider,
+   :on :transition/auto-complete,
+   :to :actor.role/provider,
+   :template :cgc-review-by-provider-wanted}
+  {:name :notification/review-period-start-customer,
+   :on :transition/auto-complete,
+   :to :actor.role/customer,
+   :template :cgc-review-by-customer-wanted}
+  {:name :notification/review-by-provider-first,
+   :on :transition/review-1-by-provider,
+   :to :actor.role/customer,
+   :template :cgc-review-by-other-party-unpublished}
+  {:name :notification/review-by-customer-first,
+   :on :transition/review-1-by-customer,
+   :to :actor.role/provider,
+   :template :cgc-review-by-other-party-unpublished}
+  {:name :notification/review-by-provider-second,
+   :on :transition/review-2-by-provider,
+   :to :actor.role/customer,
+   :template :cgc-review-by-other-party-published}
+  {:name :notification/review-by-customer-second,
+   :on :transition/review-2-by-customer,
+   :to :actor.role/provider,
+   :template :cgc-review-by-other-party-published}]}

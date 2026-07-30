@@ -8,6 +8,7 @@ import { propTypes } from '../../../util/types';
 
 import {
   ErrorMessage,
+  FieldSelect,
   FieldTextInput,
   Form,
   Heading,
@@ -31,6 +32,11 @@ import css from './InquiryForm.module.css';
  * @param {string} props.listingTitle - The listing title
  * @param {string} props.authorDisplayName - The author display name
  * @param {propTypes.error} props.sendInquiryError - The send inquiry error
+ * @param {boolean} [props.isInviteFlow] - CGC only: true when contacting a creator-profile
+ *   listing, so the brand can attach one of its own project-brief listings to the inquiry
+ *   (CGC-FRONTEND-PLAN.md §3.3) instead of sending a bare message.
+ * @param {Array<{id: string, title: string}>} [props.briefOptions] - The brand's own open
+ *   project-brief listings, offered as the "attach a brief" choices.
  * @returns {JSX.Element} inquiry form component
  */
 const InquiryForm = props => (
@@ -47,6 +53,8 @@ const InquiryForm = props => (
         listingTitle,
         authorDisplayName,
         sendInquiryError,
+        isInviteFlow = false,
+        briefOptions = [],
       } = fieldRenderProps;
 
       const intl = useIntl();
@@ -71,12 +79,30 @@ const InquiryForm = props => (
       const submitInProgress = inProgress;
       const submitDisabled = submitInProgress;
 
+      const headingId = isInviteFlow ? 'InquiryForm.inviteHeading' : 'InquiryForm.heading';
+      const hasBriefOptions = isInviteFlow && briefOptions.length > 0;
+
       return (
         <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
           <IconInquiry className={css.icon} />
           <Heading as="h2" rootClassName={css.heading}>
-            <FormattedMessage id="InquiryForm.heading" values={{ listingTitle }} />
+            <FormattedMessage id={headingId} values={{ listingTitle, authorDisplayName }} />
           </Heading>
+          {hasBriefOptions ? (
+            <FieldSelect
+              className={css.field}
+              name="inviteBriefId"
+              id={formId ? `${formId}.inviteBriefId` : 'inviteBriefId'}
+              label={intl.formatMessage({ id: 'InquiryForm.briefLabel' })}
+            >
+              <option value="">{intl.formatMessage({ id: 'InquiryForm.briefNoneOption' })}</option>
+              {briefOptions.map(brief => (
+                <option key={brief.id} value={brief.id}>
+                  {brief.title}
+                </option>
+              ))}
+            </FieldSelect>
+          ) : null}
           <FieldTextInput
             className={css.field}
             type="textarea"

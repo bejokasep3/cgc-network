@@ -26,11 +26,13 @@ import {
 import {
   OFFER,
   REQUEST,
+  CGC_UGC_PROCESS_NAME,
   isBookingProcess,
   isNegotiationProcess,
   isPurchaseProcess,
   resolveLatestProcessName,
 } from '../../transactions/transaction';
+import { checkBrandAccess } from '../../util/subscription';
 
 import { Page, LayoutSingleColumn, NamedLink } from '../../components';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -270,6 +272,7 @@ export const getDerivedRenderData = ({
     isOwnListing,
     showListingImage,
     showDescription,
+    processName,
     processType,
     ensuredAuthor,
     noPayoutDetailsSetWithOwnListing,
@@ -301,7 +304,20 @@ export const handleContactUser = parameters => () => {
     location,
     routes,
     setInquiryModalOpen,
+    processName,
+    brandSubscription,
   } = parameters;
+
+  // Contacting the author of a creator-profile listing means inviting a
+  // creator to collaborate, which only brands do. Gate it the same way
+  // checkout is gated, mirroring how the pending-approval check above
+  // redirects instead of failing silently.
+  const isCGCContact = processName === CGC_UGC_PROCESS_NAME;
+  const subscriptionResolved = brandSubscription?.status !== null && !brandSubscription?.fetchInProgress;
+  const brandAccessDenied =
+    isCGCContact &&
+    subscriptionResolved &&
+    !checkBrandAccess({ status: brandSubscription?.status, isBrand: true }).allowed;
 
   if (!currentUser) {
     const state = { from: `${location.pathname}${location.search}${location.hash}` };
@@ -320,6 +336,8 @@ export const handleContactUser = parameters => () => {
     // A user in pending-approval state can't contact the author (the same applies for a banned user)
     const pathParams = { missingAccessRight: NO_ACCESS_PAGE_INITIATE_TRANSACTIONS };
     history.push(createResourceLocatorString('NoAccessPage', routes, pathParams, {}));
+  } else if (brandAccessDenied) {
+    history.push(createResourceLocatorString('SubscriptionPage', routes, {}, {}));
   } else {
     setInquiryModalOpen(true);
   }
@@ -332,13 +350,27 @@ export const handleContactUser = parameters => () => {
  * @param {Object} parameters all the info needed to create inquiry.
  */
 export const handleSubmitInquiry = parameters => values => {
-  const { history, params, getListing, onSendInquiry, routes, setInquiryModalOpen } = parameters;
+  const {
+    history,
+    params,
+    getListing,
+    onSendInquiry,
+    routes,
+    setInquiryModalOpen,
+    ownProjectBriefs = [],
+  } = parameters;
 
   const listingId = new UUID(params.id);
   const listing = getListing(listingId);
-  const { message } = values;
+  const { message, inviteBriefId } = values;
+  const briefListing = inviteBriefId
+    ? ownProjectBriefs.find(l => l.id.uuid === inviteBriefId)
+    : null;
+  const protectedData = briefListing
+    ? { inviteBriefId, inviteBriefTitle: briefListing.attributes.title }
+    : undefined;
 
-  onSendInquiry(listing, message.trim())
+  onSendInquiry(listing, message.trim(), protectedData)
     .then(txId => {
       setInquiryModalOpen(false);
 

@@ -48,6 +48,12 @@
   composes: marketplaceModalBottomWrapper from global;
 }
 
+.applicationNotice {
+  composes: textXSmall from global;
+  color: var(--colorGrey600);
+  margin: 0 0 16px 0;
+}
+
 .error {
   composes: textXSmall from global;
   color: var(--colorFail);

@@ -36,3 +36,46 @@
   padding-left: 0;
   padding-right: 0;
 }
+
+/**
+ * Column blocks are rendered as cards: a light fill on the page ground, with no
+ * border and no shadow. Separation comes from the fill alone, which is what keeps
+ * multi-column sections from reading as text floating in space.
+ *
+ * Console only exposes background colour and text colour per section, so this has
+ * to live in code. It is applied per block by SectionColumns, which is why it does
+ * not leak into the carousel or features sections that share BlockDefault.
+ */
+.columnCard {
+  background-color: var(--colorGrey50);
+  border-radius: var(--borderRadiusLarge);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+
+  @media (--viewportMedium) {
+    padding: 32px;
+  }
+
+  /* Media sits flush at the top of the card rather than inset. */
+  & > :first-child {
+    margin-top: 0;
+  }
+
+  /* Push a block's CTA to the bottom so cards of unequal text length still line
+     their buttons up. */
+  & a:last-child {
+    margin-top: auto;
+  }
+}
+
+/**
+ * On a section whose background is already tinted (Console `backgroundColor`) or
+ * dark (`textColor: white`), a grey fill would either disappear or fight the
+ * ground. Fall back to a hairline instead.
+ */
+.columnCardOnTint {
+  background-color: transparent;
+  outline: 1px solid var(--colorGrey100);
+  outline-offset: -1px;
+}

@@ -21,6 +21,12 @@ import { LISTING_STATE_DRAFT, LISTING_STATE_PENDING_APPROVAL, propTypes } from '
 import { isErrorNoPermissionToPostListings } from '../../util/errors';
 import { ensureOwnListing } from '../../util/data';
 import { hasPermissionToPostListings, isUserAuthorized } from '../../util/userHelpers';
+import { checkBrandAccess, isSubscriptionStatusResolved } from '../../util/subscription';
+
+// A brand posting a project-brief listing needs an active subscription. Only
+// this listing type is gated — creators posting creator-profile listings
+// never are (see util/subscription.js).
+const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 import {
@@ -178,6 +184,7 @@ export const EditListingPageComponent = props => {
     onUploadFile,
     onClearUploadedFiles,
     onDownloadFile,
+    brandSubscription,
   } = props;
 
   const { id, type, returnURLType } = params;
@@ -193,6 +200,19 @@ export const EditListingPageComponent = props => {
   const hasPostingRightsError = isErrorNoPermissionToPostListings(page.publishListingError?.error);
   const shouldRedirectNoPostingRights =
     !!currentUser?.id && ((isNewListingFlow && !hasPostingRights) || hasPostingRightsError);
+
+  // Only project-brief listings are brand-subscription gated. The listing
+  // type isn't known until the draft's first tab is submitted, so nothing
+  // gates before that — this check only bites once publicData.listingType
+  // is actually 'project-brief'.
+  const isProjectBriefListing =
+    currentListing.attributes?.publicData?.listingType === PROJECT_BRIEF_LISTING_TYPE;
+  const subscriptionResolved = isSubscriptionStatusResolved(brandSubscription);
+  const shouldRedirectNoBrandSubscription =
+    !!currentUser?.id &&
+    isProjectBriefListing &&
+    subscriptionResolved &&
+    !checkBrandAccess({ status: brandSubscription?.status, isBrand: true }).allowed;
 
   const isPastDraft = currentListingState && currentListingState !== LISTING_STATE_DRAFT;
   const shouldRedirectAfterPosting = isNewListingFlow && listingId && isPastDraft;
@@ -214,6 +234,8 @@ export const EditListingPageComponent = props => {
         params={{ missingAccessRight: NO_ACCESS_PAGE_POST_LISTINGS }}
       />
     );
+  } else if (shouldRedirectNoBrandSubscription) {
+    return <NamedRedirect name="SubscriptionPage" />;
   } else if (shouldRedirectAfterPosting) {
     const isPendingApproval =
       currentListing && currentListingState === LISTING_STATE_PENDING_APPROVAL;
@@ -397,6 +419,7 @@ const mapStateToProps = state => {
     fileUploadsDisabled: selectFileUploadsDisabled(state),
     hasPendingFileUploads: selectHasPendingFileUploads(state),
     allFilesUploadedAndVerified: selectAllFilesUploadedAndVerified(state),
+    brandSubscription: state.brandSubscription,
   };
 };
 

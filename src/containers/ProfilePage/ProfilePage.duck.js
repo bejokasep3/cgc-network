@@ -6,6 +6,7 @@ import { PROFILE_PAGE_PENDING_APPROVAL_VARIANT } from '../../util/urlHelpers';
 import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
 import { hasPermissionToViewData, isUserAuthorized } from '../../util/userHelpers';
+import { CGC_UGC_PROCESS_NAME } from '../../transactions/transaction';
 
 const { UUID } = sdkTypes;
 
@@ -125,6 +126,55 @@ export const queryUserReviews = userId => dispatch => {
   return dispatch(queryUserReviewsThunk({ userId }));
 };
 
+///////////////////////////////////////////////////////
+// Query collaboration history with this creator      //
+///////////////////////////////////////////////////////
+
+// "Collaboration history per creator" (CGC-FRONTEND-PLAN.md §4.2): a brand
+// viewing a creator's profile should see its own past bookings with that
+// creator. The Marketplace API's transactions.query doesn't support
+// filtering by the other party, so this fetches the viewer's own orders
+// (capped, same page-size convention as fetchCurrentUserNotifications in
+// ducks/user.duck.js) and filters client-side down to this creator's
+// cgc-ugc-approval transactions.
+const COLLABORATION_HISTORY_PAGE_SIZE = 100;
+
+const queryCollaborationHistoryPayloadCreator = (
+  { creatorId },
+  { dispatch, rejectWithValue, extra: sdk }
+) => {
+  return sdk.transactions
+    .query({
+      only: 'order',
+      include: ['listing', 'provider'],
+      perPage: COLLABORATION_HISTORY_PAGE_SIZE,
+    })
+    .then(response => {
+      dispatch(addMarketplaceEntities(response));
+      const transactions = denormalisedResponseEntities(response);
+      return transactions
+        .filter(
+          tx =>
+            tx.attributes?.processName === CGC_UGC_PROCESS_NAME &&
+            tx.provider?.id?.uuid === creatorId
+        )
+        .sort(
+          (a, b) => new Date(b.attributes.lastTransitionedAt) - new Date(a.attributes.lastTransitionedAt)
+        );
+    })
+    .catch(e => rejectWithValue(storableError(e)));
+};
+
+export const queryCollaborationHistoryThunk = createAsyncThunk(
+  'ProfilePage/queryCollaborationHistory',
+  queryCollaborationHistoryPayloadCreator
+);
+
+// Backward compatible wrapper for the thunk
+export const queryCollaborationHistory = creatorId => dispatch => {
+  return dispatch(queryCollaborationHistoryThunk({ creatorId }));
+};
+
 // ================ Slice ================ //
 
 const initialState = {
@@ -134,6 +184,9 @@ const initialState = {
   queryListingsError: null,
   reviews: [],
   queryReviewsError: null,
+  collaborationHistory: [],
+  queryCollaborationHistoryInProgress: false,
+  queryCollaborationHistoryError: null,
 };
 
 const profilePageSlice = createSlice({
@@ -182,6 +235,20 @@ const profilePageSlice = createSlice({
       .addCase(queryUserReviewsThunk.rejected, (state, action) => {
         state.reviews = [];
         state.queryReviewsError = action.payload;
+      })
+      // queryCollaborationHistory cases
+      .addCase(queryCollaborationHistoryThunk.pending, state => {
+        state.queryCollaborationHistoryInProgress = true;
+        state.queryCollaborationHistoryError = null;
+      })
+      .addCase(queryCollaborationHistoryThunk.fulfilled, (state, action) => {
+        state.queryCollaborationHistoryInProgress = false;
+        state.collaborationHistory = action.payload;
+      })
+      .addCase(queryCollaborationHistoryThunk.rejected, (state, action) => {
+        state.queryCollaborationHistoryInProgress = false;
+        state.collaborationHistory = [];
+        state.queryCollaborationHistoryError = action.payload;
       });
   },
 });

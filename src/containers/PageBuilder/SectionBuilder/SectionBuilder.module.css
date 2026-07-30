@@ -105,10 +105,16 @@
 }
 
 .blockContainer {
-  padding: 64px 32px 0 32px;
+  padding: 40px 32px 0 32px;
 
   &:first-child {
     padding: 0 32px;
+  }
+
+  /* More air between the section heading and its blocks on wider screens, where
+     the columns sit side by side and the heading has to carry further. */
+  @media (--viewportMedium) {
+    padding-top: 48px;
   }
 }
 
@@ -135,19 +141,25 @@
 .ctaButton {
   composes: align;
   display: inline-block;
-  padding: 8px 20px;
+  /* Pill-shaped, matching the action buttons elsewhere in the app. The accent is
+     the only place colour appears in a section, so it has to read as the one
+     thing to click. */
+  padding: 13px 26px;
   font-size: 15px;
   background-color: var(--marketplaceColor);
-  border-radius: 4px;
-  color: white;
+  border-radius: 999px;
+  color: var(--colorWhite);
   text-decoration: none;
-  box-shadow: 0 8px 16px 0 rgb(0 0 0 / 20%);
-  font-weight: 500;
+  box-shadow: var(--boxShadowButton);
+  font-weight: var(--fontWeightSemiBold);
   margin-top: 24px;
+  transition: var(--transitionStyleButton);
 
   &:hover {
     text-decoration: none;
     background-color: var(--marketplaceColorDark);
+    box-shadow: var(--boxShadowSm);
+    transform: translateY(-1px);
   }
 }
 
@@ -210,7 +222,7 @@
   text-decoration: none;
 
   &:hover {
-    color: white;
+    color: var(--colorWhite);
   }
 }
 

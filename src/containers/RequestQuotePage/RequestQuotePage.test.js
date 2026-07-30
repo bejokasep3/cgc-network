@@ -343,7 +343,9 @@ describe('Duck', () => {
 
       return loadData({ id: listingId }, null, config)(dispatch, getState, sdk).then(data => {
         const relevantActions = actions.filter(
-          action => !action.type.startsWith('user/fetchCurrentUser/')
+          action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
         );
 
         expect(relevantActions[0]).toEqual(setInitialState());
@@ -396,7 +398,9 @@ describe('Duck', () => {
       return loadData({ id: listingId }, null, privateConfig)(dispatch, getState, sdk).then(
         data => {
           const relevantActions = actions.filter(
-            action => !action.type.startsWith('user/fetchCurrentUser/')
+            action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
           );
 
           expect(relevantActions[0]).toEqual(setInitialState());

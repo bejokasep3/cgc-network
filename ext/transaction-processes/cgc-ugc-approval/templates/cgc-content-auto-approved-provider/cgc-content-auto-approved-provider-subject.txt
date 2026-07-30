@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcContentAutoApprovedProvider.Subject" "Your content was approved automatically — payment released"}}{{/with}}

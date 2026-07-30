@@ -216,6 +216,9 @@ const SignupFormComponent = props => (
           ) : null}
 
           <div className={css.bottomWrapper}>
+            <p className={css.applicationNotice}>
+              <FormattedMessage id="SignupForm.applicationNotice" />
+            </p>
             {termsAndConditions}
             {isPasswordUsedMoreThanOnce(values) ? (
               <div className={css.error}>

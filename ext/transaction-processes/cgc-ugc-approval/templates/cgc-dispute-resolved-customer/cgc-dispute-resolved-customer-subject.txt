@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcDisputeResolvedCustomer.Subject" "Your dispute for {listingTitle} was resolved" listingTitle=listing.title}}{{/with}}

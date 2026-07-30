@@ -6,9 +6,24 @@
   width: 100%;
   position: relative;
 
-  /* Hero specific */
-  min-height: 80vh;
+  /* Hero specific.
+   * Height is driven by content with a floor, rather than pinned to the viewport.
+   * A viewport-height hero with a headline and one button in it reads as empty
+   * space, which is the opposite of premium — 80vh was leaving a third of the
+   * screen blank on desktop. */
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 60vh;
+  padding: 64px 0;
+
+  @media (--viewportMedium) {
+    min-height: 56vh;
+    padding: 96px 0;
+  }
+
+  @media (--viewportLarge) {
+    min-height: 60vh;
+    padding: 112px 0;
+  }
 }

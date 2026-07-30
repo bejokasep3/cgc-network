@@ -33,9 +33,11 @@ const PrivacyPolicyPage = loadable(() => import(/* webpackChunkName: "PrivacyPol
 const ProfilePage = loadable(() => import(/* webpackChunkName: "ProfilePage" */ '../containers/ProfilePage/ProfilePage'));
 const ProfileSettingsPage = loadable(() => import(/* webpackChunkName: "ProfileSettingsPage" */ '../containers/ProfileSettingsPage/ProfileSettingsPage'));
 const RequestQuotePage = loadable(() => import(/* webpackChunkName: "RequestQuotePage" */ '../containers/RequestQuotePage/RequestQuotePage'));
+const RosterPage = loadable(() => import(/* webpackChunkName: "RosterPage" */ '../containers/RosterPage/RosterPage'));
 const SearchPageWithMap = loadable(() => import(/* webpackChunkName: "SearchPageWithMap" */ /* webpackPrefetch: true */  '../containers/SearchPage/SearchPageWithMap'));
 const SearchPageWithGrid = loadable(() => import(/* webpackChunkName: "SearchPageWithGrid" */ /* webpackPrefetch: true */  '../containers/SearchPage/SearchPageWithGrid'));
 const StripePayoutPage = loadable(() => import(/* webpackChunkName: "StripePayoutPage" */ '../containers/StripePayoutPage/StripePayoutPage'));
+const SubscriptionPage = loadable(() => import(/* webpackChunkName: "SubscriptionPage" */ '../containers/SubscriptionPage/SubscriptionPage'));
 const TermsOfServicePage = loadable(() => import(/* webpackChunkName: "TermsOfServicePage" */ '../containers/TermsOfServicePage/TermsOfServicePage'));
 const TransactionPage = loadable(() => import(/* webpackChunkName: "TransactionPage" */ '../containers/TransactionPage/TransactionPage'));
 const NoAccessPage = loadable(() => import(/* webpackChunkName: "NoAccessPage" */ '../containers/NoAccessPage/NoAccessPage'));
@@ -367,6 +369,23 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       prioritizeLibraryLoading: {
         stripe: true,
       },
+    },
+    {
+      // Brands land here from a gated action or from the account menu. Stripe
+      // Checkout returns to this path with ?status=success|canceled.
+      path: '/subscription',
+      name: 'SubscriptionPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: SubscriptionPage,
+    },
+    {
+      // A brand's saved creators (CGC-FRONTEND-PLAN.md §4.2), linked from the inbox.
+      path: '/roster',
+      name: 'RosterPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: RosterPage,
     },
     {
       path: '/account/payment-methods',

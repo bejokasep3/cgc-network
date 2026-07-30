@@ -72,6 +72,7 @@ import ReportModal from './ReportModal/ReportModal';
 import ReviewModal from './ReviewModal/ReviewModal';
 import RequestChangesModal from './RequestChangesModal/RequestChangesModal';
 import MakeCounterOfferModal from './MakeCounterOfferModal/MakeCounterOfferModal';
+import CGCActionModal from './CGCActionModal/CGCActionModal';
 import SendMessageForm from './SendMessageForm/SendMessageForm';
 import TransactionPanel from './TransactionPanel/TransactionPanel';
 
@@ -331,6 +332,10 @@ export const TransactionPageComponent = props => {
   const [changeRequestSubmitted, setChangeRequestSubmitted] = useState(false);
   const [isMakeCounterOfferModalOpen, setMakeCounterOfferModalOpen] = useState(false);
   const [counterOfferSubmitted, setCounterOfferSubmitted] = useState(false);
+  // The cgc-ugc-approval process collects structured data on three of its
+  // transitions. One modal serves all three; this tracks which variant is open.
+  const [cgcModalVariant, setCgcModalVariant] = useState(null);
+  const [cgcActionSubmitted, setCgcActionSubmitted] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -516,6 +521,13 @@ export const TransactionPageComponent = props => {
   // This is called from action buttons
   const onOpenMakeCounterOfferModal = () => {
     setMakeCounterOfferModalOpen(true);
+  };
+
+  // Open one of the cgc-ugc-approval action modals (shipping details, content
+  // submission, revision request). Called from action buttons.
+  const onOpenCGCActionModal = variant => () => {
+    setCgcActionSubmitted(false);
+    setCgcModalVariant(variant);
   };
 
   // Submit review and close the review modal
@@ -737,6 +749,7 @@ export const TransactionPageComponent = props => {
     ? getStateData(
         {
           transaction,
+          listing,
           transactionRole,
           nextTransitions,
           transitionInProgress,
@@ -747,6 +760,7 @@ export const TransactionPageComponent = props => {
           onOpenReviewModal,
           onOpenRequestChangesModal,
           onOpenMakeCounterOfferModal,
+          onOpenCGCActionModal,
           onCheckoutRedirect: handleSubmitOrderRequest,
           onMakeOfferRedirect: onMakeOffer,
           intl,
@@ -754,6 +768,57 @@ export const TransactionPageComponent = props => {
         process
       )
     : {};
+
+  // Which transition the DisputeModal should trigger. Processes where the
+  // dispute transition depends on the current state (e.g. cgc-ugc-approval,
+  // where each content-submission state has its own dispute transition) can
+  // override it from stateData.
+  const disputeTransition = stateData.disputeTransition || process?.transitions?.DISPUTE;
+
+  // The cgc-ugc-approval transition each modal variant fires also depends on the
+  // current state (submit-content vs. resubmit-content-1, etc.), so stateData
+  // tells us which one applies right now.
+  const cgcModalTransitions = {
+    addShippingAddress: stateData.addShippingAddressTransition,
+    shipping: stateData.shippingTransition,
+    submitContent: stateData.contentSubmitTransition,
+    requestRevision: stateData.revisionTransition,
+  };
+  const cgcModalTransition = cgcModalVariant ? cgcModalTransitions[cgcModalVariant] : null;
+
+  // The submitContent/requestRevision modal fields (contentLinks, submissionNote,
+  // revisionNote) are reused for every round, but each round needs its own
+  // protectedData keys — otherwise resubmitting overwrites the previous round's
+  // data, and CollaborationDetailsMaybe can't show a revision history. Round 0
+  // (the original submission and its first revision request) keeps the bare
+  // field names; later rounds get a suffix.
+  const cgcRoundKeySuffix = transitionName => {
+    if (!process?.transitions) return '';
+    if (transitionName === process.transitions.RESUBMIT_CONTENT_1) return 'Revision1';
+    if (transitionName === process.transitions.RESUBMIT_CONTENT_2) return 'Revision2';
+    if (transitionName === process.transitions.REQUEST_REVISION_2) return '2';
+    return '';
+  };
+  const cgcRoundSuffix = cgcRoundKeySuffix(cgcModalTransition);
+
+  // Everything the form collects goes into protected data, which is what makes
+  // it readable by the other party and by the notification templates.
+  const onSubmitCGCAction = values => {
+    const protectedData = Object.entries(values).reduce((acc, [key, value]) => {
+      const trimmed = typeof value === 'string' ? value.trim() : value;
+      const dataKey = cgcRoundSuffix ? `${key}${cgcRoundSuffix}` : key;
+      return trimmed ? { ...acc, [dataKey]: trimmed } : acc;
+    }, {});
+
+    onTransition(transaction?.id, cgcModalTransition, { protectedData })
+      .then(() => {
+        setCgcActionSubmitted(true);
+        setCgcModalVariant(null);
+      })
+      .catch(() => {
+        // Error is surfaced through transitionError inside the modal.
+      });
+  };
 
   const hasLineItems = transaction?.attributes?.lineItems?.length > 0;
   const unitLineItem = hasLineItems
@@ -1070,7 +1135,7 @@ export const TransactionPageComponent = props => {
             reportError={transitionError}
           />
         ) : null}
-        {process?.transitions?.DISPUTE ? (
+        {disputeTransition ? (
           <DisputeModal
             id="DisputeOrderModal"
             isOpen={isDisputeModalOpen}
@@ -1079,12 +1144,12 @@ export const TransactionPageComponent = props => {
             onManageDisableScrolling={onManageDisableScrolling}
             onDisputeOrder={onDisputeOrder(
               transaction?.id,
-              process.transitions.DISPUTE,
+              disputeTransition,
               onTransition,
               setDisputeSubmitted
             )}
             disputeSubmitted={disputeSubmitted}
-            disputeInProgress={transitionInProgress === process.transitions.DISPUTE}
+            disputeInProgress={transitionInProgress === disputeTransition}
             disputeError={transitionError}
           />
         ) : null}
@@ -1107,6 +1172,20 @@ export const TransactionPageComponent = props => {
             changeRequestSubmitted={changeRequestSubmitted}
             changeRequestInProgress={transitionInProgress === process.transitions.REQUEST_CHANGES}
             changeRequestError={transitionError}
+          />
+        ) : null}
+        {cgcModalTransition ? (
+          <CGCActionModal
+            id="CGCActionModal"
+            variant={cgcModalVariant}
+            isOpen={!!cgcModalVariant}
+            focusElementId={`${actionButtonContainer}_${ACTION_BUTTON_1_ID}`}
+            onCloseModal={() => setCgcModalVariant(null)}
+            onManageDisableScrolling={onManageDisableScrolling}
+            onSubmitAction={onSubmitCGCAction}
+            submitted={cgcActionSubmitted}
+            inProgress={transitionInProgress === cgcModalTransition}
+            error={transitionError}
           />
         ) : null}
         {showMakeCounterOfferModal ? (

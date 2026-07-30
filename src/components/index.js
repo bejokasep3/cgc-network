@@ -132,6 +132,7 @@ export { default as FileUpload } from './FileUpload/FileUpload'
 export { default as OrderBreakdown } from './OrderBreakdown/OrderBreakdown';
 export { default as OrderPanel } from './OrderPanel/OrderPanel';
 export { default as ListingCard } from './ListingCard/ListingCard';
+export { default as CreatorCard } from './CreatorCard/CreatorCard';
 export { default as Map } from './Map/Map';
 export { default as Page } from './Page/Page';
 export { default as Reviews } from './Reviews/Reviews';

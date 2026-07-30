@@ -6,6 +6,7 @@ import { propTypes } from '../../../util/types';
 import { userDisplayNameAsString } from '../../../util/data';
 import { createSlug } from '../../../util/urlHelpers';
 import { displayPrice } from '../../../util/configHelpers';
+import { CGC_UGC_PROCESS_NAME } from '../../../transactions/transaction';
 
 import { AvatarLarge, NamedLink, UserDisplayName } from '../../../components';
 
@@ -15,6 +16,10 @@ import BreakdownMaybe from './BreakdownMaybe';
 import DetailCardHeadingsMaybe from './DetailCardHeadingsMaybe';
 import DetailCardImage from './DetailCardImage';
 import DeliveryInfoMaybe from './DeliveryInfoMaybe';
+import CollaborationDetailsMaybe from './CollaborationDetailsMaybe';
+import InvitationBannerMaybe from './InvitationBannerMaybe';
+import ApprovalDecisionPanel from './ApprovalDecisionPanel';
+import StageTracker from '../StageTracker/StageTracker';
 import BookingLocationMaybe from './BookingLocationMaybe';
 import FeedSection from './FeedSection';
 import DiminishedActionButtonMaybe from './DiminishedActionButtonMaybe';
@@ -183,14 +188,27 @@ export class TransactionPanelComponent extends Component {
 
     const showDiminishedButton = stateData.showDispute || stateData.showReport;
     const onOpenDiminishedModal = stateData.showReport ? onOpenReportModal : onOpenDisputeModal;
+    const isCGCProcess = stateData.processName === CGC_UGC_PROCESS_NAME;
+    const isShippable = listing?.attributes?.publicData?.requiresProduct === true;
+    const disputeMessageId = isCGCProcess
+      ? 'TransactionPanel.cgc-ugc-approval.disputeOrder'
+      : 'TransactionPanel.disputeOrder';
     const diminishedButtonMessage = stateData.showReport ? (
       <FormattedMessage id="TransactionPanel.reportOrder" />
     ) : (
-      <FormattedMessage id="TransactionPanel.disputeOrder" />
+      <FormattedMessage id={disputeMessageId} />
     );
 
     return (
       <div className={classes}>
+        {isCGCProcess ? (
+          <StageTracker
+            processName={stateData.processName}
+            processState={stateData.processState}
+            txTransitions={transitions}
+            isShippable={isShippable}
+          />
+        ) : null}
         <div className={css.container}>
           <div className={css.txInfo}>
             <DetailCardImage
@@ -231,6 +249,24 @@ export class TransactionPanelComponent extends Component {
             {offer}
             {transactionFieldsComponent}
             {fileAttachments}
+            {isCGCProcess ? (
+              <InvitationBannerMaybe
+                protectedData={protectedData}
+                isCustomer={isCustomer}
+                providerName={authorDisplayName}
+              />
+            ) : null}
+            <CollaborationDetailsMaybe
+              processName={stateData.processName}
+              protectedData={protectedData}
+            />
+            {stateData.showApprovalDecisionPanel ? (
+              <ApprovalDecisionPanel
+                primaryButtonProps={stateData.primaryButtonProps}
+                secondaryButtonProps={stateData.secondaryButtonProps}
+                onOpenDisputeModal={onOpenDisputeModal}
+              />
+            ) : null}
 
             {!isInquiryProcess ? (
               <div className={css.orderDetails}>
@@ -264,12 +300,14 @@ export class TransactionPanelComponent extends Component {
                     />
                   </p>
                 ) : null}
-                <DeliveryInfoMaybe
-                  className={css.deliveryInfoSection}
-                  protectedData={protectedData}
-                  listing={listing}
-                  locale={config.localization.locale}
-                />
+                {!isCGCProcess ? (
+                  <DeliveryInfoMaybe
+                    className={css.deliveryInfoSection}
+                    protectedData={protectedData}
+                    listing={listing}
+                    locale={config.localization.locale}
+                  />
+                ) : null}
                 <BookingLocationMaybe
                   className={css.deliveryInfoSection}
                   listing={listing}

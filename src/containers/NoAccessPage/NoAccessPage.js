@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { useConfiguration } from '../../context/configurationContext';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import appSettings from '../../config/settings';
-import { useIntl } from '../../util/reactIntl';
+import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import {
   NO_ACCESS_PAGE_INITIATE_TRANSACTIONS,
   NO_ACCESS_PAGE_POST_LISTINGS,
@@ -118,6 +118,7 @@ export const NoAccessPageComponent = props => {
         heading: 'NoAccessPage.userPendingApproval.heading',
         content: 'NoAccessPage.userPendingApproval.content',
         ctaData: approvalToJoinCTA,
+        showStatusBadge: true,
       }
     : isPostingRightsPage
     ? {
@@ -172,6 +173,11 @@ export const NoAccessPageComponent = props => {
         >
           <div className={css.emailSubmittedContent}>
             <IconDoor className={css.modalIcon} />
+            {pageData.showStatusBadge ? (
+              <span className={css.statusBadge}>
+                <FormattedMessage id="NoAccessPage.userPendingApproval.statusBadge" />
+              </span>
+            ) : null}
             <Heading as="h1" rootClassName={css.modalTitle}>
               {intl.formatMessage({ id: pageData.heading })}
             </Heading>

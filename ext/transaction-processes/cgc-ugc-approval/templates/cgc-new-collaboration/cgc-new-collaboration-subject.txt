@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcNewCollaboration.Subject" "{brandName} booked you for {listingTitle}" brandName=customer.display-name listingTitle=listing.title}}{{/with}}

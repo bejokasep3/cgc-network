@@ -12,6 +12,7 @@ import {
 
 import { authInfo } from './auth.duck';
 import { updateStripeConnectAccount } from './stripeConnectAccount.duck';
+import { fetchBrandSubscription } from './brandSubscription.duck';
 
 // ================ Helper Functions ================ //
 
@@ -231,6 +232,10 @@ const fetchCurrentUserPayloadCreator = (options, thunkAPI) => {
         if (!currentUser.attributes.emailVerified) {
           dispatch(fetchCurrentUserHasOrders());
         }
+
+        // Brand subscription status is only meaningful for authorized users;
+        // isSubscriptionStatusResolved() gates any paywall UI on this landing.
+        dispatch(fetchBrandSubscription());
       }
 
       // Make sure auth info is up to date

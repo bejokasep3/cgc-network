@@ -1,0 +1,81 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: var(--contentMaxWidth);
+  margin: 0 auto;
+  padding: 48px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 56px 24px 120px 24px;
+  }
+}
+
+.heading {
+  composes: marketplaceModalTitleStyles from global;
+  margin: 0;
+  text-align: left;
+}
+
+.subtitle {
+  composes: p from global;
+  color: var(--colorGrey700);
+  margin: 8px 0 32px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.noResults {
+  composes: p from global;
+  color: var(--colorGrey600);
+}
+
+.grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 24px;
+
+  @media (min-width: 550px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (--viewportLarge) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gridItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.removeButton {
+  composes: marketplaceTinyFontStyles from global;
+  align-self: flex-start;
+
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--colorGrey500);
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    color: var(--colorFail);
+    text-decoration: underline;
+  }
+}

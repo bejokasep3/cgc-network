@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcExpiredProvider.Subject" "The collaboration for {listingTitle} expired" listingTitle=listing.title}}{{/with}}

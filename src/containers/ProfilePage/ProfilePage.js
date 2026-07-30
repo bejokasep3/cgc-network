@@ -28,9 +28,13 @@ import {
   isUserAuthorized,
 } from '../../util/userHelpers';
 import { richText } from '../../util/richText';
+import { createSlug } from '../../util/urlHelpers';
+import { CGC_UGC_PROCESS_NAME, getProcess } from '../../transactions/transaction';
 
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
+import { toggleSavedCreator } from '../../ducks/brandRoster.duck';
+import { queryCollaborationHistory } from './ProfilePage.duck';
 import {
   Heading,
   H2,
@@ -44,6 +48,8 @@ import {
   LayoutSideNavigation,
   NamedRedirect,
   CustomExtendedDataSection,
+  SecondaryButton,
+  IconSpinner,
 } from '../../components';
 
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
@@ -55,8 +61,43 @@ import css from './ProfilePage.module.css';
 const MAX_MOBILE_SCREEN_WIDTH = 768;
 const MIN_LENGTH_FOR_LONG_WORDS = 20;
 
+// "Roster" (saved creators, CGC-FRONTEND-PLAN.md §4.2): lets a brand keep the
+// creators it wants to work with again. Only shown to brands viewing a
+// creator's own profile — never on the creator's own view of their profile.
+export const RosterSaveButtonMaybe = props => {
+  const { showRosterButton, isSaved, toggleInProgress, onToggleSavedCreator } = props;
+
+  if (!showRosterButton) {
+    return null;
+  }
+
+  return (
+    <SecondaryButton
+      className={css.rosterButton}
+      onClick={onToggleSavedCreator}
+      disabled={toggleInProgress}
+    >
+      {toggleInProgress ? (
+        <IconSpinner rootClassName={css.rosterButtonSpinner} />
+      ) : (
+        <FormattedMessage
+          id={isSaved ? 'ProfilePage.removeFromRoster' : 'ProfilePage.saveToRoster'}
+        />
+      )}
+    </SecondaryButton>
+  );
+};
+
 export const AsideContent = props => {
-  const { user, displayName, showLinkToProfileSettingsPage } = props;
+  const {
+    user,
+    displayName,
+    showLinkToProfileSettingsPage,
+    showRosterButton,
+    isSaved,
+    toggleInProgress,
+    onToggleSavedCreator,
+  } = props;
   return (
     <div className={css.asideContent}>
       <AvatarLarge className={css.avatar} user={user} disableProfileLink />
@@ -75,6 +116,12 @@ export const AsideContent = props => {
           </NamedLink>
         </>
       ) : null}
+      <RosterSaveButtonMaybe
+        showRosterButton={showRosterButton}
+        isSaved={isSaved}
+        toggleInProgress={toggleInProgress}
+        onToggleSavedCreator={onToggleSavedCreator}
+      />
     </div>
   );
 };
@@ -241,6 +288,83 @@ export const CustomUserFields = props => {
   );
 };
 
+const cgcProcess = getProcess(CGC_UGC_PROCESS_NAME);
+// Same "successfully finished" set StageTracker collapses into its
+// "Approved & paid" stage — the collaborations worth a one-click repeat.
+const BOOK_AGAIN_ELIGIBLE_STATES = [
+  cgcProcess.states.RECEIVED,
+  cgcProcess.states.COMPLETED,
+  cgcProcess.states.REVIEWED_BY_CUSTOMER,
+  cgcProcess.states.REVIEWED_BY_PROVIDER,
+  cgcProcess.states.REVIEWED,
+];
+
+// "Collaboration history per creator" + "book again" (CGC-FRONTEND-PLAN.md
+// §4.2). Book again links to the creator's current creator-profile listing
+// (the transaction's own listing may since be closed or deleted) rather than
+// attempting to silently replay stale pricing/availability from the old
+// transaction — the brand still goes through the normal booking flow, just
+// without having to search for the creator again.
+export const CollaborationHistoryMaybe = props => {
+  const { show, history, historyInProgress, currentCreatorListing, intl } = props;
+
+  if (!show) {
+    return null;
+  }
+
+  const bookAgainParamsMaybe = currentCreatorListing
+    ? {
+        id: currentCreatorListing.id.uuid,
+        slug: createSlug(currentCreatorListing.attributes.title || ''),
+      }
+    : null;
+
+  return (
+    <div className={css.collaborationHistory}>
+      <H4 as="h2" className={css.collaborationHistoryTitle}>
+        <FormattedMessage id="ProfilePage.collaborationHistoryTitle" />
+      </H4>
+      {historyInProgress ? null : history.length === 0 ? (
+        <p className={css.collaborationHistoryEmpty}>
+          <FormattedMessage id="ProfilePage.collaborationHistoryEmpty" />
+        </p>
+      ) : (
+        <ul className={css.collaborationHistoryList}>
+          {history.map(tx => {
+            const processState = cgcProcess.getState(tx);
+            const canBookAgain = bookAgainParamsMaybe && BOOK_AGAIN_ELIGIBLE_STATES.includes(processState);
+            return (
+              <li key={tx.id.uuid} className={css.collaborationHistoryItem}>
+                <NamedLink
+                  className={css.collaborationHistoryLink}
+                  name="OrderDetailsPage"
+                  params={{ id: tx.id.uuid }}
+                >
+                  <span className={css.collaborationHistoryListingTitle}>
+                    {tx.listing?.attributes?.title}
+                  </span>
+                  <span className={css.collaborationHistoryDate}>
+                    {intl.formatDate(new Date(tx.attributes.lastTransitionedAt))}
+                  </span>
+                </NamedLink>
+                {canBookAgain ? (
+                  <NamedLink
+                    className={css.bookAgainLink}
+                    name="ListingPage"
+                    params={bookAgainParamsMaybe}
+                  >
+                    <FormattedMessage id="ProfilePage.bookAgain" />
+                  </NamedLink>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 export const MainContent = props => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -261,6 +385,9 @@ export const MainContent = props => {
     intl,
     hideReviews,
     userTypeRoles,
+    showCollaborationHistory,
+    collaborationHistory = [],
+    queryCollaborationHistoryInProgress,
   } = props;
 
   const hasListings = listings.length > 0;
@@ -303,6 +430,16 @@ export const MainContent = props => {
           intl={intl}
         />
       ) : null}
+
+      <CollaborationHistoryMaybe
+        show={showCollaborationHistory}
+        history={collaborationHistory}
+        historyInProgress={queryCollaborationHistoryInProgress}
+        currentCreatorListing={listings.find(
+          l => l?.attributes?.publicData?.listingType === 'creator-profile'
+        )}
+        intl={intl}
+      />
 
       {hasListings ? (
         <div className={listingsContainerClasses}>
@@ -368,10 +505,41 @@ export const ProfilePageComponent = props => {
     useCurrentUser,
     userShowError,
     user,
+    listings = [],
+    toggleInProgress,
+    onToggleSavedCreator,
+    onQueryCollaborationHistory,
     ...rest
   } = props;
   const isVariant = pathParams.variant?.length > 0;
   const isPreview = isVariant && pathParams.variant === PROFILE_PAGE_PENDING_APPROVAL_VARIANT;
+
+  const isCurrentUser = currentUser?.id && currentUser?.id?.uuid === pathParams.id;
+  const profileUser = useCurrentUser ? currentUser : user;
+  const { bio, displayName, publicData, metadata } = profileUser?.attributes?.profile || {};
+  const { userFields } = config.user;
+
+  // Roster ("saved creators", CGC-FRONTEND-PLAN.md §4.2) and collaboration
+  // history: only offered to a brand (viewer has the customer role) looking
+  // at a creator's own profile (someone who has published at least one
+  // creator-profile listing), not on the creator's own view of their profile.
+  const isCreatorProfileUser = listings.some(
+    l => l?.attributes?.publicData?.listingType === 'creator-profile'
+  );
+  const { customer: viewerIsBrand } = getCurrentUserTypeRoles(config, currentUser);
+  const showRosterButton = !isCurrentUser && isCreatorProfileUser && viewerIsBrand && !!currentUser?.id;
+  const showCollaborationHistory = showRosterButton;
+  const savedCreatorIds = currentUser?.attributes?.profile?.privateData?.savedCreatorIds || [];
+  const isSavedCreator = !!profileUser?.id?.uuid && savedCreatorIds.includes(profileUser.id.uuid);
+  const handleToggleSavedCreator = () => onToggleSavedCreator(profileUser.id.uuid);
+  const creatorId = profileUser?.id?.uuid;
+
+  useEffect(() => {
+    if (showCollaborationHistory && creatorId) {
+      onQueryCollaborationHistory(creatorId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCollaborationHistory, creatorId]);
 
   // Stripe's onboarding needs a business URL for each seller, but the profile page can be
   // too empty for the provider at the time they are creating their first listing.
@@ -385,10 +553,6 @@ export const ProfilePageComponent = props => {
     return <NamedRedirect name="LandingPage" />;
   }
 
-  const isCurrentUser = currentUser?.id && currentUser?.id?.uuid === pathParams.id;
-  const profileUser = useCurrentUser ? currentUser : user;
-  const { bio, displayName, publicData, metadata } = profileUser?.attributes?.profile || {};
-  const { userFields } = config.user;
   const isPrivateMarketplace = config.accessControl.marketplace.private === true;
   const isUnauthorizedUser = currentUser && !isUserAuthorized(currentUser);
   const isUnauthorizedOnPrivateMarketplace = isPrivateMarketplace && isUnauthorizedUser;
@@ -472,6 +636,10 @@ export const ProfilePageComponent = props => {
             user={profileUser}
             showLinkToProfileSettingsPage={mounted && isCurrentUser}
             displayName={displayName}
+            showRosterButton={showRosterButton}
+            isSaved={isSavedCreator}
+            toggleInProgress={toggleInProgress}
+            onToggleSavedCreator={handleToggleSavedCreator}
           />
         }
         footer={<FooterContainer />}
@@ -486,6 +654,8 @@ export const ProfilePageComponent = props => {
           hideReviews={hasNoViewingRightsOnPrivateMarketplace}
           intl={intl}
           userTypeRoles={userTypeRoles}
+          listings={listings}
+          showCollaborationHistory={showCollaborationHistory}
           {...rest}
         />
       </LayoutSideNavigation>
@@ -502,6 +672,8 @@ const mapStateToProps = state => {
     userListingRefs,
     reviews = [],
     queryReviewsError,
+    collaborationHistory,
+    queryCollaborationHistoryInProgress,
   } = state.ProfilePage;
   const userMatches = getMarketplaceEntities(state, [{ type: 'user', id: userId }]);
   const user = userMatches.length === 1 ? userMatches[0] : null;
@@ -521,9 +693,17 @@ const mapStateToProps = state => {
     listings: getMarketplaceEntities(state, userListingRefs),
     reviews,
     queryReviewsError,
+    toggleInProgress: state.brandRoster.toggleInProgress,
+    collaborationHistory,
+    queryCollaborationHistoryInProgress,
   };
 };
 
-const ProfilePage = compose(connect(mapStateToProps))(ProfilePageComponent);
+const mapDispatchToProps = dispatch => ({
+  onToggleSavedCreator: creatorId => dispatch(toggleSavedCreator(creatorId)),
+  onQueryCollaborationHistory: creatorId => dispatch(queryCollaborationHistory(creatorId)),
+});
+
+const ProfilePage = compose(connect(mapStateToProps, mapDispatchToProps))(ProfilePageComponent);
 
 export default ProfilePage;

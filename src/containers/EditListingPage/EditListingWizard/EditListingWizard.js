@@ -73,6 +73,10 @@ const MAX_HORIZONTAL_NAV_SCREEN_WIDTH = 1023;
 const STRIPE_ONBOARDING_RETURN_URL_SUCCESS = 'success';
 const STRIPE_ONBOARDING_RETURN_URL_FAILURE = 'failure';
 
+// Brands post project briefs through this same wizard — the details tab reads
+// as "brief details" for that listing type only (CGC-FRONTEND-PLAN.md Phase 6).
+const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+
 /**
  * Pick only allowed tabs for the given process and listing type configuration.
  * - The location tab could be omitted for booking process
@@ -119,15 +123,26 @@ const tabsForListingType = (processName, listingTypeConfig) => {
  * @param {string} tab name of the tab/panel in the wizard
  * @param {boolean} isNewListingFlow
  * @param {string} processName
+ * @param {string} listingType
  */
-const tabLabelAndSubmit = (intl, tab, isNewListingFlow, isPriceDisabled, processName) => {
+const tabLabelAndSubmit = (
+  intl,
+  tab,
+  isNewListingFlow,
+  isPriceDisabled,
+  processName,
+  listingType
+) => {
   const processNameString = isNewListingFlow ? `${processName}.` : '';
   const newOrEdit = isNewListingFlow ? 'new' : 'edit';
 
   let labelKey = null;
   let submitButtonKey = null;
   if (tab === DETAILS) {
-    labelKey = 'EditListingWizard.tabLabelDetails';
+    labelKey =
+      listingType === PROJECT_BRIEF_LISTING_TYPE
+        ? 'EditListingWizard.tabLabelBriefDetails'
+        : 'EditListingWizard.tabLabelDetails';
     submitButtonKey = `EditListingWizard.${processNameString}${newOrEdit}.saveDetails`;
   } else if (tab === PRICING) {
     labelKey = 'EditListingWizard.tabLabelPricing';
@@ -717,7 +732,8 @@ class EditListingWizard extends Component {
               tab,
               isNewListingFlow,
               isPriceDisabled,
-              resolveLatestProcessName(processName)
+              resolveLatestProcessName(processName),
+              listingTypeConfig?.listingType
             );
             return (
               <EditListingWizardTab

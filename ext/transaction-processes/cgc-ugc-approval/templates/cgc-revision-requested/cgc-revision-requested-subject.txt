@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcRevisionRequested.Subject" "{brandName} requested a revision" brandName=customer.display-name}}{{/with}}

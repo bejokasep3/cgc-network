@@ -31,7 +31,17 @@ import {
   isBookingProcess,
   isPurchaseProcess,
   isNegotiationProcess,
+  CGC_UGC_PROCESS_NAME,
 } from '../../transactions/transaction';
+import {
+  REVISION_ROUND_BY_STATE,
+  MAX_REVISIONS,
+} from '../TransactionPage/StageTracker/StageTracker';
+import {
+  DEADLINE_RULES,
+  getStateEnteredAtMap,
+} from '../../transactions/transactionProcessCGCUGC';
+import { formatDateIntoPartials } from '../../util/dates';
 
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
@@ -121,6 +131,54 @@ const BookingTimeInfoMaybe = props => {
   );
 };
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Compact "Revision X of Y" + deadline hint for CGC inbox rows, so the brand
+// and creator can see the two-revision cap and the auto-approve/auto-cancel
+// clock without opening the transaction. Reuses the same lookup tables as
+// StageTracker (the transaction-page equivalent) to avoid drifting apart.
+const CGCPipelineMetaMaybe = props => {
+  const { tx, processState, intl } = props;
+  const revisionRound = REVISION_ROUND_BY_STATE[processState];
+  const deadlineRule = DEADLINE_RULES[processState];
+
+  if (!revisionRound && !deadlineRule) {
+    return null;
+  }
+
+  const stateEnteredAt = getStateEnteredAtMap(tx.attributes?.transitions);
+  const enteredCurrentStateAt = stateEnteredAt[processState];
+  const deadlineDate =
+    deadlineRule && enteredCurrentStateAt
+      ? new Date(new Date(enteredCurrentStateAt).getTime() + deadlineRule.days * MS_PER_DAY)
+      : null;
+  const deadlineMessageId = deadlineRule
+    ? {
+        autoApprove: 'InboxPage.deadlineAutoApprove',
+        autoCancel: 'InboxPage.deadlineAutoCancel',
+        autoReceive: 'InboxPage.deadlineAutoReceive',
+      }[deadlineRule.kind]
+    : null;
+
+  return (
+    <div className={css.itemMeta}>
+      {revisionRound ? (
+        <FormattedMessage
+          id="StageTracker.revisionCounter"
+          values={{ round: revisionRound, max: MAX_REVISIONS }}
+        />
+      ) : null}
+      {revisionRound && deadlineDate ? ' · ' : null}
+      {deadlineDate ? (
+        <FormattedMessage
+          id={deadlineMessageId}
+          values={{ date: formatDateIntoPartials(deadlineDate, intl).date }}
+        />
+      ) : null}
+    </div>
+  );
+};
+
 // Build and push path string for routing - based on sort selection as selected in InboxSearchForm
 const handleSortSelect = (tab, routeConfiguration, history) => urlParam => {
   const pathParams = {
@@ -172,6 +230,7 @@ export const InboxItem = props => {
     isFinal,
   } = stateData;
   const isCustomer = transactionRole === TX_TRANSITION_ACTOR_CUSTOMER;
+  const isCGCProcess = processName === CGC_UGC_PROCESS_NAME;
 
   const lineItems = tx.attributes?.lineItems;
   const hasPricingData = lineItems.length > 0;
@@ -214,6 +273,9 @@ export const InboxItem = props => {
             <FormattedMessage id="InboxPage.quantity" values={{ quantity }} />
           ) : null}
         </div>
+        {isCGCProcess ? (
+          <CGCPipelineMetaMaybe tx={tx} processState={processState} intl={intl} />
+        ) : null}
         {availabilityType == AVAILABILITY_MULTIPLE_SEATS && unitLineItem?.seats ? (
           <div className={css.itemSeats}>
             <FormattedMessage id="InboxPage.seats" values={{ seats: unitLineItem.seats }} />
@@ -327,6 +389,26 @@ export const InboxPageComponent = props => {
     ) : null;
   };
 
+  // Lead with whatever needs the viewer's action, so the inbox reads as a
+  // pipeline to work through rather than a plain reverse-chronological list.
+  // Stable sort: ties keep the server's original (most-recent-first) order.
+  const transactionRoleForSort = isOrders
+    ? TX_TRANSITION_ACTOR_CUSTOMER
+    : TX_TRANSITION_ACTOR_PROVIDER;
+  const getActionNeededForSort = tx => {
+    try {
+      return !!getStateData({ transaction: tx, transactionRole: transactionRoleForSort, intl })
+        .actionNeeded;
+    } catch (error) {
+      return false;
+    }
+  };
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const aRank = getActionNeededForSort(a) ? 0 : 1;
+    const bRank = getActionNeededForSort(b) ? 0 : 1;
+    return aRank - bRank;
+  });
+
   const hasOrderOrSaleTransactions = (tx, isOrdersTab, user) => {
     return isOrdersTab
       ? user?.id && tx && tx.length > 0 && tx[0].customer.id.uuid === user?.id?.uuid
@@ -375,7 +457,22 @@ export const InboxPageComponent = props => {
       ]
     : [];
 
-  const tabs = [...ordersTabMaybe, ...salesTabMaybe];
+  // Roster (CGC-FRONTEND-PLAN.md §4.2) is a brand-only concept, so only offer
+  // the link to users with the customer (brand) role — same gate used above
+  // to decide whether the "orders" tab appears at all.
+  const rosterTabMaybe = isCustomerUserType
+    ? [
+        {
+          text: <FormattedMessage id="InboxPage.rosterTabTitle" />,
+          selected: false,
+          linkProps: {
+            name: 'RosterPage',
+          },
+        },
+      ]
+    : [];
+
+  const tabs = [...ordersTabMaybe, ...salesTabMaybe, ...rosterTabMaybe];
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
@@ -417,7 +514,7 @@ export const InboxPageComponent = props => {
         ) : null}
         <ul className={css.itemList}>
           {!fetchInProgress ? (
-            transactions.map(toTxItem)
+            sortedTransactions.map(toTxItem)
           ) : (
             <li className={css.listItemsLoading}>
               <IconSpinner />

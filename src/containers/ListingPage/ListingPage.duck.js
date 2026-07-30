@@ -213,7 +213,7 @@ export const fetchTimeSlots = (listingId, start, end, timeZone, options) => (
 // Send Inquiry //
 //////////////////
 const sendInquiryPayloadCreator = (
-  { listing, message },
+  { listing, message, protectedData },
   { dispatch, rejectWithValue, extra: sdk }
 ) => {
   const processAlias = listing?.attributes?.publicData?.transactionProcessAlias;
@@ -246,7 +246,12 @@ const sendInquiryPayloadCreator = (
   const bodyParams = {
     transition: transitions.INQUIRE,
     processAlias,
-    params: { listingId },
+    // protectedData carries the "invite creator to a brief" context (see
+    // CGC-FRONTEND-PLAN.md §3.3) when the brand attaches one of their own
+    // project-brief listings. transition/inquire already runs
+    // action/update-protected-data in process.edn, so no process change
+    // is needed to store it.
+    params: protectedData ? { listingId, protectedData } : { listingId },
   };
   return sdk.transactions
     .initiate(bodyParams)
@@ -269,8 +274,38 @@ export const sendInquiryThunk = createAsyncThunk(
   sendInquiryPayloadCreator
 );
 // Backward compatible wrapper for the thunk
-export const sendInquiry = (listing, message) => (dispatch, getState, sdk) => {
-  return dispatch(sendInquiryThunk({ listing, message })).unwrap();
+export const sendInquiry = (listing, message, protectedData) => (dispatch, getState, sdk) => {
+  return dispatch(sendInquiryThunk({ listing, message, protectedData })).unwrap();
+};
+
+////////////////////////////////////
+// Fetch own project-brief listings //
+////////////////////////////////////
+
+// Used by the "invite creator to collaborate" flow (CGC-FRONTEND-PLAN.md §3.3):
+// lets a brand pick one of its own open project-brief listings to attach to an
+// inquiry, so the creator sees an invitation with the brief attached rather
+// than a bare message.
+const fetchOwnProjectBriefsPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
+  return sdk.ownListings
+    .query({ pub_listingType: 'project-brief' })
+    .then(response => {
+      return denormalisedResponseEntities(response).filter(
+        l => l.attributes.state === 'published'
+      );
+    })
+    .catch(e => {
+      return rejectWithValue(storableError(e));
+    });
+};
+
+export const fetchOwnProjectBriefsThunk = createAsyncThunk(
+  'ListingPage/fetchOwnProjectBriefs',
+  fetchOwnProjectBriefsPayloadCreator
+);
+
+export const fetchOwnProjectBriefs = () => (dispatch, getState, sdk) => {
+  return dispatch(fetchOwnProjectBriefsThunk()).unwrap();
 };
 
 // Helper function for loadData call.
@@ -396,6 +431,9 @@ const initialState = {
   sendInquiryInProgress: false,
   sendInquiryError: null,
   inquiryModalOpenForListingId: null,
+  ownProjectBriefs: [],
+  fetchOwnProjectBriefsInProgress: false,
+  fetchOwnProjectBriefsError: null,
 };
 
 const listingPageSlice = createSlice({
@@ -515,6 +553,18 @@ const listingPageSlice = createSlice({
       .addCase(fetchTransactionLineItemsThunk.rejected, (state, action) => {
         state.fetchLineItemsInProgress = false;
         state.fetchLineItemsError = action.payload;
+      })
+      .addCase(fetchOwnProjectBriefsThunk.pending, state => {
+        state.fetchOwnProjectBriefsInProgress = true;
+        state.fetchOwnProjectBriefsError = null;
+      })
+      .addCase(fetchOwnProjectBriefsThunk.fulfilled, (state, action) => {
+        state.fetchOwnProjectBriefsInProgress = false;
+        state.ownProjectBriefs = action.payload;
+      })
+      .addCase(fetchOwnProjectBriefsThunk.rejected, (state, action) => {
+        state.fetchOwnProjectBriefsInProgress = false;
+        state.fetchOwnProjectBriefsError = action.payload;
       });
   },
 });

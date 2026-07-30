@@ -94,17 +94,30 @@ export const LogoComponent = props => {
         />
       </div>
     );
-  } else if (layout === 'desktop') {
-    return (
-      <div className={logoClasses}>
-        <img className={logoImageClasses} src={logoImageDesktop} alt={marketplaceName} {...rest} />
-      </div>
-    );
   }
 
+  // Coded fallback: no hosted logo asset has been uploaded in Console yet.
+  // Mobile shows the mark only (topbar space is tight); desktop pairs it
+  // with the wordmark, mirroring how the image-asset branches above also
+  // differ by layout.
+  const gradientId = `cgc_logo_mark_${layout}`;
   return (
-    <div className={logoClasses}>
-      <img className={logoImageClasses} src={logoImageMobile} alt={marketplaceName} {...rest} />
+    <div className={classNames(logoClasses, css.fallbackRoot)}>
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill={`url(#${gradientId})`} />
+        <path d="M10 16L14 20L22 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+            <stop className={css.fallbackMarkFill} />
+            <stop offset="1" className={css.fallbackMarkFillDark} />
+          </linearGradient>
+        </defs>
+      </svg>
+      {layout === 'desktop' ? (
+        <span className={css.fallbackWordmark}>
+          CGC <span className={css.fallbackWordmarkAccent}>NETWORK</span>
+        </span>
+      ) : null}
     </div>
   );
 };

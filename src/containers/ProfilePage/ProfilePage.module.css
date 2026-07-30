@@ -80,6 +80,24 @@
   }
 }
 
+.rosterButton {
+  width: auto;
+  min-height: 0;
+  height: 40px;
+  margin-top: 17px;
+
+  @media (--viewportLarge) {
+    width: 100%;
+    margin-top: 20px;
+  }
+}
+
+.rosterButtonSpinner {
+  width: 20px;
+  height: 20px;
+  stroke: var(--marketplaceColor);
+}
+
 .desktopHeading {
   display: none;
 
@@ -138,6 +156,77 @@
 
   @media (--viewportLarge) {
     border-top: 1px solid var(--colorGrey100);
+  }
+}
+
+.collaborationHistory {
+  border-top: 1px solid var(--colorGrey100);
+  padding: 24px 0;
+
+  @media (--viewportMedium) {
+    padding: 32px 0;
+  }
+}
+
+.collaborationHistoryTitle {
+  color: var(--colorGrey700);
+  margin: 0 0 16px 0;
+}
+
+.collaborationHistoryEmpty {
+  composes: textSmall from global;
+  color: var(--colorGrey500);
+}
+
+.collaborationHistoryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.collaborationHistoryItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--colorGrey100);
+
+  &:first-child {
+    border-top: 1px solid var(--colorGrey100);
+  }
+}
+
+.collaborationHistoryLink {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.collaborationHistoryListingTitle {
+  composes: textSmall from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey700);
+}
+
+.collaborationHistoryDate {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+.bookAgainLink {
+  composes: textSmall from global;
+  flex-shrink: 0;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--marketplaceColor);
+
+  &:hover {
+    color: var(--marketplaceColorDark);
   }
 }
 

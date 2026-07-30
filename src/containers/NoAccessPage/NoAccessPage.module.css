@@ -34,6 +34,27 @@
   composes: marketplaceModalIconStyles from global;
 }
 
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--colorAttentionSubtle);
+  color: var(--colorAttentionDark);
+  border-radius: var(--borderRadius);
+  padding: 6px 14px;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: var(--fontWeightSemiBold);
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--colorAttentionDark);
+  }
+}
+
 /* ================ Typography ================ */
 
 /* Title of the modal */

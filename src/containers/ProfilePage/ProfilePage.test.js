@@ -206,6 +206,9 @@ describe('Duck', () => {
         queryListingsError: null,
         reviews: [],
         queryReviewsError: null,
+        collaborationHistory: [],
+        queryCollaborationHistoryInProgress: false,
+        queryCollaborationHistoryError: null,
       });
     });
 
@@ -235,6 +238,9 @@ describe('Duck', () => {
         queryListingsError: null,
         reviews: [],
         queryReviewsError: null,
+        collaborationHistory: [],
+        queryCollaborationHistoryInProgress: false,
+        queryCollaborationHistoryError: null,
       });
     });
 
@@ -372,7 +378,9 @@ describe('Duck', () => {
     // update the dispatched actions list in this test accordingly!
     return loadData({ id: userId }, null, config)(dispatch, getState, sdk).then(data => {
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
 
       // Check that setInitialState is first
@@ -454,7 +462,9 @@ describe('Duck', () => {
     // update the dispatched actions list in this test accordingly!
     return loadData({ id: 'otherUserId' }, null, config)(dispatch, getState, sdk).then(data => {
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
 
       // Check that setInitialState is first
@@ -534,7 +544,9 @@ describe('Duck', () => {
     // update the dispatched actions list in this test accordingly!
     return loadData({ id: userId }, null, config)(dispatch, getState, sdk).then(data => {
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
 
       // Check that setInitialState is first

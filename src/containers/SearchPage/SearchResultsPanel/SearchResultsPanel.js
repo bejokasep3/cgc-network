@@ -2,7 +2,11 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { propTypes } from '../../../util/types';
-import { ListingCard, PaginationLinks } from '../../../components';
+import { ListingCard, CreatorCard, PaginationLinks } from '../../../components';
+
+// CreatorCard is portfolio-first and only makes sense for creator-profile
+// listings; every other listing type keeps the generic ListingCard.
+const CREATOR_PROFILE_LISTING_TYPE = 'creator-profile';
 
 import css from './SearchResultsPanel.module.css';
 
@@ -75,16 +79,21 @@ const SearchResultsPanel = props => {
   return (
     <div className={classes}>
       <ul className={isMapVariant ? css.listingCardsMapVariant : css.listingCards}>
-        {listings.map(l => (
-          <li key={l.id.uuid} className={css.resultItem}>
-            <ListingCard
-              className={css.listingCard}
-              listing={l}
-              renderSizes={cardRenderSizes(isMapVariant)}
-              setActiveListing={setActiveListing}
-            />
-          </li>
-        ))}
+        {listings.map(l => {
+          const isCreatorProfile =
+            l?.attributes?.publicData?.listingType === CREATOR_PROFILE_LISTING_TYPE;
+          const Card = isCreatorProfile ? CreatorCard : ListingCard;
+          return (
+            <li key={l.id.uuid} className={css.resultItem}>
+              <Card
+                className={css.listingCard}
+                listing={l}
+                renderSizes={cardRenderSizes(isMapVariant)}
+                setActiveListing={setActiveListing}
+              />
+            </li>
+          );
+        })}
         {props.children}
       </ul>
       {paginationLinks}

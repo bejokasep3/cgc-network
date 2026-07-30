@@ -53,6 +53,7 @@ import SectionReviews from './SectionReviews';
 import SectionAuthorMaybe from './SectionAuthorMaybe';
 import SectionMapMaybe from './SectionMapMaybe';
 import CustomListingFields from './CustomListingFields';
+import SectionCreatorPackageMaybe from './SectionCreatorPackageMaybe';
 import Notifications from './Notifications/Notifications';
 import ListingPageAccessWrapper from './ListingPageAccessWrapper';
 
@@ -71,6 +72,8 @@ export const ListingPageComponent = props => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const brandSubscription = useSelector(state => state.brandSubscription);
 
   const {
     isAuthenticated,
@@ -94,6 +97,7 @@ export const ListingPageComponent = props => {
     config,
     routeConfiguration,
     showOwnListingsOnly,
+    ownProjectBriefs,
     ...restOfProps
   } = props;
 
@@ -129,6 +133,7 @@ export const ListingPageComponent = props => {
     isOwnListing,
     showListingImage,
     showDescription,
+    processName,
     processType,
     ensuredAuthor,
     noPayoutDetailsSetWithOwnListing,
@@ -165,6 +170,11 @@ export const ListingPageComponent = props => {
   }
   const unitType = publicData.unitType;
   const isNegotiation = processType === 'negotiation';
+  // Creators sell themselves, not a product: lead with who they are before
+  // package details, rather than the generic product-first order. Gated on
+  // listingType (not processName) since this component serves every listing
+  // type in the marketplace, not only CGC's.
+  const isCreatorProfile = publicData?.listingType === 'creator-profile';
 
   const commonParams = { params, history, routes: routeConfiguration };
   const onContactUser = handleContactUser({
@@ -174,6 +184,8 @@ export const ListingPageComponent = props => {
     setInitialValues, // from ListingPage.duck.js (set initial values for the listing page)
     location,
     setInquiryModalOpen,
+    processName,
+    brandSubscription,
   });
   // Note: this is for inquire transition to inquiry state in booking, purchase and negotiation processes.
   // Inquiry process is handled through handleSubmit.
@@ -182,6 +194,7 @@ export const ListingPageComponent = props => {
     getListing,
     onSendInquiry,
     setInquiryModalOpen,
+    ownProjectBriefs,
   });
 
   const handleOrderSubmit = values => {
@@ -297,6 +310,22 @@ export const ListingPageComponent = props => {
                 </H3>
               )}
             </div>
+            {isCreatorProfile ? (
+              <SectionAuthorMaybe
+                title={title}
+                listing={currentListing}
+                authorDisplayName={authorDisplayName}
+                onContactUser={onContactUser}
+                isInquiryModalOpen={isAuthenticated && inquiryModalOpen}
+                onCloseInquiryModal={() => setInquiryModalOpen(false)}
+                sendInquiryError={sendInquiryError}
+                sendInquiryInProgress={sendInquiryInProgress}
+                onSubmitInquiry={onSubmitInquiry}
+                currentUser={currentUser}
+                onManageDisableScrolling={onManageDisableScrolling}
+              />
+            ) : null}
+            {isCreatorProfile ? <SectionCreatorPackageMaybe publicData={publicData} /> : null}
             {showDescription && <SectionText text={description} showAsIngress />}
 
             <CustomListingFields
@@ -314,19 +343,21 @@ export const ListingPageComponent = props => {
               mapsConfig={config.maps}
             />
             <SectionReviews reviews={reviews} fetchReviewsError={fetchReviewsError} />
-            <SectionAuthorMaybe
-              title={title}
-              listing={currentListing}
-              authorDisplayName={authorDisplayName}
-              onContactUser={onContactUser}
-              isInquiryModalOpen={isAuthenticated && inquiryModalOpen}
-              onCloseInquiryModal={() => setInquiryModalOpen(false)}
-              sendInquiryError={sendInquiryError}
-              sendInquiryInProgress={sendInquiryInProgress}
-              onSubmitInquiry={onSubmitInquiry}
-              currentUser={currentUser}
-              onManageDisableScrolling={onManageDisableScrolling}
-            />
+            {isCreatorProfile ? null : (
+              <SectionAuthorMaybe
+                title={title}
+                listing={currentListing}
+                authorDisplayName={authorDisplayName}
+                onContactUser={onContactUser}
+                isInquiryModalOpen={isAuthenticated && inquiryModalOpen}
+                onCloseInquiryModal={() => setInquiryModalOpen(false)}
+                sendInquiryError={sendInquiryError}
+                sendInquiryInProgress={sendInquiryInProgress}
+                onSubmitInquiry={onSubmitInquiry}
+                currentUser={currentUser}
+                onManageDisableScrolling={onManageDisableScrolling}
+              />
+            )}
           </div>
           <div className={css.orderColumnForHeroLayout}>
             <OrderPanel
@@ -419,6 +450,7 @@ const ListingPage = props => {
     fetchLineItemsInProgress,
     fetchLineItemsError,
     inquiryModalOpenForListingId,
+    ownProjectBriefs,
   } = useSelector(state => state.ListingPage);
   const currentUser = useSelector(state => state.user?.currentUser);
   const scrollingDisabled = useSelector(state => isScrollingDisabled(state));
@@ -456,9 +488,10 @@ const ListingPage = props => {
     params => dispatch(fetchTransactionLineItems(params)),
     [dispatch]
   );
-  const onSendInquiry = useCallback((listing, message) => dispatch(sendInquiry(listing, message)), [
-    dispatch,
-  ]);
+  const onSendInquiry = useCallback(
+    (listing, message, protectedData) => dispatch(sendInquiry(listing, message, protectedData)),
+    [dispatch]
+  );
   const onInitializeCardPaymentData = useCallback(() => dispatch(initializeCardPaymentData()), [
     dispatch,
   ]);
@@ -478,6 +511,7 @@ const ListingPage = props => {
       getOwnListing={getOwnListing}
       scrollingDisabled={scrollingDisabled}
       inquiryModalOpenForListingId={inquiryModalOpenForListingId}
+      ownProjectBriefs={ownProjectBriefs}
       showListingError={showListingError}
       reviews={reviews}
       fetchReviewsError={fetchReviewsError}

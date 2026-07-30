@@ -359,6 +359,9 @@ describe('Duck', () => {
         sendInquiryInProgress: false,
         sendInquiryError: null,
         inquiryModalOpenForListingId: null,
+        ownProjectBriefs: [],
+        fetchOwnProjectBriefsInProgress: false,
+        fetchOwnProjectBriefsError: null,
       });
     });
 
@@ -495,7 +498,9 @@ describe('Duck', () => {
         ]);
 
         const relevantActions = actions.filter(
-          action => !action.type.startsWith('user/fetchCurrentUser/')
+          action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
         );
 
         // Check that the expected action types are present
@@ -544,7 +549,9 @@ describe('Duck', () => {
         ]);
 
         const relevantActions = actions.filter(
-          action => !action.type.startsWith('user/fetchCurrentUser/')
+          action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
         );
 
         expect(relevantActions[0].type).toBe('ListingPage/showListing/pending');
@@ -593,7 +600,9 @@ describe('Duck', () => {
     // update the dispatched actions list in this test accordingly!
     return loadData({ id }, null, config)(dispatch, getState, sdk).then(data => {
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
       expect(relevantActions[0]).toEqual(
         setInitialValues({ inquiryModalOpenForListingId: null, lineItems: null })
@@ -656,7 +665,9 @@ describe('Duck', () => {
     return loadData({ id }, null, config)(dispatch, getState, sdk).catch(e => {
       // Note: catch for loadData is on Routes.js component in practice.
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
       expect(relevantActions[0]).toEqual(
         setInitialValues({ inquiryModalOpenForListingId: null, lineItems: null })
@@ -701,7 +712,9 @@ describe('Duck', () => {
     // update the dispatched actions list in this test accordingly!
     return loadData({ id }, null, config)(dispatch, getState, sdk).then(data => {
       const relevantActions = actions.filter(
-        action => !action.type.startsWith('user/fetchCurrentUser/')
+        action =>
+            !action.type.startsWith('user/fetchCurrentUser/') &&
+            !action.type.startsWith('app/brandSubscription/')
       );
       expect(relevantActions[0]).toEqual(
         setInitialValues({ inquiryModalOpenForListingId: null, lineItems: null })

@@ -1,0 +1,140 @@
+@import '../../../styles/customMediaQueries.css';
+
+.root {
+  padding: 18px;
+  margin-bottom: 18px;
+  background-color: var(--colorWhite);
+  border-radius: var(--borderRadiusMedium);
+  box-shadow: var(--boxShadowSm);
+
+  @media (--viewportMedium) {
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+}
+
+.terminal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--colorFailDark);
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 14px;
+}
+
+.stageList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+  }
+}
+
+.stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+
+  @media (--viewportMedium) {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 4px;
+  }
+}
+
+.stage:not(:last-child) {
+  @media (--viewportMedium) {
+    &::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: calc(50% + 20px);
+      width: calc(100% - 20px);
+      height: 2px;
+      background-color: var(--colorGrey100);
+    }
+  }
+}
+.stageDone:not(:last-child)::after {
+  @media (--viewportMedium) {
+    background-color: var(--colorSuccess);
+  }
+}
+
+.stageMarker {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--colorGrey100);
+  color: var(--colorGrey600);
+  font-size: 13px;
+  font-weight: var(--fontWeightBold);
+}
+.stageDone .stageMarker {
+  background-color: var(--colorSuccess);
+  color: var(--colorWhite);
+}
+.stageCurrent .stageMarker {
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+}
+
+.stageMarkerIcon {
+  width: 12px;
+  height: 9px;
+  stroke: var(--colorWhite);
+}
+
+.stageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+}
+
+.stageLabel {
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 14px;
+  color: var(--colorGrey700);
+}
+.stageCurrent .stageLabel {
+  color: var(--colorGrey900);
+}
+.stageUpcoming .stageLabel {
+  color: var(--colorGrey400);
+}
+
+.stageDate {
+  font-size: 12px;
+  color: var(--colorGrey500);
+}
+
+.revisionCounter {
+  font-size: 12px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorAttentionDark);
+}
+
+.deadline {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--colorGrey100);
+  font-size: 13px;
+  color: var(--colorGrey600);
+}

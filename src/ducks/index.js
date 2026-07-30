@@ -5,6 +5,8 @@
  */
 
 import auth from './auth.duck';
+import brandRoster from './brandRoster.duck';
+import brandSubscription from './brandSubscription.duck';
 import emailVerification from './emailVerification.duck';
 import routing from './routing.duck';
 import ui from './ui.duck';
@@ -18,6 +20,8 @@ import user from './user.duck';
 
 export {
   auth,
+  brandRoster,
+  brandSubscription,
   emailVerification,
   routing,
   ui,

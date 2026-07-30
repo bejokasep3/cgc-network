@@ -4,8 +4,8 @@
 .labelSelected {
   display: inline-block;
   width: auto;
-  height: 35px;
-  min-height: 35px;
+  height: 36px;
+  min-height: 36px;
 
   padding: 0 18px;
   margin: 0 9px 0 0;
@@ -49,15 +49,16 @@
 }
 
 .label {
-  /* Button borders */
+  /* Pill-shaped chip, not just a rounded-corner button */
   border: 1px solid var(--colorGrey100);
-  border-radius: var(--borderRadiusMedium);
+  border-radius: var(--borderRadiusLarge);
 
   background-color: var(--colorWhite);
 
   &:hover,
   &:focus {
     border-color: var(--colorGrey300);
+    box-shadow: var(--boxShadowXs);
   }
   &:disabled {
     border-color: var(--colorGrey100);
@@ -72,21 +73,24 @@
 }
 
 .labelSelected {
-  /* Button borders */
-  border-radius: var(--borderRadiusMedium);
+  /* Pill-shaped chip, not just a rounded-corner button */
+  border-radius: var(--borderRadiusLarge);
   border: 1px solid var(--marketplaceColor);
 
   /* Button colors: secondary */
   background-color: var(--marketplaceColor);
   color: var(--colorWhite);
+  box-shadow: var(--boxShadowXs);
 
   &:hover,
   &:focus {
     border: 1px solid var(--marketplaceColorDark);
+    box-shadow: var(--boxShadowSm);
   }
   &:disabled {
     background-color: var(--colorGrey100);
     color: var(--colorWhite);
+    box-shadow: none;
   }
 }
 
