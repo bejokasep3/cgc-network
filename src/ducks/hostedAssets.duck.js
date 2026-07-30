@@ -30,22 +30,6 @@ const getGoogleAnalyticsId = (configAssets, path) => {
   return enabled ? measurementId : null;
 };
 
-const replaceWarungUrang = obj => {
-  if (typeof obj === 'string') {
-    return obj.replace(/Warung Urang/g, 'CGC Network');
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(replaceWarungUrang);
-  }
-  if (obj && typeof obj === 'object') {
-    return Object.keys(obj).reduce((acc, key) => {
-      acc[key] = replaceWarungUrang(obj[key]);
-      return acc;
-    }, {});
-  }
-  return obj;
-};
-
 // ================ Async Thunks ================ //
 
 const fetchAppAssetsPayloadCreator = (arg, thunkAPI) => {
@@ -129,7 +113,7 @@ const fetchAppAssetsPayloadCreator = (arg, thunkAPI) => {
       }, {});
 
       return {
-        assets: replaceWarungUrang(collectedAssets),
+        assets: collectedAssets,
         version: versionInTranslationsCall,
         googleAnalyticsId,
       };
@@ -201,13 +185,13 @@ const fetchPageAssetsPayloadCreator = (arg, thunkAPI) => {
           const [name, path] = assetEntry;
           const assetData = denormalizeAssetData(responses[i].data);
           // Limit CMS page data to maximum 10 sections with sectionType='listings' for performance optimization
-          const filteredAssetData = replaceWarungUrang(limitListingsSections(assetData));
+          const filteredAssetData = limitListingsSections(assetData);
           return { ...collectedAssets, [name]: { path, data: filteredAssetData } };
         },
         { ...fixedPageAssets, ...pickLatestPageAssetData }
       );
 
-      return replaceWarungUrang(pageAssets);
+      return pageAssets;
     })
     .catch(e => {
       // If there's a fallback UI, something went wrong when fetching the "known asset" like landing-page.json.
