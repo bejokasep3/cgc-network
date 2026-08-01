@@ -246,11 +246,12 @@ const sendInquiryPayloadCreator = (
   const bodyParams = {
     transition: transitions.INQUIRE,
     processAlias,
-    // protectedData carries the "invite creator to a brief" context (see
+    // protectedData carries the "invite creator to a project" context (see
     // CGC-FRONTEND-PLAN.md §3.3) when the brand attaches one of their own
     // project-brief listings. transition/inquire already runs
     // action/update-protected-data in process.edn, so no process change
-    // is needed to store it.
+    // is needed to store it. (protectedData still uses the historical
+    // `inviteBriefId`/`inviteBriefTitle` keys — see InquiryForm.js.)
     params: protectedData ? { listingId, protectedData } : { listingId },
   };
   return sdk.transactions
@@ -278,15 +279,15 @@ export const sendInquiry = (listing, message, protectedData) => (dispatch, getSt
   return dispatch(sendInquiryThunk({ listing, message, protectedData })).unwrap();
 };
 
-////////////////////////////////////
-// Fetch own project-brief listings //
-////////////////////////////////////
+///////////////////////////////
+// Fetch own project listings //
+///////////////////////////////
 
 // Used by the "invite creator to collaborate" flow (CGC-FRONTEND-PLAN.md §3.3):
 // lets a brand pick one of its own open project-brief listings to attach to an
-// inquiry, so the creator sees an invitation with the brief attached rather
+// inquiry, so the creator sees an invitation with the project attached rather
 // than a bare message.
-const fetchOwnProjectBriefsPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
+const fetchOwnProjectsPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
   return sdk.ownListings
     .query({ pub_listingType: 'project-brief' })
     .then(response => {
@@ -299,13 +300,13 @@ const fetchOwnProjectBriefsPayloadCreator = (_, { rejectWithValue, extra: sdk })
     });
 };
 
-export const fetchOwnProjectBriefsThunk = createAsyncThunk(
-  'ListingPage/fetchOwnProjectBriefs',
-  fetchOwnProjectBriefsPayloadCreator
+export const fetchOwnProjectsThunk = createAsyncThunk(
+  'ListingPage/fetchOwnProjects',
+  fetchOwnProjectsPayloadCreator
 );
 
-export const fetchOwnProjectBriefs = () => (dispatch, getState, sdk) => {
-  return dispatch(fetchOwnProjectBriefsThunk()).unwrap();
+export const fetchOwnProjects = () => (dispatch, getState, sdk) => {
+  return dispatch(fetchOwnProjectsThunk()).unwrap();
 };
 
 // Helper function for loadData call.
@@ -431,9 +432,9 @@ const initialState = {
   sendInquiryInProgress: false,
   sendInquiryError: null,
   inquiryModalOpenForListingId: null,
-  ownProjectBriefs: [],
-  fetchOwnProjectBriefsInProgress: false,
-  fetchOwnProjectBriefsError: null,
+  ownProjects: [],
+  fetchOwnProjectsInProgress: false,
+  fetchOwnProjectsError: null,
 };
 
 const listingPageSlice = createSlice({
@@ -554,17 +555,17 @@ const listingPageSlice = createSlice({
         state.fetchLineItemsInProgress = false;
         state.fetchLineItemsError = action.payload;
       })
-      .addCase(fetchOwnProjectBriefsThunk.pending, state => {
-        state.fetchOwnProjectBriefsInProgress = true;
-        state.fetchOwnProjectBriefsError = null;
+      .addCase(fetchOwnProjectsThunk.pending, state => {
+        state.fetchOwnProjectsInProgress = true;
+        state.fetchOwnProjectsError = null;
       })
-      .addCase(fetchOwnProjectBriefsThunk.fulfilled, (state, action) => {
-        state.fetchOwnProjectBriefsInProgress = false;
-        state.ownProjectBriefs = action.payload;
+      .addCase(fetchOwnProjectsThunk.fulfilled, (state, action) => {
+        state.fetchOwnProjectsInProgress = false;
+        state.ownProjects = action.payload;
       })
-      .addCase(fetchOwnProjectBriefsThunk.rejected, (state, action) => {
-        state.fetchOwnProjectBriefsInProgress = false;
-        state.fetchOwnProjectBriefsError = action.payload;
+      .addCase(fetchOwnProjectsThunk.rejected, (state, action) => {
+        state.fetchOwnProjectsInProgress = false;
+        state.fetchOwnProjectsError = action.payload;
       });
   },
 });

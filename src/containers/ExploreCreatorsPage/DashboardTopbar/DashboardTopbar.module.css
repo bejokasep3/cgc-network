@@ -1,0 +1,202 @@
+@import '../../../styles/customMediaQueries.css';
+
+/* Same shape as the shared Topbar (Topbar.module.css .container): fixed
+   height, white background, drop shadow instead of a border — just with
+   this page's own content instead of the marketplace-wide nav/search/menu. */
+.root {
+  width: 100%;
+  height: var(--topbarHeight);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+  background-color: var(--colorWhite);
+  box-shadow: var(--boxShadow);
+
+  @media (--viewportMedium) {
+    height: var(--topbarHeightDesktop);
+    padding: 0 36px;
+  }
+}
+
+.logo {
+  flex-shrink: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.nav {
+  display: none;
+  flex: 1 1 auto;
+  align-items: center;
+  height: 100%;
+  gap: 24px;
+
+  @media (--viewportMedium) {
+    display: flex;
+  }
+}
+
+.navLink,
+.navLinkActive {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-weight: var(--fontWeightSemiBold);
+  text-decoration: none;
+  border-bottom: 4px solid transparent;
+  transition: var(--transitionStyleButton);
+
+  &:hover {
+    text-decoration: none;
+    color: var(--colorBlack);
+    border-bottom-color: var(--marketplaceColor);
+  }
+}
+
+.navLink {
+  color: var(--colorGrey500);
+}
+
+.navLinkActive {
+  color: var(--marketplaceColor);
+}
+
+.right {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+/* ================ Account menu ================ */
+
+.accountMenuLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border-bottom: 4px solid transparent;
+  transition: var(--transitionStyleButton);
+
+  &:hover {
+    border-bottom-color: var(--marketplaceColor);
+  }
+
+  &:active {
+    border-bottom-color: transparent;
+  }
+}
+
+.accountMenuIsOpen {
+  border-bottom-color: transparent;
+}
+
+.accountMenuContent {
+  width: 260px;
+  border-radius: var(--borderRadiusMedium);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.accountMenuHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--colorGrey50);
+    text-decoration: none;
+  }
+}
+
+.accountMenuHeaderAvatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-size: 13px;
+  font-weight: var(--fontWeightBold);
+  line-height: 1;
+}
+
+.accountMenuHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.accountMenuName {
+  font-size: 14px;
+  line-height: 1.3;
+  margin: 0;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountMenuEmail {
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 0;
+  color: var(--colorGrey500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountMenuLink,
+.accountMenuLogout {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  background: none;
+  color: var(--colorGrey700);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 12px 16px;
+
+  & svg {
+    flex: 0 0 auto;
+    color: var(--colorGrey500);
+  }
+
+  &:hover {
+    background-color: var(--colorGrey50);
+    color: var(--marketplaceColor);
+    text-decoration: none;
+
+    & svg {
+      color: var(--marketplaceColor);
+    }
+  }
+}
+
+.accountMenuLogout {
+  border-top: 1px solid var(--colorGrey100);
+  color: var(--colorGrey500);
+}

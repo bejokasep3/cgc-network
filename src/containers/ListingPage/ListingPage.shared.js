@@ -357,17 +357,17 @@ export const handleSubmitInquiry = parameters => values => {
     onSendInquiry,
     routes,
     setInquiryModalOpen,
-    ownProjectBriefs = [],
+    ownProjects = [],
   } = parameters;
 
   const listingId = new UUID(params.id);
   const listing = getListing(listingId);
   const { message, inviteBriefId } = values;
-  const briefListing = inviteBriefId
-    ? ownProjectBriefs.find(l => l.id.uuid === inviteBriefId)
+  const projectListing = inviteBriefId
+    ? ownProjects.find(l => l.id.uuid === inviteBriefId)
     : null;
-  const protectedData = briefListing
-    ? { inviteBriefId, inviteBriefTitle: briefListing.attributes.title }
+  const protectedData = projectListing
+    ? { inviteBriefId, inviteBriefTitle: projectListing.attributes.title }
     : undefined;
 
   onSendInquiry(listing, message.trim(), protectedData)

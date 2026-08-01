@@ -9,18 +9,19 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { ensureCurrentUser } from '../../util/data';
 import {
-  showCreateListingLinkForUser,
   showPaymentDetailsForUser,
   initialValuesForUserFields,
   pickUserFieldsData,
+  isBrandUserType,
 } from '../../util/userHelpers';
 import { pathByRouteName } from '../../util/routes';
 
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 
-import { H3, H4, Page, UserNav, LayoutSideNavigation } from '../../components';
+import { H3, H4, Page, LayoutSideNavigation } from '../../components';
 
-import TopbarContainer from '../TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import DeleteAccountForm from './DeleteAccountForm/DeleteAccountForm';
@@ -53,11 +54,15 @@ export const ManageAccountPageComponent = props => {
     onSubmitDeleteAccount,
     onResetPassword,
     onUpdateProfile,
+    onLogout,
     resetPasswordInProgress = false,
     resetPasswordError,
     updateProfileInProgress = false,
     updateProfileError,
   } = props;
+
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   const user = ensureCurrentUser(currentUser);
   const { publicData, protectedData, privateData } = user?.attributes.profile;
@@ -96,19 +101,24 @@ export const ManageAccountPageComponent = props => {
     // Get password from form, use it to delete the user account
     const { currentPassword } = values;
 
-    return onSubmitDeleteAccount(currentPassword).then(() => {
-      const path = pathByRouteName('LandingPage', routeConfiguration);
+    return onSubmitDeleteAccount(currentPassword)
+      .then(() => {
+        const path = pathByRouteName('LandingPage', routeConfiguration);
 
-      // Enforce full page load against LandingPage route
-      if (typeof window !== 'undefined') {
-        window.location = path;
-      }
-    });
+        // Enforce full page load against LandingPage route
+        if (typeof window !== 'undefined') {
+          window.location = path;
+        }
+      })
+      .catch(() => {
+        // Error is already stored in Redux state (deleteAccountError) and
+        // rendered by DeleteAccountForm. Swallow it here so it doesn't
+        // surface as an unhandled promise rejection.
+      });
   };
 
   const title = intl.formatMessage({ id: 'ManageAccountPage.title' });
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
   const { showPayoutDetails, showPaymentMethods } = showPaymentDetailsForUser(config, currentUser);
   const accountSettingsNavProps = {
     currentPage: 'ManageAccountPage',
@@ -119,18 +129,7 @@ export const ManageAccountPageComponent = props => {
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation
-        topbar={
-          <>
-            <TopbarContainer
-              desktopClassName={css.desktopTopbar}
-              mobileClassName={css.mobileTopbar}
-            />
-            <UserNav
-              currentPage="ManageAccountPage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
-        }
+        topbar={<DashboardTopbar displayName={displayName} role={role} onLogout={onLogout} />}
         sideNav={null}
         useAccountSettingsNav
         accountSettingsNavProps={accountSettingsNavProps}
@@ -212,6 +211,7 @@ const mapDispatchToProps = dispatch => ({
   onSubmitDeleteAccount: values => dispatch(deleteAccount(values)),
   onResetPassword: values => dispatch(resetPassword(values)),
   onUpdateProfile: values => dispatch(updateProfile(values)),
+  onLogout: () => dispatch(logout()),
 });
 
 const ManageAccountPage = compose(

@@ -38,17 +38,22 @@ flex-cli process list --marketplace YOUR_MARKETPLACE_ID
 > it (`flex-cli process update-alias`). Never edit a version that has live
 > transactions on it.
 
-> **Self-transitions:** `process.edn` now includes
+> **Self-transitions:** `process.edn` includes
 > `transition/provider-add-shipping-address`, a self-transition (`:from` and `:to`
-> both `:state/purchased`; see CGC-FRONTEND-PLAN.md §1.3). Running
-> `flex-cli process --path ext/transaction-processes/cgc-ugc-approval` locally
-> (no login needed — it only parses the file) accepts it without error, which is
-> good local evidence the v3 format supports self-transitions. That command does
-> not talk to a marketplace, though, so it is not the same guarantee as
-> `flex-cli process push`. Confirm with an actual push before relying on it in
-> production; if it is ever rejected, fall back to an `awaiting-address` state
-> between `purchased` and `shipped`, or to exchanging the address over the
-> existing message thread (documented as the v1 fallback in the frontend plan).
+> both `:state/purchased`; see CGC-FRONTEND-PLAN.md §1.3). **Confirmed** — pushed
+> to `warungurang-test` as version 2 and pulled back down for comparison; it
+> round-tripped byte-for-byte (modulo comments/whitespace, which the server
+> strips), so the v3 format accepts self-transitions in production, not just in
+> local parsing. No fallback needed.
+>
+> One gotcha hit during this push: `warungurang-test` already had a stale
+> version 1 (an early draft, unrelated to the current design — no self-transition,
+> far fewer transitions) from a prior attempt. `process push` always creates a new
+> version rather than overwriting, so pushing landed as version 2, but
+> `create-alias` was initially pointed at version 1 by mistake. Always double check
+> which version an alias points at with `flex-cli process list`, and use
+> `flex-cli process pull --process <name> --version <n> --path <dir>` to inspect a
+> specific version's contents if there's any doubt.
 
 ---
 
@@ -58,7 +63,7 @@ The money in Sharetribe always flows `customer → provider`, and the **provider
 the listing author**. Creators get paid, so creators must own the purchasable
 listings. That's why there are two listing types rather than one.
 
-Create both under **Console → Build → Content → Listing types**.
+Create both under **Console → Build → Listings → Listing types**.
 
 ### 2a. `creator-profile` — the purchasable one
 
@@ -96,6 +101,7 @@ what makes the creator the payee.
 | Process alias | `default-inquiry/release-1` |
 | Price | Disabled |
 | Payout details required | No |
+| Photos required | No — a brief is text (title + description + the fields below), not a product listing, so don't require an image upload for it |
 
 Authored by brands. This is how "brands post projects" works without reversing
 the payment direction: creators apply via inquiry, then the brand books the
@@ -103,7 +109,7 @@ creator on that creator's own `creator-profile` listing.
 
 ### 2c. Listing fields
 
-Add under **Console → Build → Content → Listing fields**. Scope all of these to
+Add under **Console → Build → Listings → Listing fields**. Scope all of these to
 `public` so they can be used as search filters.
 
 For `creator-profile` (limit to that listing type):
@@ -197,19 +203,19 @@ so a paying brand never sees a false paywall flash.
 
 ## 5. Marketplace identity
 
-The app currently ships a workaround in
-[`src/ducks/hostedAssets.duck.js`](src/ducks/hostedAssets.duck.js) that
-string-replaces `"Warung Urang"` with `"CGC Network"` across every hosted asset at
-runtime. That is a leftover from a reused Console marketplace and should be
-removed once the real marketplace is set up:
+Done: the marketplace has been renamed to **The CGC Network** in
+**Console → Build → General**, and the runtime workaround that used to
+string-replace `"Warung Urang"` with `"CGC Network"` across hosted assets has
+been deleted from `src/ducks/hostedAssets.duck.js` (see commit `da5d0628e`).
 
-1. Rename the marketplace in **Console → Build → General**, or create a fresh
-   marketplace for CGC.
-2. Delete the `replaceWarungUrang` function and its three call sites in
-   `hostedAssets.duck.js`.
-
-Leaving it in place means the replacement runs on every render, touches all CMS
-content, and will leak the old name anywhere it doesn't happen to match.
+That removal surfaced the actual problem the workaround was masking: the
+landing-page CMS content in Console still contains literal `"Warung Urang"`
+text, left over from the reused Console marketplace this project started
+from. That text has to be fixed by hand in Console — there is no code fix,
+since it lives in hosted content, not in the repo. Follow
+[CGC-CONSOLE-LANDING.md](CGC-CONSOLE-LANDING.md), which has ready-to-paste
+copy for every landing page section. Until that's done, the old name will
+keep showing up anywhere the CMS content wasn't already covered by that guide.
 
 ---
 

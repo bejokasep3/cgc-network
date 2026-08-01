@@ -95,7 +95,7 @@ export const ListingPageComponent = props => {
     config,
     routeConfiguration,
     showOwnListingsOnly,
-    ownProjectBriefs,
+    ownProjects,
     ...restOfProps
   } = props;
 
@@ -192,7 +192,7 @@ export const ListingPageComponent = props => {
     getListing,
     onSendInquiry,
     setInquiryModalOpen,
-    ownProjectBriefs,
+    ownProjects,
   });
 
   const handleOrderSubmit = values => {
@@ -425,7 +425,7 @@ const ListingPage = props => {
     fetchLineItemsInProgress,
     fetchLineItemsError,
     inquiryModalOpenForListingId,
-    ownProjectBriefs,
+    ownProjects,
   } = useSelector(state => state.ListingPage);
   const currentUser = useSelector(state => state.user?.currentUser);
   const scrollingDisabled = useSelector(state => isScrollingDisabled(state));
@@ -486,7 +486,7 @@ const ListingPage = props => {
       getOwnListing={getOwnListing}
       scrollingDisabled={scrollingDisabled}
       inquiryModalOpenForListingId={inquiryModalOpenForListingId}
-      ownProjectBriefs={ownProjectBriefs}
+      ownProjects={ownProjects}
       showListingError={showListingError}
       reviews={reviews}
       fetchReviewsError={fetchReviewsError}

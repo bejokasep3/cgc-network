@@ -2762,6 +2762,64 @@ exports[`InboxPage InboxItem: default-inquiry process with "inquiry" item check 
 </div>
 `;
 
+exports[`InboxPage InboxItem: default-inquiry process with "inquiry" item check inquiry: transition/inquire-without-payment 2`] = `
+<div
+  class="item"
+>
+  <div
+    class="itemAvatar"
+  >
+    <a
+      class="root"
+      href="/u/customer"
+      title="customer display name"
+    >
+      <span
+        class="initials"
+      >
+        TT
+      </span>
+    </a>
+  </div>
+  <a
+    class="itemLink"
+    href="/sale/id-inquiry-INQUIRE-sale"
+  >
+    <div
+      class="rowNotificationDot"
+    />
+    <div
+      class="itemUsername"
+    >
+      <span
+        class=""
+      >
+        customer display name
+      </span>
+    </div>
+    <div
+      class="itemTitle"
+    >
+      listing1 title
+    </div>
+    <div
+      class="itemDetails"
+    />
+    <div
+      class="itemState"
+    >
+      <div
+        class="stateName stateActionNeeded"
+      >
+        <span>
+          InboxPage.default-inquiry.free-inquiry.status
+        </span>
+      </div>
+    </div>
+  </a>
+</div>
+`;
+
 exports[`InboxPage InboxItem: default-negotiation process with "request" check negotiation: transition/accept-deliverable 1`] = `
 <div
   class="item"

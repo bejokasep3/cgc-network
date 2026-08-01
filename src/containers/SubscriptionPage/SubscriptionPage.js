@@ -8,6 +8,7 @@ import { propTypes } from '../../util/types';
 import { parse } from '../../util/urlHelpers';
 import { hasActiveBrandSubscription } from '../../util/subscription';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 import {
   fetchBrandSubscription,
   startBrandSubscriptionCheckout,
@@ -24,7 +25,7 @@ import {
   IconCheckmark,
 } from '../../components';
 
-import TopbarContainer from '../TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import css from './SubscriptionPage.module.css';
@@ -58,6 +59,7 @@ export const SubscriptionPageComponent = props => {
   const intl = useIntl();
   const location = useLocation();
   const {
+    currentUser,
     status,
     fetchInProgress,
     fetchError,
@@ -69,7 +71,10 @@ export const SubscriptionPageComponent = props => {
     onFetchStatus,
     onStartCheckout,
     onOpenBillingPortal,
+    onLogout,
   } = props;
+
+  const displayName = currentUser?.attributes?.profile?.displayName;
 
   // Stripe redirects back here after checkout. The subscription may take a moment
   // to appear, so we simply re-read the live status on mount.
@@ -102,7 +107,10 @@ export const SubscriptionPageComponent = props => {
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
-      <LayoutSingleColumn topbar={<TopbarContainer />} footer={<FooterContainer />}>
+      <LayoutSingleColumn
+        topbar={<DashboardTopbar displayName={displayName} role="brand" onLogout={onLogout} />}
+        footer={<FooterContainer />}
+      >
         <div className={css.root}>
           {checkoutOutcome === 'canceled' ? (
             <p className={css.notice}>
@@ -217,6 +225,7 @@ const mapDispatchToProps = dispatch => ({
   onFetchStatus: () => dispatch(fetchBrandSubscription()),
   onStartCheckout: () => dispatch(startBrandSubscriptionCheckout()),
   onOpenBillingPortal: () => dispatch(openBillingPortal()),
+  onLogout: () => dispatch(logout()),
 });
 
 const SubscriptionPage = compose(

@@ -9,7 +9,7 @@ import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 
 import { FormattedMessage, intlShape, useIntl } from '../../util/reactIntl';
 import { parse } from '../../util/urlHelpers';
-import { getCurrentUserTypeRoles } from '../../util/userHelpers';
+import { getCurrentUserTypeRoles, isBrandUserType } from '../../util/userHelpers';
 import {
   propTypes,
   DATE_TYPE_DATE,
@@ -45,6 +45,7 @@ import { formatDateIntoPartials } from '../../util/dates';
 
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 import {
   H2,
   Avatar,
@@ -59,7 +60,7 @@ import {
   LayoutSideNavigation,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 import InboxSearchForm from './InboxSearchForm/InboxSearchForm';
@@ -328,6 +329,7 @@ export const InboxPageComponent = props => {
     customerNotificationCount = 0,
     scrollingDisabled,
     transactions,
+    onLogout,
   } = props;
   const { tab } = params;
   const validTab = tab === 'orders' || tab === 'sales';
@@ -474,16 +476,14 @@ export const InboxPageComponent = props => {
 
   const tabs = [...ordersTabMaybe, ...salesTabMaybe, ...rosterTabMaybe];
 
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
+
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation
         sideNavClassName={css.navigation}
-        topbar={
-          <TopbarContainer
-            mobileRootClassName={css.mobileTopbar}
-            desktopClassName={css.desktopTopbar}
-          />
-        }
+        topbar={<DashboardTopbar displayName={displayName} role={role} onLogout={onLogout} />}
         sideNav={
           <>
             <H2 as="h1" className={css.title}>
@@ -561,6 +561,10 @@ const mapStateToProps = state => {
   };
 };
 
-const InboxPage = compose(connect(mapStateToProps))(InboxPageComponent);
+const mapDispatchToProps = dispatch => ({
+  onLogout: () => dispatch(logout()),
+});
+
+const InboxPage = compose(connect(mapStateToProps, mapDispatchToProps))(InboxPageComponent);
 
 export default InboxPage;

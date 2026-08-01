@@ -8,9 +8,10 @@ import { createResourceLocatorString } from '../../util/routes';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { ensureCurrentUser } from '../../util/data';
 import { propTypes } from '../../util/types';
-import { showCreateListingLinkForUser, showPaymentDetailsForUser } from '../../util/userHelpers';
+import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers';
 import { getDisplayAccountType } from '../../util/stripeConnect';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 import {
   stripeAccountClearError,
   getStripeConnectAccountLink,
@@ -22,11 +23,10 @@ import {
   Page,
   StripeConnectAccountStatusBox,
   StripeConnectAccountForm,
-  UserNav,
   LayoutSideNavigation,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import { savePayoutDetails } from './StripePayoutPage.duck';
@@ -121,6 +121,7 @@ export const StripePayoutPageComponent = props => {
     payoutDetailsSaved,
     params,
     authScopes,
+    onLogout,
   } = props;
 
   const { returnURLType } = params || {};
@@ -176,29 +177,19 @@ export const StripePayoutPageComponent = props => {
     handleGetStripeConnectAccountLink('custom_account_verification')();
   }
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
   const { showPayoutDetails, showPaymentMethods } = showPaymentDetailsForUser(config, currentUser);
   const accountSettingsNavProps = {
     currentPage: 'StripePayoutPage',
     showPaymentMethods,
     showPayoutDetails,
   };
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation
-        topbar={
-          <>
-            <TopbarContainer
-              desktopClassName={css.desktopTopbar}
-              mobileClassName={css.mobileTopbar}
-            />
-            <UserNav
-              currentPage="StripePayoutPage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
-        }
+        topbar={<DashboardTopbar displayName={displayName} role={role} onLogout={onLogout} />}
         sideNav={null}
         useAccountSettingsNav
         accountSettingsNavProps={accountSettingsNavProps}
@@ -300,6 +291,7 @@ const mapDispatchToProps = dispatch => ({
   onPayoutDetailsSubmit: (values, isUpdateCall) =>
     dispatch(savePayoutDetails(values, isUpdateCall)),
   onGetStripeConnectAccountLink: params => dispatch(getStripeConnectAccountLink(params)),
+  onLogout: () => dispatch(logout()),
 });
 
 const StripePayoutPage = compose(

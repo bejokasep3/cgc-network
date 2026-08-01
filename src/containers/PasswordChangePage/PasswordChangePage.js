@@ -6,11 +6,12 @@ import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
-import { showCreateListingLinkForUser, showPaymentDetailsForUser } from '../../util/userHelpers';
+import { logout } from '../../ducks/auth.duck';
+import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers';
 
-import { Page, UserNav, H3, LayoutSideNavigation } from '../../components';
+import { Page, H3, LayoutSideNavigation } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import PasswordChangeForm from './PasswordChangeForm/PasswordChangeForm';
@@ -47,6 +48,7 @@ export const PasswordChangePageComponent = props => {
     resetPasswordError,
     passwordChanged,
     scrollingDisabled,
+    onLogout,
   } = props;
 
   const changePasswordForm =
@@ -67,29 +69,19 @@ export const PasswordChangePageComponent = props => {
 
   const title = intl.formatMessage({ id: 'PasswordChangePage.title' });
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
   const { showPayoutDetails, showPaymentMethods } = showPaymentDetailsForUser(config, currentUser);
   const accountSettingsNavProps = {
     currentPage: 'PasswordChangePage',
     showPaymentMethods,
     showPayoutDetails,
   };
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation
-        topbar={
-          <>
-            <TopbarContainer
-              desktopClassName={css.desktopTopbar}
-              mobileClassName={css.mobileTopbar}
-            />
-            <UserNav
-              currentPage="PasswordChangePage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
-        }
+        topbar={<DashboardTopbar displayName={displayName} role={role} onLogout={onLogout} />}
         sideNav={null}
         useAccountSettingsNav
         accountSettingsNavProps={accountSettingsNavProps}
@@ -132,6 +124,7 @@ const mapDispatchToProps = dispatch => ({
   onChange: () => dispatch(changePasswordClear()),
   onSubmitChangePassword: values => dispatch(changePassword(values)),
   onResetPassword: values => dispatch(resetPassword(values)),
+  onLogout: () => dispatch(logout()),
 });
 
 const PasswordChangePage = compose(

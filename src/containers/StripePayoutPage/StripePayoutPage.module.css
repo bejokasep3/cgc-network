@@ -12,11 +12,6 @@
   }
 }
 
-.desktopTopbar,
-.mobileTopbar {
-  box-shadow: none;
-}
-
 .heading {
   hyphens: auto;
 }

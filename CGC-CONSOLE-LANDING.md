@@ -80,14 +80,15 @@ image. Both still point at biketribe demo assets.
 
 ## Step 2 — Marketplace name (Build → General)
 
-Rename the marketplace to **The CGC Network**.
+Rename the marketplace to **The CGC Network**. Done — and the runtime
+workaround that used to paper over the old name (a string-replace in
+`src/ducks/hostedAssets.duck.js`) has since been deleted (commit `da5d0628e`),
+since it only masked stale copy instead of fixing it.
 
-This matters beyond cosmetics: there is a workaround in
-[`src/ducks/hostedAssets.duck.js`](src/ducks/hostedAssets.duck.js) that
-string-replaces `"Warung Urang"` with `"CGC Network"` across every hosted asset at
-runtime. Once the rename is done, that function and its three call sites should be
-deleted. Leaving it in means the replacement runs on every render and will leak the
-old name anywhere it doesn't happen to match.
+That removal surfaced the actual issue: the landing-page CMS content below
+still contains literal `"Warung Urang"` text in places. There's no code fix
+for that — it has to be edited by hand in Console, using the copy given in
+Step 4 below.
 
 ---
 

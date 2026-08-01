@@ -12,7 +12,7 @@
   flex-grow: 1;
 }
 
-.projectBriefIntro {
+.projectIntro {
   composes: p from global;
   color: var(--colorGrey600);
   margin: 0 0 24px 0;

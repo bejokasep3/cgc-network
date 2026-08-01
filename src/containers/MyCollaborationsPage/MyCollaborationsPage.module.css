@@ -1,0 +1,411 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  padding: 24px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 24px 40px 120px 40px;
+  }
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-width: 640px;
+  margin: 0;
+}
+
+.browseProjectsButton {
+  composes: marketplaceSmallFontStyles from global;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 14px 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
+}
+
+.setupBanner {
+  margin-bottom: 24px;
+}
+
+/* ================ Summary ================ */
+
+.summaryRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.summaryTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background-color: var(--colorGrey50);
+  border-radius: var(--borderRadiusMedium);
+  padding: 16px 20px;
+}
+
+.summaryValue {
+  font-size: 24px;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+}
+
+.summaryLabel {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey600);
+}
+
+/* ================ Tabs ================ */
+
+.tabRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  border-bottom: 1px solid var(--colorGrey100);
+  margin-bottom: 24px;
+}
+
+.tab {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  cursor: pointer;
+  padding: 0 0 14px 0;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.tabActive {
+  color: var(--marketplaceColor);
+  border-bottom-color: var(--marketplaceColor);
+}
+
+.tabCount {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background-color: var(--colorGrey100);
+  color: var(--colorGrey700);
+  font-weight: var(--fontWeightBold);
+}
+
+.tabActive .tabCount {
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+}
+
+/* ================ Sub-tabs ================ */
+
+.subTabRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -12px 0 24px 0;
+}
+
+.subTab {
+  composes: marketplaceTinyFontStyles from global;
+  border: 1px solid var(--colorGrey100);
+  background-color: var(--colorWhite);
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton), color var(--transitionStyleButton),
+    border-color var(--transitionStyleButton);
+
+  &:hover {
+    border-color: var(--marketplaceColor);
+    color: var(--marketplaceColor);
+  }
+}
+
+.subTabActive {
+  background-color: var(--colorGrey900);
+  border-color: var(--colorGrey900);
+  color: var(--colorWhite);
+
+  &:hover {
+    color: var(--colorWhite);
+  }
+}
+
+/* ================ List ================ */
+
+.rowGrid {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 2fr) 1.2fr 0.8fr 0.9fr 0.9fr 0.9fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.applicationRowGrid {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 2fr) 1.2fr 0.9fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listHeader {
+  composes: rowGrid;
+  composes: marketplaceTinyFontStyles from global;
+  padding: 0 20px 8px 20px;
+  color: var(--colorGrey500);
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.applicationListHeader {
+  composes: applicationRowGrid;
+  composes: marketplaceTinyFontStyles from global;
+  padding: 0 20px 8px 20px;
+  color: var(--colorGrey500);
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.listHeaderSpacer {
+  width: 40px;
+}
+
+.row {
+  composes: rowGrid;
+  padding: 14px 20px;
+  border-radius: var(--borderRadiusMedium);
+  background-color: var(--colorGrey50);
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: #eef2ff;
+    text-decoration: none;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 40px 1fr;
+    row-gap: 8px;
+
+    & .rowStatus,
+    & .rowDate,
+    & .rowEarnings,
+    & .rowReview {
+      grid-column: 1 / -1;
+      text-align: left;
+      padding-left: 56px;
+    }
+
+    & .rowDate::before,
+    & .rowEarnings::before,
+    & .rowReview::before {
+      content: attr(data-label) ': ';
+      color: var(--colorGrey500);
+      font-weight: var(--fontWeightRegular);
+    }
+  }
+}
+
+.applicationRow {
+  composes: applicationRowGrid;
+  padding: 14px 20px;
+  border-radius: var(--borderRadiusMedium);
+  background-color: var(--colorGrey50);
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: #eef2ff;
+    text-decoration: none;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 40px 1fr;
+    row-gap: 8px;
+
+    & .rowStatus,
+    & .rowDate {
+      grid-column: 1 / -1;
+      text-align: left;
+      padding-left: 56px;
+    }
+
+    & .rowDate::before {
+      content: attr(data-label) ': ';
+      color: var(--colorGrey500);
+      font-weight: var(--fontWeightRegular);
+    }
+  }
+}
+
+.rowAvatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+}
+
+.rowInfo {
+  min-width: 0;
+}
+
+.rowTitle {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowSubtitle {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.revisionTag {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.rowStatus {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.rowEarnings {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.notPaidYet {
+  color: var(--colorGrey500);
+  font-weight: var(--fontWeightRegular);
+}
+
+.rowReview {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+.rowDate {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  white-space: nowrap;
+}
+
+.rowDue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.dueSoon {
+  color: #b45309;
+}
+
+.dueOverdue {
+  color: var(--colorFail);
+}
+
+.dueBadge {
+  composes: marketplaceTinyFontStyles from global;
+  background-color: var(--colorFail);
+  color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.emptyState {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey700);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 24px;
+}

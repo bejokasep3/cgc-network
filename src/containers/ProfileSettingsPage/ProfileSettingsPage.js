@@ -11,13 +11,14 @@ import {
   initialValuesForUserFields,
   isUserAuthorized,
   pickUserFieldsData,
-  showCreateListingLinkForUser,
+  isBrandUserType,
 } from '../../util/userHelpers';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 
-import { H3, Page, UserNav, NamedLink, LayoutSingleColumn } from '../../components';
+import { H3, Page, NamedLink, LayoutSingleColumn } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../../containers/ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import ProfileSettingsForm from './ProfileSettingsForm/ProfileSettingsForm';
@@ -77,12 +78,16 @@ export const ProfileSettingsPageComponent = props => {
     image,
     onImageUpload,
     onUpdateProfile,
+    onLogout,
     scrollingDisabled,
     updateInProgress,
     updateProfileError,
     uploadImageError,
     uploadInProgress,
   } = props;
+
+  const topbarDisplayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   const { userFields, userTypes = [] } = config.user;
   const publicUserFields = userFields.filter(uf => uf.scope === 'public');
@@ -157,19 +162,11 @@ export const ProfileSettingsPageComponent = props => {
 
   const title = intl.formatMessage({ id: 'ProfileSettingsPage.title' });
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
-
   return (
     <Page className={css.root} title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSingleColumn
         topbar={
-          <>
-            <TopbarContainer />
-            <UserNav
-              currentPage="ProfileSettingsPage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
+          <DashboardTopbar displayName={topbarDisplayName} role={role} onLogout={onLogout} />
         }
         footer={<FooterContainer />}
       >
@@ -211,6 +208,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => ({
   onImageUpload: data => dispatch(uploadImage(data)),
   onUpdateProfile: data => dispatch(updateProfile(data)),
+  onLogout: () => dispatch(logout()),
 });
 
 const ProfileSettingsPage = compose(

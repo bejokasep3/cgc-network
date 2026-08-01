@@ -1,0 +1,7 @@
+.root {
+  width: 20px;
+  height: 20px;
+  fill: var(--marketplaceColor);
+  stroke: var(--colorWhite);
+  stroke-width: 1.5px;
+}

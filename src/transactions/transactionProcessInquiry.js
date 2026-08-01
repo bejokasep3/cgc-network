@@ -16,6 +16,13 @@ export const transitions = {
   // A customer can initiate a transaction with an inquiry, and
   // then transition that with a request.
   INQUIRE_WITHOUT_PAYMENT: 'transition/inquire-without-payment',
+  // Alias for INQUIRE_WITHOUT_PAYMENT: every other process module in this
+  // directory exports an INQUIRE constant, and ListingPage.duck.js's
+  // sendInquiry looks it up generically via getProcess(processName).transitions.INQUIRE
+  // (see ProjectDetailPage.js, CreatorProfilePage.js) — without this alias
+  // that generic lookup silently sends `transition: undefined` for any
+  // listing on this process, e.g. applying to a project-brief listing.
+  INQUIRE: 'transition/inquire-without-payment',
 };
 
 /**

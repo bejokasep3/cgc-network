@@ -7,6 +7,7 @@
 import auth from './auth.duck';
 import brandRoster from './brandRoster.duck';
 import brandSubscription from './brandSubscription.duck';
+import creatorProfile from './creatorProfile.duck';
 import emailVerification from './emailVerification.duck';
 import routing from './routing.duck';
 import ui from './ui.duck';
@@ -22,6 +23,7 @@ export {
   auth,
   brandRoster,
   brandSubscription,
+  creatorProfile,
   emailVerification,
   routing,
   ui,

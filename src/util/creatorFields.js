@@ -38,3 +38,27 @@ export const getCreatorFieldLabels = (publicData, listingFieldConfigs) => {
     turnaroundDays: typeof turnaroundDays === 'number' ? turnaroundDays : null,
   };
 };
+
+/**
+ * Same idea as getCreatorFieldLabels, but for the `project-brief` listing
+ * fields (contentNiche, platforms, budgetRange, deadline — see
+ * CGC-SETUP.md §2c).
+ *
+ * @param {Object} publicData - listing.attributes.publicData
+ * @param {Array<Object>} listingFieldConfigs - config.listing.listingFields
+ * @returns {Object} { nicheLabels, platformLabels, budgetRangeLabel, deadline }
+ */
+export const getProjectFieldLabels = (publicData, listingFieldConfigs) => {
+  const { contentNiche = [], platforms = [], budgetRange, deadline = null } = publicData || {};
+
+  const nicheConfig = findFieldConfig(listingFieldConfigs, 'contentNiche');
+  const platformsConfig = findFieldConfig(listingFieldConfigs, 'platforms');
+  const budgetRangeConfig = findFieldConfig(listingFieldConfigs, 'budgetRange');
+
+  return {
+    nicheLabels: contentNiche.map(value => labelForOption(nicheConfig, value)),
+    platformLabels: platforms.map(value => labelForOption(platformsConfig, value)),
+    budgetRangeLabel: budgetRange ? labelForOption(budgetRangeConfig, budgetRange) : null,
+    deadline,
+  };
+};

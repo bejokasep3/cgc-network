@@ -1,0 +1,208 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: var(--contentMaxWidth);
+  margin: 0 auto;
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 24px 0;
+}
+
+.progressBarTrack {
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--colorGrey100);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  transition: width var(--transitionStyleButton);
+}
+
+.progressLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 8px 0 32px 0;
+}
+
+.stepList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.stepCard {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 24px;
+  transition: border-color var(--transitionStyleButton);
+
+  @media (--viewportSmall) {
+    grid-template-columns: 32px 1fr;
+    row-gap: 16px;
+
+    & > :last-child {
+      grid-column: 2;
+    }
+  }
+}
+
+.stepCardCurrent {
+  border-color: var(--marketplaceColor);
+}
+
+.stepCardDone {
+  border-color: var(--colorGrey100);
+  background-color: var(--colorGrey50);
+}
+
+.stepIcon {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--colorGrey300);
+  color: var(--colorGrey500);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.stepIconCurrent {
+  border-color: var(--marketplaceColor);
+  color: var(--marketplaceColor);
+}
+
+.stepIconDone {
+  background-color: var(--marketplaceColor);
+  border-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+}
+
+.stepInfo {
+  min-width: 0;
+}
+
+.stepTitle {
+  composes: h4 from global;
+  margin: 0 0 6px 0;
+  color: var(--colorGrey900);
+}
+
+.stepTitleDone {
+  color: var(--colorGrey600);
+}
+
+.stepBody {
+  composes: p from global;
+  color: var(--colorGrey600);
+  margin: 0;
+}
+
+.stepCta {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--colorGrey900);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 12px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
+}
+
+.stepDoneBadge {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  border-radius: 999px;
+  background-color: #dcfce7;
+  color: #15803d;
+  font-weight: var(--fontWeightSemiBold);
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.allDoneCard {
+  text-align: center;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 32px 24px;
+}
+
+.allDoneTitle {
+  composes: h3 from global;
+  margin: 0 0 8px 0;
+  color: var(--colorGrey900);
+}
+
+.allDoneBody {
+  composes: p from global;
+  color: var(--colorGrey600);
+  margin: 0 0 20px 0;
+}
+
+.allDoneCta {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 14px 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
+}

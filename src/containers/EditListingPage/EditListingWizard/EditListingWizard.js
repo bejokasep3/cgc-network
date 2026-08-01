@@ -73,8 +73,8 @@ const MAX_HORIZONTAL_NAV_SCREEN_WIDTH = 1023;
 const STRIPE_ONBOARDING_RETURN_URL_SUCCESS = 'success';
 const STRIPE_ONBOARDING_RETURN_URL_FAILURE = 'failure';
 
-// Brands post project briefs through this same wizard — the details tab reads
-// as "brief details" for that listing type only (CGC-FRONTEND-PLAN.md Phase 6).
+// Brands post projects through this same wizard — the details tab reads
+// as "project details" for that listing type only (CGC-FRONTEND-PLAN.md Phase 6).
 const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
 
 /**
@@ -141,7 +141,7 @@ const tabLabelAndSubmit = (
   if (tab === DETAILS) {
     labelKey =
       listingType === PROJECT_BRIEF_LISTING_TYPE
-        ? 'EditListingWizard.tabLabelBriefDetails'
+        ? 'EditListingWizard.tabLabelProjectDetails'
         : 'EditListingWizard.tabLabelDetails';
     submitButtonKey = `EditListingWizard.${processNameString}${newOrEdit}.saveDetails`;
   } else if (tab === PRICING) {

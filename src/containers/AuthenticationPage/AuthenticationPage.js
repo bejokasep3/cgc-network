@@ -9,6 +9,7 @@ import { camelize } from '../../util/string';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { ensureCurrentUser, getFeaturedListingsProps } from '../../util/data';
+import { getRoleHomeRouteName } from '../../util/userHelpers';
 import {
   isSignupEmailTakenError,
   isTooManyEmailVerificationRequestsError,
@@ -301,8 +302,10 @@ export const AuthenticationPageComponent = props => {
     // Already authenticated, redirect back to the page the user tried to access
     return <Redirect to={from} />;
   } else if (shouldRedirectToLandingPage) {
-    // Already authenticated, redirect to the landing page (this was direct access to /login or /signup)
-    return <NamedRedirect name="LandingPage" />;
+    // Already authenticated with no specific page to return to (direct access to
+    // /login or /signup) — send the user straight to their role's home base
+    // instead of the marketing landing page.
+    return <NamedRedirect name={getRoleHomeRouteName(config, currentUser)} />;
   } else if (show404) {
     // User type not found, show 404
     return <NotFoundPage staticContext={staticContext} />;

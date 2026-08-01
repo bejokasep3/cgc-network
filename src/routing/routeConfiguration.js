@@ -13,6 +13,16 @@ import { NamedRedirect } from '../components';
 const pageDataLoadingAPI = getPageDataLoadingAPI();
 
 const AuthenticationPage = loadable(() => import(/* webpackChunkName: "AuthenticationPage" */ '../containers/AuthenticationPage/AuthenticationPage'));
+const BrandOnboardingPage = loadable(() => import(/* webpackChunkName: "BrandOnboardingPage" */ '../containers/BrandOnboardingPage/BrandOnboardingPage'));
+const ExploreCreatorsPage = loadable(() => import(/* webpackChunkName: "ExploreCreatorsPage" */ '../containers/ExploreCreatorsPage/ExploreCreatorsPage'));
+const ManageCampaignsPage = loadable(() => import(/* webpackChunkName: "ManageCampaignsPage" */ '../containers/ManageCampaignsPage/ManageCampaignsPage'));
+const PostProjectPage = loadable(() => import(/* webpackChunkName: "PostProjectPage" */ '../containers/PostProjectPage/PostProjectPage'));
+const CreatorProfilePage = loadable(() => import(/* webpackChunkName: "CreatorProfilePage" */ '../containers/CreatorProfilePage/CreatorProfilePage'));
+const BrowseProjectsPage = loadable(() => import(/* webpackChunkName: "BrowseProjectsPage" */ '../containers/BrowseProjectsPage/BrowseProjectsPage'));
+const ProjectDetailPage = loadable(() => import(/* webpackChunkName: "ProjectDetailPage" */ '../containers/ProjectDetailPage/ProjectDetailPage'));
+const MyCollaborationsPage = loadable(() => import(/* webpackChunkName: "MyCollaborationsPage" */ '../containers/MyCollaborationsPage/MyCollaborationsPage'));
+const CreatorOnboardingPage = loadable(() => import(/* webpackChunkName: "CreatorOnboardingPage" */ '../containers/CreatorOnboardingPage/CreatorOnboardingPage'));
+const CreatorPackagePage = loadable(() => import(/* webpackChunkName: "CreatorPackagePage" */ '../containers/CreatorPackagePage/CreatorPackagePage'));
 const CheckoutPage = loadable(() => import(/* webpackChunkName: "CheckoutPage" */ '../containers/CheckoutPage/CheckoutPage'));
 const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../containers/CMSPage/CMSPage'));
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
@@ -82,7 +92,6 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       path: '/',
       name: 'LandingPage',
       component: LandingPage,
-      loadData: pageDataLoadingAPI.LandingPage.loadData,
     },
     {
       path: '/p/:pageId',
@@ -380,12 +389,108 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: SubscriptionPage,
     },
     {
+      // Brand's home base after login (see AuthenticationPage.js redirect).
+      path: '/creators',
+      name: 'ExploreCreatorsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ExploreCreatorsPage,
+    },
+    {
+      // "My Campaigns" nav item in DashboardTopbar — status-based view of
+      // the brand's own CGC UGC transactions (see ManageCampaignsPage.js).
+      path: '/campaigns',
+      name: 'ManageCampaignsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ManageCampaignsPage,
+    },
+    {
+      // "New campaign" button on ManageCampaignsPage — a purpose-built form
+      // for posting a project-brief listing (see PostProjectPage.js), instead
+      // of routing into the general EditListingPage wizard.
+      path: '/campaigns/new',
+      name: 'PostProjectPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: PostProjectPage,
+    },
+    {
+      // "Collab" button on ExploreCreatorsPage — a purpose-built profile page
+      // for a creator (package details, reviews, invite-to-a-project form),
+      // instead of routing into the generic ListingPage. :id is the
+      // creator's published creator-profile listing id.
+      path: '/creators/:id',
+      name: 'CreatorProfilePage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: CreatorProfilePage,
+    },
+    {
       // A brand's saved creators (CGC-FRONTEND-PLAN.md §4.2), linked from the inbox.
       path: '/roster',
       name: 'RosterPage',
       auth: true,
       authPage: 'LoginPage',
       component: RosterPage,
+    },
+    {
+      // Code-only page, not managed through Console/PageBuilder.
+      path: '/brand-onboarding',
+      name: 'BrandOnboardingPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: BrandOnboardingPage,
+    },
+    {
+      // Creator's home base after login (see AuthenticationPage.js redirect).
+      path: '/projects',
+      name: 'BrowseProjectsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: BrowseProjectsPage,
+    },
+    {
+      // "View project" link on BrowseProjectsPage — a purpose-built project page
+      // (brand's project details + an apply form), instead of routing into
+      // the generic ListingPage. :id is the project-brief listing id.
+      path: '/projects/:id',
+      name: 'ProjectDetailPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ProjectDetailPage,
+    },
+    {
+      // "My Collaborations" nav item in DashboardTopbar — status-based view
+      // of the creator's own CGC UGC transactions, plus a tab for their
+      // pending project applications (see MyCollaborationsPage.js).
+      path: '/collaborations',
+      name: 'MyCollaborationsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: MyCollaborationsPage,
+    },
+    {
+      // Creator's setup checklist: approval status, profile, package listing,
+      // Stripe payout — linked from BrowseProjectsPage/MyCollaborationsPage
+      // whenever setup is incomplete (see CreatorSetupBanner.js).
+      path: '/creator-onboarding',
+      name: 'CreatorOnboardingPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: CreatorOnboardingPage,
+    },
+    {
+      // A creator's own editable package (details + photos) — this *is*
+      // their creator-profile listing, edited through a purpose-built page
+      // instead of the generic EditListingWizard (see CreatorPackagePage.js).
+      // Linked from CreatorOnboardingPage/CreatorSetupBanner and
+      // DashboardTopbar's "My Creator Profile" nav item.
+      path: '/creator-package',
+      name: 'CreatorPackagePage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: CreatorPackagePage,
     },
     {
       path: '/account/payment-methods',

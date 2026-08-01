@@ -152,6 +152,13 @@ export const deleteUserAccount = body => {
   return post('/api/delete-account', body);
 };
 
+// Lists creator (provider) user accounts directly via the Integration API
+// (server/api/list-creators.js) — the regular Marketplace SDK can't query
+// users, only listings, so this is a local API endpoint instead of an SDK call.
+export const listCreators = () => {
+  return request('/api/list-creators', { method: methods.GET });
+};
+
 // Brand subscriptions. Stripe stays the source of truth for whether a brand's
 // subscription is active, so this is read live rather than cached in the store.
 //

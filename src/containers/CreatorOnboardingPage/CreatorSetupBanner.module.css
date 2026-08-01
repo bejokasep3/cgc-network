@@ -1,0 +1,39 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background-color: var(--colorGrey50);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 14px 20px;
+}
+
+.progressText {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey700);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.cta {
+  composes: marketplaceSmallFontStyles from global;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--colorGrey900);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 8px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
+}

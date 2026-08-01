@@ -6,14 +6,15 @@ import { useConfiguration } from '../../context/configurationContext.js';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { ensureCurrentUser, ensureStripeCustomer, ensurePaymentMethodCard } from '../../util/data';
 import { propTypes } from '../../util/types';
-import { showCreateListingLinkForUser, showPaymentDetailsForUser } from '../../util/userHelpers.js';
+import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers.js';
 import { savePaymentMethod, deletePaymentMethod } from '../../ducks/paymentMethods.duck';
 import { handleCardSetup } from '../../ducks/stripe.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 
-import { H3, SavedCardDetails, Page, UserNav, LayoutSideNavigation } from '../../components';
+import { H3, SavedCardDetails, Page, LayoutSideNavigation } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import PaymentMethodsForm from './PaymentMethodsForm/PaymentMethodsForm';
@@ -62,6 +63,7 @@ const PaymentMethodsPageComponent = props => {
     scrollingDisabled,
     onManageDisableScrolling,
     stripeCustomerFetched,
+    onLogout,
   } = props;
 
   const getClientSecret = setupIntent => {
@@ -162,29 +164,19 @@ const PaymentMethodsPageComponent = props => {
   const showForm = cardState === 'replaceCard' || !hasDefaultPaymentMethod;
   const showCardDetails = !!hasDefaultPaymentMethod;
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
   const { showPayoutDetails, showPaymentMethods } = showPaymentDetailsForUser(config, currentUser);
   const accountSettingsNavProps = {
     currentPage: 'PaymentMethodsPage',
     showPaymentMethods,
     showPayoutDetails,
   };
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation
-        topbar={
-          <>
-            <TopbarContainer
-              desktopClassName={css.desktopTopbar}
-              mobileClassName={css.mobileTopbar}
-            />
-            <UserNav
-              currentPage="PaymentMethodsPage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
-        }
+        topbar={<DashboardTopbar displayName={displayName} role={role} onLogout={onLogout} />}
         sideNav={null}
         useAccountSettingsNav
         accountSettingsNavProps={accountSettingsNavProps}
@@ -263,6 +255,7 @@ const mapDispatchToProps = dispatch => ({
   onSavePaymentMethod: (stripeCustomer, newPaymentMethod) =>
     dispatch(savePaymentMethod(stripeCustomer, newPaymentMethod)),
   onDeletePaymentMethod: params => dispatch(deletePaymentMethod(params)),
+  onLogout: () => dispatch(logout()),
 });
 
 const PaymentMethodsPage = compose(

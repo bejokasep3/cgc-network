@@ -265,3 +265,30 @@ export const getCurrentUserTypeRoles = (config, currentUser) => {
     }
   );
 };
+
+/**
+ * Whether the current user acts as a brand (buyer side) rather than a
+ * creator, based on the 'customer' role of their configured user type.
+ *
+ * @param {Object} config Marketplace configuration
+ * @param {Object} currentUser API entity
+ * @returns {Boolean}
+ */
+export const isBrandUserType = (config, currentUser) => {
+  const { customer: isCustomerUserType } = getCurrentUserTypeRoles(config, currentUser);
+  return !!isCustomerUserType;
+};
+
+/**
+ * The route a logged-in user should land on instead of the marketing landing
+ * page — brands browse creators, creators browse projects. Used both right
+ * after login/signup (AuthenticationPage.js) and when an already-authenticated
+ * user navigates back to "/" (LandingPage.js).
+ *
+ * @param {Object} config Marketplace configuration
+ * @param {Object} currentUser API entity
+ * @returns {string} route name to redirect to
+ */
+export const getRoleHomeRouteName = (config, currentUser) => {
+  return isBrandUserType(config, currentUser) ? 'ExploreCreatorsPage' : 'BrowseProjectsPage';
+};

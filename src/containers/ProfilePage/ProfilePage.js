@@ -26,7 +26,9 @@ import {
   getCurrentUserTypeRoles,
   hasPermissionToViewData,
   isUserAuthorized,
+  isBrandUserType,
 } from '../../util/userHelpers';
+import { getCreatorFieldLabels } from '../../util/creatorFields';
 import { richText } from '../../util/richText';
 import { createSlug } from '../../util/urlHelpers';
 import { CGC_UGC_PROCESS_NAME, getProcess } from '../../transactions/transaction';
@@ -34,93 +36,150 @@ import { CGC_UGC_PROCESS_NAME, getProcess } from '../../transactions/transaction
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { toggleSavedCreator } from '../../ducks/brandRoster.duck';
+import { logout } from '../../ducks/auth.duck';
 import { queryCollaborationHistory } from './ProfilePage.duck';
 import {
   Heading,
-  H2,
   H4,
   Page,
+  Avatar,
   AvatarLarge,
   NamedLink,
   ListingCard,
-  Reviews,
-  ButtonTabNavHorizontal,
-  LayoutSideNavigation,
+  ReviewRating,
+  LayoutSingleColumn,
   NamedRedirect,
   CustomExtendedDataSection,
-  SecondaryButton,
+  IconLocation,
+  IconVerified,
   IconSpinner,
+  Menu,
+  MenuLabel,
+  MenuContent,
+  MenuItem,
+  UserDisplayName,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 
 import css from './ProfilePage.module.css';
 
-const MAX_MOBILE_SCREEN_WIDTH = 768;
 const MIN_LENGTH_FOR_LONG_WORDS = 20;
+const MAX_CATEGORY_LABELS = 2;
 
-// "Roster" (saved creators, CGC-FRONTEND-PLAN.md §4.2): lets a brand keep the
-// creators it wants to work with again. Only shown to brands viewing a
-// creator's own profile — never on the creator's own view of their profile.
-export const RosterSaveButtonMaybe = props => {
-  const { showRosterButton, isSaved, toggleInProgress, onToggleSavedCreator } = props;
+// "1 year ago"-style relative time matching the reference design's review
+// list. Walks divisions from seconds up to years, picking the largest unit
+// whose magnitude is still >= 1 (standard Intl.RelativeTimeFormat pattern).
+const RELATIVE_TIME_DIVISIONS = [
+  { amount: 60, unit: 'second' },
+  { amount: 60, unit: 'minute' },
+  { amount: 24, unit: 'hour' },
+  { amount: 7, unit: 'day' },
+  { amount: 4.34524, unit: 'week' },
+  { amount: 12, unit: 'month' },
+  { amount: Infinity, unit: 'year' },
+];
 
-  if (!showRosterButton) {
-    return null;
+const relativeTimeFromNow = (date, intl) => {
+  let duration = (date.getTime() - Date.now()) / 1000;
+  for (const division of RELATIVE_TIME_DIVISIONS) {
+    if (Math.abs(duration) < division.amount) {
+      return intl.formatRelativeTime(Math.round(duration), division.unit);
+    }
+    duration /= division.amount;
   }
-
-  return (
-    <SecondaryButton
-      className={css.rosterButton}
-      onClick={onToggleSavedCreator}
-      disabled={toggleInProgress}
-    >
-      {toggleInProgress ? (
-        <IconSpinner rootClassName={css.rosterButtonSpinner} />
-      ) : (
-        <FormattedMessage
-          id={isSaved ? 'ProfilePage.removeFromRoster' : 'ProfilePage.saveToRoster'}
-        />
-      )}
-    </SecondaryButton>
-  );
 };
 
-export const AsideContent = props => {
+// Decorative starburst next to the review score, purely visual (aria-hidden).
+const ReviewStarBurst = props => (
+  <svg
+    className={props.className}
+    viewBox="0 0 80 80"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M40 2c2 16 6 30 16 38 10 8 22 12 22 12s-16 4-26 14-14 26-14 26-4-16-14-26S4 52 4 52s16-4 26-14S38 18 40 2Z" />
+  </svg>
+);
+
+// "Roster" (saved creators, CGC-FRONTEND-PLAN.md §4.2) + "copy profile link":
+// the header's "..." overflow menu. Roster toggle only offered to a brand
+// (viewer has the customer role) looking at a creator's own profile — never
+// on the creator's own view of their profile. Copy-link has no such
+// condition, so the menu itself always renders.
+export const ProfileActionsMenu = props => {
   const {
-    user,
-    displayName,
-    showLinkToProfileSettingsPage,
     showRosterButton,
     isSaved,
     toggleInProgress,
     onToggleSavedCreator,
+    onCopyProfileLink,
   } = props;
+  const intl = useIntl();
+
   return (
-    <div className={css.asideContent}>
-      <AvatarLarge className={css.avatar} user={user} disableProfileLink />
-      <H2 as="h1" className={css.mobileHeading}>
-        {displayName ? (
-          <FormattedMessage id="ProfilePage.mobileHeading" values={{ name: displayName }} />
+    <Menu contentPosition="left" useArrow={false}>
+      <MenuLabel
+        className={css.moreButton}
+        isOpenClassName={css.moreButtonIsOpen}
+        ariaLabel={intl.formatMessage({ id: 'ProfilePage.moreActions' })}
+      >
+        <span aria-hidden="true">&#8230;</span>
+      </MenuLabel>
+      <MenuContent className={css.moreMenuContent}>
+        {showRosterButton ? (
+          <MenuItem key="roster">
+            <button
+              type="button"
+              className={css.moreMenuItem}
+              onClick={onToggleSavedCreator}
+              disabled={toggleInProgress}
+            >
+              {toggleInProgress ? (
+                <IconSpinner rootClassName={css.moreMenuItemSpinner} />
+              ) : (
+                <FormattedMessage
+                  id={isSaved ? 'ProfilePage.removeFromRoster' : 'ProfilePage.saveToRoster'}
+                />
+              )}
+            </button>
+          </MenuItem>
         ) : null}
-      </H2>
-      {showLinkToProfileSettingsPage ? (
-        <>
-          <NamedLink className={css.editLinkMobile} name="ProfileSettingsPage">
-            <FormattedMessage id="ProfilePage.editProfileLinkMobile" />
-          </NamedLink>
-          <NamedLink className={css.editLinkDesktop} name="ProfileSettingsPage">
-            <FormattedMessage id="ProfilePage.editProfileLinkDesktop" />
-          </NamedLink>
-        </>
-      ) : null}
-      <RosterSaveButtonMaybe
-        showRosterButton={showRosterButton}
-        isSaved={isSaved}
-        toggleInProgress={toggleInProgress}
-        onToggleSavedCreator={onToggleSavedCreator}
+        <MenuItem key="copy-link">
+          <button type="button" className={css.moreMenuItem} onClick={onCopyProfileLink}>
+            <FormattedMessage id="ProfilePage.copyProfileLink" />
+          </button>
+        </MenuItem>
+      </MenuContent>
+    </Menu>
+  );
+};
+
+// Sidebar card sitting next to the main column — in the same slot a booking
+// calendar would occupy on a typical provider-profile layout. There's no
+// booking flow here, so it surfaces what actually matters for CGC: past
+// collaborations with this creator. Renders nothing when there's none to show,
+// so the main column takes the full width instead of leaving a blank aside.
+export const ProfileSidebar = props => {
+  const { show, collaborationHistory, queryCollaborationHistoryInProgress, currentCreatorListing, intl } = props;
+
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <div className={css.sidebar}>
+      <CollaborationHistoryMaybe
+        show={show}
+        history={collaborationHistory}
+        historyInProgress={queryCollaborationHistoryInProgress}
+        currentCreatorListing={currentCreatorListing}
+        intl={intl}
       />
     </div>
   );
@@ -135,97 +194,173 @@ export const ReviewsErrorMaybe = props => {
   ) : null;
 };
 
-export const MobileReviews = props => {
-  const { reviews, queryReviewsError } = props;
-  const reviewsOfProvider = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_PROVIDER);
-  const reviewsOfCustomer = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_CUSTOMER);
+// Average + count for a single review type, used for the header card's
+// headline score and each tab's score box below.
+const averageOf = reviews => {
+  if (reviews.length === 0) {
+    return { average: null, count: 0 };
+  }
+  const total = reviews.reduce((sum, r) => sum + (r.attributes?.rating || 0), 0);
+  return { average: total / reviews.length, count: reviews.length };
+};
+
+export const ReviewScoreBox = props => {
+  const { reviews } = props;
+  const { average, count } = averageOf(reviews);
+
+  if (average == null) {
+    return (
+      <div className={css.reviewScoreBox}>
+        <span className={css.reviewScoreEmpty}>
+          <FormattedMessage id="ProfilePage.noRatingYet" />
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className={css.mobileReviews}>
-      <H4 as="h2" className={css.mobileReviewsTitle}>
-        <FormattedMessage
-          id="ProfilePage.reviewsFromMyCustomersTitle"
-          values={{ count: reviewsOfProvider.length }}
+    <div className={css.reviewScoreBox}>
+      <ReviewStarBurst className={classNames(css.reviewScoreDecoration, css.reviewScoreDecorationLeft)} />
+      <div className={css.reviewScoreMain}>
+        <span className={css.reviewScoreValue}>{average.toFixed(1)}</span>
+        <ReviewRating
+          rating={Math.round(average)}
+          className={css.reviewScoreStars}
+          reviewStarClassName={css.reviewScoreStar}
         />
-      </H4>
-      <ReviewsErrorMaybe queryReviewsError={queryReviewsError} />
-      <Reviews reviews={reviewsOfProvider} />
-      <H4 as="h2" className={css.mobileReviewsTitle}>
-        <FormattedMessage
-          id="ProfilePage.reviewsAsACustomerTitle"
-          values={{ count: reviewsOfCustomer.length }}
-        />
-      </H4>
-      <ReviewsErrorMaybe queryReviewsError={queryReviewsError} />
-      <Reviews reviews={reviewsOfCustomer} />
+        <span className={css.reviewScoreCount}>
+          <FormattedMessage id="ProfilePage.reviewScoreCount" values={{ count }} />
+        </span>
+      </div>
+      <ReviewStarBurst className={classNames(css.reviewScoreDecoration, css.reviewScoreDecorationRight)} />
     </div>
   );
 };
 
-export const DesktopReviews = props => {
-  const { reviews, queryReviewsError, userTypeRoles, intl } = props;
-  const { customer: isCustomerUserType, provider: isProviderUserType } = userTypeRoles;
+// A single review row: avatar, name, single-star rating + relative date, body.
+// Purpose-built here (rather than the shared <Reviews> component) since that
+// component is also used by CreatorProfilePage and ListingPage's
+// SectionReviews with a different, denser layout — changing it would affect
+// those pages too.
+export const ProfileReviewItem = props => {
+  const { review } = props;
+  // Real useIntl() rather than a drilled-down `intl` prop: MainContent's
+  // `intl` prop can end up shadowed by `...rest` (see ProfilePageComponent),
+  // which would silently corrupt formatRelativeTime for callers that pass a
+  // custom `intl` prop through ProfilePage (e.g. tests).
+  const intl = useIntl();
+  const rating = review.attributes.rating;
 
-  const initialReviewState = !isProviderUserType
-    ? REVIEW_TYPE_OF_CUSTOMER
-    : REVIEW_TYPE_OF_PROVIDER;
-  const [showReviewsType, setShowReviewsType] = useState(initialReviewState);
+  return (
+    <li className={css.reviewItem}>
+      <Avatar className={css.reviewAvatar} user={review.author} />
+      <div className={css.reviewBody}>
+        <div className={css.reviewHeaderRow}>
+          <span className={css.reviewAuthor}>
+            <UserDisplayName user={review.author} intl={intl} />
+          </span>
+          <span className={css.reviewMeta}>
+            <ReviewRating
+              rating={rating}
+              className={css.reviewItemStars}
+              reviewStarClassName={css.reviewItemStar}
+            />
+            <span className={css.reviewRatingValue}>{rating.toFixed(1)}</span>
+            <span className={css.reviewDate}>{relativeTimeFromNow(review.attributes.createdAt, intl)}</span>
+          </span>
+        </div>
+        <p className={css.reviewContent}>{review.attributes.content}</p>
+      </div>
+    </li>
+  );
+};
+
+export const ProfileReviewList = props => {
+  const { reviews } = props;
+
+  // No separate empty-state text here: ReviewScoreBox already shows
+  // "No ratings yet" right above when the list is empty, so a second one
+  // would just duplicate it.
+  if (reviews.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul className={css.reviewList}>
+      {reviews.map(r => (
+        <ProfileReviewItem key={`review-${r.id.uuid}`} review={r} />
+      ))}
+    </ul>
+  );
+};
+
+// A single "Reviews & ratings" block. Most CGC users only ever collect one
+// review type — a brand is reviewed as a customer, a creator as a provider —
+// so the common case is just a score box + list, no tab switcher at all. The
+// switcher only appears for the rare user who holds both roles.
+export const ProfileReviews = props => {
+  const { reviews = [], queryReviewsError, userTypeRoles, intl } = props;
 
   const reviewsOfProvider = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_PROVIDER);
   const reviewsOfCustomer = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_CUSTOMER);
-  const isReviewTypeProviderSelected = showReviewsType === REVIEW_TYPE_OF_PROVIDER;
-  const isReviewTypeCustomerSelected = showReviewsType === REVIEW_TYPE_OF_CUSTOMER;
-  const providerReviewsMaybe = isProviderUserType
-    ? [
-        {
-          text: (
-            <Heading as="h3" rootClassName={css.desktopReviewsTitle}>
-              <FormattedMessage
-                id="ProfilePage.reviewsFromMyCustomersTitle"
-                values={{ count: reviewsOfProvider.length }}
-              />
-            </Heading>
-          ),
-          selected: isReviewTypeProviderSelected,
-          onClick: () => setShowReviewsType(REVIEW_TYPE_OF_PROVIDER),
-        },
-      ]
-    : [];
 
-  const customerReviewsMaybe = isCustomerUserType
-    ? [
-        {
-          text: (
-            <Heading as="h3" rootClassName={css.desktopReviewsTitle}>
-              <FormattedMessage
-                id="ProfilePage.reviewsAsACustomerTitle"
-                values={{ count: reviewsOfCustomer.length }}
-              />
-            </Heading>
-          ),
-          selected: isReviewTypeCustomerSelected,
-          onClick: () => setShowReviewsType(REVIEW_TYPE_OF_CUSTOMER),
-        },
-      ]
-    : [];
-  const desktopReviewTabs = [...providerReviewsMaybe, ...customerReviewsMaybe];
+  const availableTypes = [
+    userTypeRoles.provider
+      ? {
+          type: REVIEW_TYPE_OF_PROVIDER,
+          list: reviewsOfProvider,
+          labelId: 'ProfilePage.reviewsFromMyCustomersTitle',
+        }
+      : null,
+    userTypeRoles.customer
+      ? {
+          type: REVIEW_TYPE_OF_CUSTOMER,
+          list: reviewsOfCustomer,
+          labelId: 'ProfilePage.reviewsAsACustomerTitle',
+        }
+      : null,
+  ].filter(Boolean);
+
+  const [activeType, setActiveType] = useState(availableTypes[0]?.type);
+  const active = availableTypes.find(t => t.type === activeType) || availableTypes[0];
+
+  if (!active) {
+    return null;
+  }
 
   return (
-    <div className={css.desktopReviews}>
-      <div className={css.desktopReviewsWrapper}>
-        <ButtonTabNavHorizontal
-          className={css.desktopReviewsTabNav}
-          tabs={desktopReviewTabs}
-          ariaLabel={intl.formatMessage({ id: 'ProfilePage.screenreader.reviewsNav' })}
-        />
+    <div>
+      {availableTypes.length > 1 ? (
+        <div
+          className={css.reviewTypeTabs}
+          role="tablist"
+          aria-label={intl.formatMessage({ id: 'ProfilePage.screenreader.reviewsNav' })}
+        >
+          {availableTypes.map(t => (
+            <Heading key={t.type} as="h3" rootClassName={css.reviewTypeTabHeading}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={t.type === active.type}
+                className={classNames(css.reviewTypeTab, {
+                  [css.reviewTypeTabActive]: t.type === active.type,
+                })}
+                onClick={() => setActiveType(t.type)}
+              >
+                <FormattedMessage id={t.labelId} values={{ count: t.list.length }} />
+              </button>
+            </Heading>
+          ))}
+        </div>
+      ) : (
+        <Heading as="h3" rootClassName={css.reviewTypeLabel}>
+          <FormattedMessage id={active.labelId} values={{ count: active.list.length }} />
+        </Heading>
+      )}
 
-        <ReviewsErrorMaybe queryReviewsError={queryReviewsError} />
-
-        {isReviewTypeProviderSelected ? (
-          <Reviews reviews={reviewsOfProvider} />
-        ) : (
-          <Reviews reviews={reviewsOfCustomer} />
-        )}
-      </div>
+      <ReviewScoreBox reviews={active.list} />
+      <ReviewsErrorMaybe queryReviewsError={queryReviewsError} />
+      <ProfileReviewList reviews={active.list} intl={intl} />
     </div>
   );
 };
@@ -320,7 +455,7 @@ export const CollaborationHistoryMaybe = props => {
     : null;
 
   return (
-    <div className={css.collaborationHistory}>
+    <div className={css.sidebarCard}>
       <H4 as="h2" className={css.collaborationHistoryTitle}>
         <FormattedMessage id="ProfilePage.collaborationHistoryTitle" />
       </H4>
@@ -365,12 +500,105 @@ export const CollaborationHistoryMaybe = props => {
   );
 };
 
-export const MainContent = props => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export const ProfileHeaderCard = props => {
+  const {
+    user,
+    displayName,
+    userTypeRoles,
+    reviews = [],
+    location,
+    categoryLabels = [],
+    categoryExtraCount = 0,
+    headerCta,
+    actionsMenu,
+    intl,
+  } = props;
 
+  const reviewsOfProvider = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_PROVIDER);
+  const reviewsOfCustomer = reviews.filter(r => r.attributes.type === REVIEW_TYPE_OF_CUSTOMER);
+  const primaryReviews = userTypeRoles.provider ? reviewsOfProvider : reviewsOfCustomer;
+  const { average, count } = averageOf(primaryReviews);
+
+  const roleLabelId = userTypeRoles.provider
+    ? 'ProfilePage.roleLabelCreator'
+    : 'ProfilePage.roleLabelBrand';
+
+  const isVerified = isUserAuthorized(user);
+
+  return (
+    <div className={css.headerCard}>
+      <div className={css.avatarWrapper}>
+        <AvatarLarge className={css.avatar} user={user} disableProfileLink />
+        {isVerified ? (
+          <IconVerified
+            className={css.verifiedBadge}
+            aria-label={intl.formatMessage({ id: 'ProfilePage.verifiedBadgeLabel' })}
+          />
+        ) : null}
+      </div>
+
+      <div className={css.headerInfo}>
+        <Heading as="h2" rootClassName={css.heading}>
+          {displayName}
+        </Heading>
+        <span className={css.roleLabel}>
+          <FormattedMessage id={roleLabelId} />
+        </span>
+
+        {location ? (
+          <div className={css.locationRow}>
+            <IconLocation className={css.locationIcon} />
+            <span className={css.locationText}>{location}</span>
+          </div>
+        ) : null}
+
+        <div className={css.metaRow}>
+          <div className={css.metaColumn}>
+            <span className={css.metaLabel}>
+              <FormattedMessage id="ProfilePage.metaRatingLabel" />
+            </span>
+            {average != null ? (
+              <a href="#profile-reviews" className={css.metaValueLink}>
+                <ReviewRating
+                  rating={Math.round(average)}
+                  className={css.reviewStars}
+                  reviewStarClassName={css.reviewStar}
+                />
+                <span className={css.metaValue}>
+                  {average.toFixed(1)} ·{' '}
+                  <FormattedMessage id="ProfilePage.reviewCount" values={{ count }} />
+                </span>
+              </a>
+            ) : (
+              <span className={css.metaValue}>
+                <FormattedMessage id="ProfilePage.noRatingYet" />
+              </span>
+            )}
+          </div>
+
+          {categoryLabels.length > 0 ? (
+            <div className={css.metaColumn}>
+              <span className={css.metaLabel}>
+                <FormattedMessage id="ProfilePage.metaCategoryLabel" />
+              </span>
+              <span className={css.metaValue}>
+                {categoryLabels.join(', ')}
+                {categoryExtraCount > 0 ? ` +${categoryExtraCount}` : ''}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className={css.headerActions}>
+        {actionsMenu}
+        {headerCta}
+      </div>
+    </div>
+  );
+};
+
+export const MainContent = props => {
   const {
     userShowError,
     bio,
@@ -385,27 +613,17 @@ export const MainContent = props => {
     intl,
     hideReviews,
     userTypeRoles,
-    showCollaborationHistory,
-    collaborationHistory = [],
-    queryCollaborationHistoryInProgress,
+    isCurrentUser,
   } = props;
 
-  const hasListings = listings.length > 0;
-  const hasMatchMedia = typeof window !== 'undefined' && window?.matchMedia;
-  const isMobileLayout =
-    mounted && hasMatchMedia
-      ? window.matchMedia(`(max-width: ${MAX_MOBILE_SCREEN_WIDTH}px)`)?.matches
-      : true;
-
-  const hasBio = !!bio;
+  const visibleListings = listings.filter(
+    l => !l.attributes.deleted && l.attributes.state === 'published'
+  );
+  const hasListings = visibleListings.length > 0;
   const bioWithLinks = richText(bio, {
     linkify: true,
     longWordMinLength: MIN_LENGTH_FOR_LONG_WORDS,
     longWordClass: css.longWord,
-  });
-
-  const listingsContainerClasses = classNames(css.listingsContainer, {
-    [css.withBioMissingAbove]: !hasBio,
   });
 
   if (userShowError || queryListingsError) {
@@ -415,12 +633,33 @@ export const MainContent = props => {
       </p>
     );
   }
+
+  const aboutTitleId = userTypeRoles.provider
+    ? 'ProfilePage.aboutTitleCreator'
+    : 'ProfilePage.aboutTitleBrand';
+
+  const listingsTitleId = userTypeRoles.provider
+    ? isCurrentUser
+      ? 'ProfilePage.listingsTitleOwnCreator'
+      : 'ProfilePage.listingsTitleCreator'
+    : isCurrentUser
+    ? 'ProfilePage.listingsTitleOwnBrand'
+    : 'ProfilePage.listingsTitleBrand';
+
   return (
     <div>
-      <H2 as="h1" className={css.desktopHeading}>
-        <FormattedMessage id="ProfilePage.desktopHeading" values={{ name: displayName }} />
-      </H2>
-      {hasBio ? <p className={css.bio}>{bioWithLinks}</p> : null}
+      <section className={css.section}>
+        <Heading as="h2" rootClassName={css.sectionHeading}>
+          <FormattedMessage id={aboutTitleId} />
+        </Heading>
+        {bio ? (
+          <p className={css.bio}>{bioWithLinks}</p>
+        ) : (
+          <p className={css.bioEmpty}>
+            <FormattedMessage id="ProfilePage.aboutEmpty" />
+          </p>
+        )}
+      </section>
 
       {displayName ? (
         <CustomUserFields
@@ -431,43 +670,30 @@ export const MainContent = props => {
         />
       ) : null}
 
-      <CollaborationHistoryMaybe
-        show={showCollaborationHistory}
-        history={collaborationHistory}
-        historyInProgress={queryCollaborationHistoryInProgress}
-        currentCreatorListing={listings.find(
-          l => l?.attributes?.publicData?.listingType === 'creator-profile'
-        )}
-        intl={intl}
-      />
-
       {hasListings ? (
-        <div className={listingsContainerClasses}>
-          <H4 as="h2" className={css.listingsTitle}>
-            <FormattedMessage id="ProfilePage.listingsTitle" values={{ count: listings.length }} />
-          </H4>
-          <ul className={css.listings}>
-            {listings.map(l => (
-              <li className={css.listing} key={l.id.uuid}>
-                <ListingCard listing={l} showAuthorInfo={false} />
-              </li>
+        <section className={css.section}>
+          <Heading as="h2" rootClassName={css.sectionHeading}>
+            <FormattedMessage id={listingsTitleId} values={{ count: visibleListings.length }} />
+          </Heading>
+          <div className={css.listingsGrid}>
+            {visibleListings.map(l => (
+              <ListingCard key={l.id.uuid} listing={l} showAuthorInfo={false} />
             ))}
-          </ul>
-        </div>
+          </div>
+        </section>
       ) : null}
-      {hideReviews ? null : isMobileLayout ? (
-        <MobileReviews
-          reviews={reviews}
-          queryReviewsError={queryReviewsError}
-          userTypeRoles={userTypeRoles}
-        />
-      ) : (
-        <DesktopReviews
-          reviews={reviews}
-          queryReviewsError={queryReviewsError}
-          userTypeRoles={userTypeRoles}
-          intl={intl}
-        />
+      {hideReviews ? null : (
+        <section id="profile-reviews" className={css.section}>
+          <Heading as="h2" rootClassName={css.sectionHeading}>
+            <FormattedMessage id="ProfilePage.reviewsAndRatingsTitle" />
+          </Heading>
+          <ProfileReviews
+            reviews={reviews}
+            queryReviewsError={queryReviewsError}
+            userTypeRoles={userTypeRoles}
+            intl={intl}
+          />
+        </section>
       )}
     </div>
   );
@@ -509,6 +735,11 @@ export const ProfilePageComponent = props => {
     toggleInProgress,
     onToggleSavedCreator,
     onQueryCollaborationHistory,
+    onLogout,
+    reviews = [],
+    queryReviewsError,
+    collaborationHistory = [],
+    queryCollaborationHistoryInProgress,
     ...rest
   } = props;
   const isVariant = pathParams.variant?.length > 0;
@@ -523,15 +754,21 @@ export const ProfilePageComponent = props => {
   // history: only offered to a brand (viewer has the customer role) looking
   // at a creator's own profile (someone who has published at least one
   // creator-profile listing), not on the creator's own view of their profile.
-  const isCreatorProfileUser = listings.some(
+  const creatorProfileListing = listings.find(
     l => l?.attributes?.publicData?.listingType === 'creator-profile'
   );
+  const isCreatorProfileUser = !!creatorProfileListing;
   const { customer: viewerIsBrand } = getCurrentUserTypeRoles(config, currentUser);
   const showRosterButton = !isCurrentUser && isCreatorProfileUser && viewerIsBrand && !!currentUser?.id;
   const showCollaborationHistory = showRosterButton;
   const savedCreatorIds = currentUser?.attributes?.profile?.privateData?.savedCreatorIds || [];
   const isSavedCreator = !!profileUser?.id?.uuid && savedCreatorIds.includes(profileUser.id.uuid);
   const handleToggleSavedCreator = () => onToggleSavedCreator(profileUser.id.uuid);
+  const handleCopyProfileLink = () => {
+    if (typeof window !== 'undefined' && window.navigator?.clipboard) {
+      window.navigator.clipboard.writeText(window.location.href).catch(() => {});
+    }
+  };
   const creatorId = profileUser?.id?.uuid;
 
   useEffect(() => {
@@ -613,6 +850,61 @@ export const ProfilePageComponent = props => {
     return null;
   }
 
+  const topbarDisplayName = currentUser?.attributes?.profile?.displayName;
+  const topbarRole = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
+
+  // Header meta: location comes straight off the user's own publicData (no
+  // dedicated user field configured yet — see PLAN-PROFILEPAGE-REDESIGN.md
+  // §2.3). Category differs by role: a creator's niche lives on their
+  // creator-profile listing (same source ExploreCreatorsPage/CreatorProfilePage
+  // read), a brand's industry (if ever added) would live on the user itself.
+  const location = publicData?.location || publicData?.city || null;
+
+  let categoryLabels = [];
+  let categoryExtraCount = 0;
+  if (userTypeRoles.provider) {
+    const creatorListingPublicData = creatorProfileListing?.attributes?.publicData || {};
+    const { nicheLabels } = getCreatorFieldLabels(
+      creatorListingPublicData,
+      config.listing.listingFields
+    );
+    categoryLabels = nicheLabels.slice(0, MAX_CATEGORY_LABELS);
+    categoryExtraCount = Math.max(nicheLabels.length - MAX_CATEGORY_LABELS, 0);
+  } else if (publicData?.industry) {
+    categoryLabels = [publicData.industry];
+  }
+
+  const showCollabCta = viewerIsBrand && isCreatorProfileUser && !isCurrentUser;
+
+  const headerCta =
+    mounted && isCurrentUser ? (
+      <NamedLink className={css.ctaButton} name="ProfileSettingsPage">
+        <FormattedMessage id="ProfilePage.editProfileLinkDesktop" />
+      </NamedLink>
+    ) : showCollabCta ? (
+      <NamedLink
+        className={css.ctaButton}
+        name="CreatorProfilePage"
+        params={{ id: creatorProfileListing.id.uuid }}
+      >
+        <FormattedMessage id="ProfilePage.collabCta" />
+      </NamedLink>
+    ) : null;
+
+  const actionsMenu = (
+    <ProfileActionsMenu
+      showRosterButton={showRosterButton}
+      isSaved={isSavedCreator}
+      toggleInProgress={toggleInProgress}
+      onToggleSavedCreator={handleToggleSavedCreator}
+      onCopyProfileLink={handleCopyProfileLink}
+    />
+  );
+
+  const pageHeadingId = userTypeRoles.provider
+    ? 'ProfilePage.pageHeadingCreator'
+    : 'ProfilePage.pageHeadingBrand';
+
   // This is rendering normal profile page (not preview for pending-approval)
   return (
     <Page
@@ -628,37 +920,57 @@ export const ProfilePageComponent = props => {
         name: schemaTitle,
       }}
     >
-      <LayoutSideNavigation
-        sideNavClassName={css.aside}
-        topbar={<TopbarContainer />}
-        sideNav={
-          <AsideContent
-            user={profileUser}
-            showLinkToProfileSettingsPage={mounted && isCurrentUser}
-            displayName={displayName}
-            showRosterButton={showRosterButton}
-            isSaved={isSavedCreator}
-            toggleInProgress={toggleInProgress}
-            onToggleSavedCreator={handleToggleSavedCreator}
-          />
+      <LayoutSingleColumn
+        topbar={
+          <DashboardTopbar displayName={topbarDisplayName} role={topbarRole} onLogout={onLogout} />
         }
         footer={<FooterContainer />}
       >
-        <MainContent
-          bio={bio}
-          displayName={displayName}
-          userShowError={userShowError}
-          publicData={publicData}
-          metadata={metadata}
-          userFieldConfig={userFields}
-          hideReviews={hasNoViewingRightsOnPrivateMarketplace}
-          intl={intl}
-          userTypeRoles={userTypeRoles}
-          listings={listings}
-          showCollaborationHistory={showCollaborationHistory}
-          {...rest}
-        />
-      </LayoutSideNavigation>
+        <div className={css.root}>
+          <Heading as="h1" rootClassName={css.pageHeading}>
+            <FormattedMessage id={pageHeadingId} />
+          </Heading>
+          <div className={css.layout}>
+            <div className={css.main}>
+              <ProfileHeaderCard
+                user={profileUser}
+                displayName={displayName}
+                userTypeRoles={userTypeRoles}
+                reviews={reviews}
+                location={location}
+                categoryLabels={categoryLabels}
+                categoryExtraCount={categoryExtraCount}
+                headerCta={headerCta}
+                actionsMenu={actionsMenu}
+                intl={intl}
+              />
+              <MainContent
+                bio={bio}
+                displayName={displayName}
+                userShowError={userShowError}
+                publicData={publicData}
+                metadata={metadata}
+                userFieldConfig={userFields}
+                hideReviews={hasNoViewingRightsOnPrivateMarketplace}
+                intl={intl}
+                userTypeRoles={userTypeRoles}
+                isCurrentUser={isCurrentUser}
+                listings={listings}
+                reviews={reviews}
+                queryReviewsError={queryReviewsError}
+                {...rest}
+              />
+            </div>
+            <ProfileSidebar
+              show={showCollaborationHistory}
+              collaborationHistory={collaborationHistory}
+              queryCollaborationHistoryInProgress={queryCollaborationHistoryInProgress}
+              currentCreatorListing={creatorProfileListing}
+              intl={intl}
+            />
+          </div>
+        </div>
+      </LayoutSingleColumn>
     </Page>
   );
 };
@@ -702,6 +1014,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => ({
   onToggleSavedCreator: creatorId => dispatch(toggleSavedCreator(creatorId)),
   onQueryCollaborationHistory: creatorId => dispatch(queryCollaborationHistory(creatorId)),
+  onLogout: () => dispatch(logout()),
 });
 
 const ProfilePage = compose(connect(mapStateToProps, mapDispatchToProps))(ProfilePageComponent);

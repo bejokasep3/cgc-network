@@ -11,7 +11,7 @@ import {
 import { Heading, Modal } from '../../components';
 import UserCard from './UserCard/UserCard';
 import InquiryForm from './InquiryForm/InquiryForm';
-import { fetchOwnProjectBriefs } from './ListingPage.duck';
+import { fetchOwnProjects } from './ListingPage.duck';
 
 import css from './ListingPage.module.css';
 
@@ -34,7 +34,7 @@ const SectionAuthorMaybe = props => {
   } = props;
 
   const dispatch = useDispatch();
-  const { ownProjectBriefs, fetchOwnProjectBriefsInProgress } = useSelector(
+  const { ownProjects, fetchOwnProjectsInProgress } = useSelector(
     state => state.ListingPage
   );
 
@@ -46,7 +46,7 @@ const SectionAuthorMaybe = props => {
     listing?.attributes?.publicData?.listingType === CREATOR_PROFILE_LISTING_TYPE;
   useEffect(() => {
     if (isInquiryModalOpen && isCreatorProfileListing && currentUser?.id) {
-      dispatch(fetchOwnProjectBriefs());
+      dispatch(fetchOwnProjects());
     }
   }, [isInquiryModalOpen, isCreatorProfileListing, currentUser?.id, dispatch]);
 
@@ -60,8 +60,8 @@ const SectionAuthorMaybe = props => {
   const isNegotiationProcess = isNegotiationProcessAlias(transactionProcessAlias);
   const showContact = !(isInquiryProcess || (isNegotiationProcess && unitType === OFFER));
 
-  const briefOptions = isCreatorProfileListing
-    ? ownProjectBriefs.map(l => ({ id: l.id.uuid, title: l.attributes.title }))
+  const projectOptions = isCreatorProfileListing
+    ? ownProjects.map(l => ({ id: l.id.uuid, title: l.attributes.title }))
     : [];
 
   return (
@@ -94,8 +94,8 @@ const SectionAuthorMaybe = props => {
           onSubmit={onSubmitInquiry}
           inProgress={sendInquiryInProgress}
           isInviteFlow={isCreatorProfileListing}
-          briefOptions={briefOptions}
-          briefOptionsInProgress={fetchOwnProjectBriefsInProgress}
+          projectOptions={projectOptions}
+          projectOptionsInProgress={fetchOwnProjectsInProgress}
         />
       </Modal>
     </section>

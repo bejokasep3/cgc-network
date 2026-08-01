@@ -13,7 +13,7 @@
 
 // Actions that require an active brand subscription.
 export const BRAND_GATED_ACTIONS = {
-  POST_BRIEF: 'postBrief',
+  POST_PROJECT: 'postProject',
   CONTACT_CREATOR: 'contactCreator',
   BOOK_CREATOR: 'bookCreator',
 };

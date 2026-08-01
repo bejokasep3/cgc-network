@@ -1,0 +1,197 @@
+@import '../../styles/customMediaQueries.css';
+
+/* ================ Page background ================ */
+
+/* Subtle dot-grid so the plain white canvas doesn't feel empty. Full-bleed
+   and continuous across sections (unlike the earlier floating blob accents),
+   so there's nothing to clip or look "boxy". */
+.page {
+  background-color: var(--colorWhite);
+  background-image: radial-gradient(circle, rgba(99, 102, 241, 0.55) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+/* ================ Hero ================ */
+
+.heroInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 24px 40px 24px;
+
+  @media (--viewportLarge) {
+    padding: 96px 24px 64px 24px;
+  }
+}
+
+.heroHeading {
+  composes: h1 from global;
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+  margin: 0 0 20px 0;
+  letter-spacing: -0.02em;
+
+  @media (--viewportMedium) {
+    font-size: 44px;
+  }
+}
+
+.heroSubtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-width: 560px;
+  margin: 0 0 32px 0;
+}
+
+.ctaRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroCta {
+  composes: marketplaceBodyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  border-radius: var(--borderRadiusMedium);
+  padding: 16px 28px;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover,
+  &:focus {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+  }
+}
+
+.trustRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.avatarStack {
+  display: flex;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--colorGrey200);
+  border: 2px solid var(--colorWhite);
+  margin-left: -8px;
+
+  &:first-child {
+    margin-left: 0;
+  }
+}
+
+.trustText {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+/* ================ Pipeline (feature cards) ================ */
+
+.pipeline {
+  max-width: var(--contentMaxWidth);
+  margin: 0 auto;
+  padding: 8px 24px 96px 24px;
+  text-align: center;
+}
+
+.pipelineHeading {
+  composes: h1 from global;
+  font-size: 32px;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+  margin: 0 0 12px 0;
+
+  @media (--viewportMedium) {
+    font-size: 40px;
+  }
+}
+
+.pipelineSubtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-width: 560px;
+  margin: 0 auto 48px auto;
+}
+
+.pipelineGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  text-align: left;
+
+  @media (--viewportMedium) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (--viewportLarge) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.pipelineCard {
+  background-image: linear-gradient(160deg, rgba(219, 228, 255, 0.35) 0%, rgba(219, 228, 255, 0) 70%);
+  background-color: var(--colorGrey50);
+  border-radius: var(--borderRadiusMedium);
+  padding: 28px 20px;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: #eef2ff;
+  }
+
+  &:hover .pipelineCardBody {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 8px;
+  }
+}
+
+.pipelineIndex {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightBold);
+  margin-bottom: 16px;
+}
+
+.pipelineCardTitle {
+  composes: h3 from global;
+  margin: 0 0 8px 0;
+}
+
+.pipelineCardBody {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+}

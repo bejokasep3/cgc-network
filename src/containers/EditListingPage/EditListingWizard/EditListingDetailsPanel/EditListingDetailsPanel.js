@@ -20,7 +20,7 @@ import { isBookingProcessAlias } from '../../../../transactions/transaction';
 // Import shared components
 import { H3, ListingLink } from '../../../../components';
 
-// Brands post project briefs through this same panel — the heading and intro
+// Brands post projects through this same panel — the heading and intro
 // copy read as "post a project" for that listing type only, without touching
 // the shared wizard markup used by other listing types (CGC-FRONTEND-PLAN.md Phase 6).
 const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
@@ -373,7 +373,7 @@ const EditListingDetailsPanel = props => {
       }
     : isProjectBrief
     ? {
-        id: 'EditListingDetailsPanel.createProjectBriefTitle',
+        id: 'EditListingDetailsPanel.createProjectTitle',
         values: { lineBreak: <br /> },
         messageProps: {},
       }
@@ -395,8 +395,8 @@ const EditListingDetailsPanel = props => {
         <FormattedMessage id={panelHeadingProps.id} values={{ ...panelHeadingProps.values }} />
       </H3>
       {!isPublished && isProjectBrief ? (
-        <p className={css.projectBriefIntro}>
-          <FormattedMessage id="EditListingDetailsPanel.projectBriefIntro" />
+        <p className={css.projectIntro}>
+          <FormattedMessage id="EditListingDetailsPanel.projectIntro" />
         </p>
       ) : null}
 

@@ -1,0 +1,227 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 28px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.noResults {
+  composes: p from global;
+  color: var(--colorGrey600);
+}
+
+/* ================ Filters ================ */
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.filtersButton,
+.filterTab {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton), color var(--transitionStyleButton);
+}
+
+.filtersButton {
+  background-color: var(--colorGrey900);
+  color: var(--colorWhite);
+}
+
+.filterTab {
+  background-color: var(--colorWhite);
+  color: var(--colorGrey600);
+  border: 1px solid var(--colorGrey100);
+
+  &:hover {
+    border-color: var(--marketplaceColor);
+    color: var(--marketplaceColor);
+  }
+}
+
+.filterTabActive {
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  border-color: var(--marketplaceColor);
+
+  &:hover {
+    color: var(--colorWhite);
+  }
+}
+
+.filterTabDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+
+  &:hover {
+    border-color: var(--colorGrey100);
+    color: var(--colorGrey600);
+  }
+}
+
+/* ================ Grid & card ================ */
+
+/* auto-fill instead of fixed breakpoints: column count adapts continuously
+   to the viewport (roughly 7 across on a fullscreen desktop monitor,
+   1 across on mobile) rather than jumping at a few hardcoded widths. */
+.grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-image: linear-gradient(160deg, rgba(219, 228, 255, 0.4) 0%, rgba(219, 228, 255, 0) 70%);
+  background-color: var(--colorGrey50);
+  border-radius: 28px;
+  padding: 20px;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: #eef2ff;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.avatar {
+  composes: marketplaceBodyFontStyles from global;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightBold);
+}
+
+.name {
+  composes: marketplaceSmallFontStyles from global;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+.likeButton {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: var(--colorGrey300);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.likeButtonActive {
+  color: var(--marketplaceColor);
+}
+
+.thumbnail {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #dbe4ff 0%, #eef2ff 100%);
+}
+
+.thumbnailImage {
+  width: 100%;
+  height: 100%;
+}
+
+.inviteButton {
+  composes: marketplaceSmallFontStyles from global;
+  display: block;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--colorGrey900);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 12px 0;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    color: var(--colorWhite);
+    text-decoration: none;
+  }
+}
+
+.inviteButtonDisabled {
+  background-color: var(--colorGrey100);
+  color: var(--colorGrey500);
+  cursor: not-allowed;
+
+  &:hover {
+    background-color: var(--colorGrey100);
+  }
+}

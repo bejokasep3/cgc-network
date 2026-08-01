@@ -126,7 +126,7 @@ describe('ProfilePage', () => {
         config,
       });
     });
-    expect(screen.getByText('ProfilePage.desktopHeading')).toBeInTheDocument();
+    expect(screen.getByText('ProfilePage.pageHeadingCreator')).toBeInTheDocument();
     expect(screen.getByText('I am a great cook!')).toBeInTheDocument();
   });
 
@@ -164,7 +164,11 @@ describe('ProfilePage', () => {
       });
     });
 
-    expect(screen.getByText('ProfilePage.listingsTitle')).toBeInTheDocument();
+    // props.params is {} in this fixture (no :id), so isCurrentUser evaluates
+    // false even though the profile being viewed is technically "your own" —
+    // same quirk the original test's generic 'ProfilePage.listingsTitle' key
+    // never surfaced.
+    expect(screen.getByText('ProfilePage.listingsTitleCreator')).toBeInTheDocument();
     expect(screen.getByText('l1 title')).toBeInTheDocument();
     expect(screen.getByText('ListingCard.price')).toBeInTheDocument();
   });
@@ -185,8 +189,11 @@ describe('ProfilePage', () => {
 
     expect(screen.getByText('Awesome!')).toBeInTheDocument();
     expect(screen.getByText('reviewerA display name')).toBeInTheDocument();
-    expect(screen.getByText('March 2024')).toBeInTheDocument();
-    expect(screen.getAllByTitle('3/5')).toHaveLength(2);
+    // Relative time (e.g. "1 year ago"), rendered via intl.formatRelativeTime.
+    expect(screen.getByText(/ago$/)).toBeInTheDocument();
+    // Header card rating + review-type score box + the review item's own
+    // single rating = 3.
+    expect(screen.getAllByTitle('3/5')).toHaveLength(3);
   });
 });
 

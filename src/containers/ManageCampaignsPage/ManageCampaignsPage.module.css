@@ -1,0 +1,393 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  padding: 24px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 24px 40px 120px 40px;
+  }
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-width: 640px;
+  margin: 0;
+}
+
+.newCampaignButton {
+  composes: marketplaceSmallFontStyles from global;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 14px 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
+}
+
+/* ================ Tabs ================ */
+
+.tabRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  border-bottom: 1px solid var(--colorGrey100);
+  margin-bottom: 24px;
+}
+
+.tab {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: none;
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  cursor: pointer;
+  padding: 0 0 14px 0;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.tabActive {
+  color: var(--marketplaceColor);
+  border-bottom-color: var(--marketplaceColor);
+}
+
+/* ================ Filters ================ */
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.filterSelect {
+  composes: marketplaceSmallFontStyles from global;
+  min-width: 160px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 8px 12px;
+  color: var(--colorGrey700);
+  background-color: var(--colorWhite);
+  cursor: pointer;
+}
+
+/* ================ Shipment pills / info box ================ */
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pill {
+  composes: marketplaceSmallFontStyles from global;
+  border: 1px solid var(--colorGrey100);
+  background-color: var(--colorWhite);
+  color: var(--colorGrey700);
+  font-weight: var(--fontWeightSemiBold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: border-color var(--transitionStyleButton), color var(--transitionStyleButton);
+
+  &:hover {
+    border-color: var(--marketplaceColor);
+    color: var(--marketplaceColor);
+  }
+}
+
+.pillActive {
+  border-color: var(--marketplaceColor);
+  background-color: var(--colorGrey50);
+  color: var(--marketplaceColor);
+}
+
+.infoBox {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 24px;
+  color: var(--colorGrey700);
+
+  & svg {
+    flex: 0 0 auto;
+    color: var(--colorGrey700);
+  }
+}
+
+.shipmentListHeader {
+  composes: marketplaceTinyFontStyles from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 1fr 1fr 0.8fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  border-bottom: 1px solid var(--colorGrey100);
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.shipmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 1fr 1fr 0.8fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--colorGrey100);
+  transition: background-color var(--transitionStyleButton);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--colorGrey50);
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+
+    & .rowDate {
+      text-align: left;
+    }
+
+    & .rowDate::before {
+      content: attr(data-label) ': ';
+      color: var(--colorGrey500);
+      font-weight: var(--fontWeightRegular);
+    }
+  }
+}
+
+/* ================ List ================ */
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  background-color: var(--colorWhite);
+  overflow: hidden;
+}
+
+.rowInfo {
+  min-width: 0;
+}
+
+.rowTitle {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowHighlight {
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.rowPayment {
+  composes: marketplaceTinyFontStyles from global;
+}
+
+.rowDate {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  white-space: nowrap;
+}
+
+.dueBadge {
+  composes: marketplaceTinyFontStyles from global;
+  background-color: var(--colorFail);
+  color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--colorGrey100);
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton);
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.toggleOn {
+  background-color: var(--marketplaceColor);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--colorWhite);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform var(--transitionStyleButton);
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(16px);
+}
+
+.visibilityBadge {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: var(--fontWeightSemiBold);
+  background-color: var(--colorGrey100);
+  color: var(--colorGrey600);
+}
+
+/* One row per project-brief listing: project name, creators to approve,
+   actions required, orders, posted date, visibility — laid out as a bordered
+   card (.list) with the header and each row as flush, divided sections. */
+
+.projectListHeader {
+  composes: marketplaceTinyFontStyles from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 1fr 1fr 0.6fr 0.8fr 0.8fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  border-bottom: 1px solid var(--colorGrey100);
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.projectRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 1fr 1fr 0.6fr 0.8fr 0.8fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--colorGrey100);
+  transition: background-color var(--transitionStyleButton);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--colorGrey50);
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+
+    & .rowDate,
+    & .rowPayment {
+      text-align: left;
+    }
+
+    & .rowDate::before,
+    & .rowPayment::before {
+      content: attr(data-label) ': ';
+      color: var(--colorGrey500);
+      font-weight: var(--fontWeightRegular);
+    }
+  }
+}
+
+.emptyState {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey700);
+  padding: 32px 24px;
+  text-align: center;
+}

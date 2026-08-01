@@ -8,7 +8,7 @@ import css from './TransactionPanel.module.css';
  * Renders the "invite creator to collaborate" context (CGC-FRONTEND-PLAN.md §3.3)
  * when a brand attached one of its own project-brief listings to the inquiry
  * that started this transaction. Without this, the creator only sees a plain
- * message with no indication which brief they were invited to.
+ * message with no indication which project they were invited to.
  *
  * @component
  * @param {Object} props
@@ -19,9 +19,9 @@ import css from './TransactionPanel.module.css';
  */
 const InvitationBannerMaybe = props => {
   const { protectedData, isCustomer, providerName } = props;
-  const briefTitle = protectedData?.inviteBriefTitle;
+  const projectTitle = protectedData?.inviteBriefTitle;
 
-  if (!briefTitle) {
+  if (!projectTitle) {
     return null;
   }
 
@@ -31,7 +31,7 @@ const InvitationBannerMaybe = props => {
       <span>
         <FormattedMessage
           id={isCustomer ? 'TransactionPanel.invitationBannerCustomer' : 'TransactionPanel.invitationBannerProvider'}
-          values={{ briefTitle, providerName }}
+          values={{ projectTitle, providerName }}
         />
       </span>
     </div>

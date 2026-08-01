@@ -35,8 +35,8 @@ import css from './InquiryForm.module.css';
  * @param {boolean} [props.isInviteFlow] - CGC only: true when contacting a creator-profile
  *   listing, so the brand can attach one of its own project-brief listings to the inquiry
  *   (CGC-FRONTEND-PLAN.md §3.3) instead of sending a bare message.
- * @param {Array<{id: string, title: string}>} [props.briefOptions] - The brand's own open
- *   project-brief listings, offered as the "attach a brief" choices.
+ * @param {Array<{id: string, title: string}>} [props.projectOptions] - The brand's own open
+ *   project-brief listings, offered as the "attach a project" choices.
  * @returns {JSX.Element} inquiry form component
  */
 const InquiryForm = props => (
@@ -54,7 +54,7 @@ const InquiryForm = props => (
         authorDisplayName,
         sendInquiryError,
         isInviteFlow = false,
-        briefOptions = [],
+        projectOptions = [],
       } = fieldRenderProps;
 
       const intl = useIntl();
@@ -80,7 +80,7 @@ const InquiryForm = props => (
       const submitDisabled = submitInProgress;
 
       const headingId = isInviteFlow ? 'InquiryForm.inviteHeading' : 'InquiryForm.heading';
-      const hasBriefOptions = isInviteFlow && briefOptions.length > 0;
+      const hasProjectOptions = isInviteFlow && projectOptions.length > 0;
 
       return (
         <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
@@ -88,17 +88,17 @@ const InquiryForm = props => (
           <Heading as="h2" rootClassName={css.heading}>
             <FormattedMessage id={headingId} values={{ listingTitle, authorDisplayName }} />
           </Heading>
-          {hasBriefOptions ? (
+          {hasProjectOptions ? (
             <FieldSelect
               className={css.field}
               name="inviteBriefId"
               id={formId ? `${formId}.inviteBriefId` : 'inviteBriefId'}
-              label={intl.formatMessage({ id: 'InquiryForm.briefLabel' })}
+              label={intl.formatMessage({ id: 'InquiryForm.projectLabel' })}
             >
-              <option value="">{intl.formatMessage({ id: 'InquiryForm.briefNoneOption' })}</option>
-              {briefOptions.map(brief => (
-                <option key={brief.id} value={brief.id}>
-                  {brief.title}
+              <option value="">{intl.formatMessage({ id: 'InquiryForm.projectNoneOption' })}</option>
+              {projectOptions.map(project => (
+                <option key={project.id} value={project.id}>
+                  {project.title}
                 </option>
               ))}
             </FieldSelect>

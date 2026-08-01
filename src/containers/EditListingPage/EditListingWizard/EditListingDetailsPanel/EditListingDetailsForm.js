@@ -29,7 +29,7 @@ import css from './EditListingDetailsForm.module.css';
 
 const TITLE_MAX_LENGTH = 60;
 
-// Brands post project briefs through the same wizard creators use to post their
+// Brands post projects through the same wizard creators use to post their
 // profile — this reads the title/description copy as "post a project" for that
 // listing type only (CGC-FRONTEND-PLAN.md Phase 6).
 const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
@@ -435,12 +435,12 @@ const EditListingDetailsForm = props => (
               type="text"
               label={intl.formatMessage({
                 id: isProjectBrief
-                  ? 'EditListingDetailsForm.projectBrief.title'
+                  ? 'EditListingDetailsForm.project.title'
                   : 'EditListingDetailsForm.title',
               })}
               placeholder={intl.formatMessage({
                 id: isProjectBrief
-                  ? 'EditListingDetailsForm.projectBrief.titlePlaceholder'
+                  ? 'EditListingDetailsForm.project.titlePlaceholder'
                   : 'EditListingDetailsForm.titlePlaceholder',
               })}
               maxLength={TITLE_MAX_LENGTH}
@@ -457,12 +457,12 @@ const EditListingDetailsForm = props => (
               type="textarea"
               label={intl.formatMessage({
                 id: isProjectBrief
-                  ? 'EditListingDetailsForm.projectBrief.description'
+                  ? 'EditListingDetailsForm.project.description'
                   : 'EditListingDetailsForm.description',
               })}
               placeholder={intl.formatMessage({
                 id: isProjectBrief
-                  ? 'EditListingDetailsForm.projectBrief.descriptionPlaceholder'
+                  ? 'EditListingDetailsForm.project.descriptionPlaceholder'
                   : 'EditListingDetailsForm.descriptionPlaceholder',
               })}
               validate={required(
