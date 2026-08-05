@@ -55,7 +55,25 @@
 }
 
 .planName {
+  margin: 0 0 4px 0;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   margin: 0 0 16px 0;
+}
+
+.priceAmount {
+  font-size: 32px;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+}
+
+.priceInterval {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey500);
 }
 
 .benefits {

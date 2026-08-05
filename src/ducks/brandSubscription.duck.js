@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import {
   fetchSubscriptionStatus,
+  fetchSubscriptionPrice,
   createSubscriptionCheckoutSession,
   createBillingPortalSession,
 } from '../util/api';
@@ -21,6 +22,11 @@ const initialState = {
   fetchError: null,
   // null means "not fetched yet", which is different from "not subscribed".
   status: null,
+  // { unitAmount, currency, interval, intervalCount } | null — see
+  // fetchBrandSubscriptionPrice below (IMPLEMENTATION-PLAN.md F9.2).
+  price: null,
+  priceFetchInProgress: false,
+  priceFetchError: null,
   checkoutInProgress: false,
   checkoutError: null,
   billingPortalInProgress: false,
@@ -31,6 +37,15 @@ export const fetchBrandSubscription = createAsyncThunk(
   'app/brandSubscription/fetch',
   (_, { rejectWithValue }) =>
     fetchSubscriptionStatus().catch(e => rejectWithValue(storableError(e)))
+);
+
+// The live Stripe price for the brand plan (IMPLEMENTATION-PLAN.md F9.2) —
+// SubscriptionPage must not hardcode this, so it's read from Stripe on
+// every visit rather than baked into a translation string.
+export const fetchBrandSubscriptionPrice = createAsyncThunk(
+  'app/brandSubscription/fetchPrice',
+  (_, { rejectWithValue }) =>
+    fetchSubscriptionPrice().catch(e => rejectWithValue(storableError(e)))
 );
 
 // Redirects the browser to Stripe-hosted Checkout. The user enters their card
@@ -82,6 +97,18 @@ const brandSubscriptionSlice = createSlice({
       .addCase(fetchBrandSubscription.rejected, (state, action) => {
         state.fetchInProgress = false;
         state.fetchError = action.payload;
+      })
+      .addCase(fetchBrandSubscriptionPrice.pending, state => {
+        state.priceFetchInProgress = true;
+        state.priceFetchError = null;
+      })
+      .addCase(fetchBrandSubscriptionPrice.fulfilled, (state, action) => {
+        state.priceFetchInProgress = false;
+        state.price = action.payload;
+      })
+      .addCase(fetchBrandSubscriptionPrice.rejected, (state, action) => {
+        state.priceFetchInProgress = false;
+        state.priceFetchError = action.payload;
       })
       .addCase(startBrandSubscriptionCheckout.pending, state => {
         state.checkoutInProgress = true;

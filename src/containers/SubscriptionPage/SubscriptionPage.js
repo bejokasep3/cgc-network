@@ -7,10 +7,14 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { parse } from '../../util/urlHelpers';
 import { hasActiveBrandSubscription } from '../../util/subscription';
+import { formatMoney } from '../../util/currency';
+import { types as sdkTypes } from '../../util/sdkLoader';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
+import { isUserAuthorized } from '../../util/userHelpers';
 import {
   fetchBrandSubscription,
+  fetchBrandSubscriptionPrice,
   startBrandSubscriptionCheckout,
   openBillingPortal,
 } from '../../ducks/brandSubscription.duck';
@@ -23,12 +27,15 @@ import {
   SecondaryButton,
   IconSpinner,
   IconCheckmark,
+  NamedRedirect,
 } from '../../components';
 
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import css from './SubscriptionPage.module.css';
+
+const { Money } = sdkTypes;
 
 const PLAN_BENEFIT_COUNT = 5;
 
@@ -45,12 +52,14 @@ const PLAN_BENEFIT_COUNT = 5;
  * @param {Object|null} props.status - Live subscription status from Stripe
  * @param {boolean} props.fetchInProgress - Whether the status is being fetched
  * @param {propTypes.error} props.fetchError - Error from fetching the status
+ * @param {Object|null} props.price - Live { unitAmount, currency, interval, intervalCount } from Stripe
  * @param {boolean} props.checkoutInProgress - Whether checkout is being started
  * @param {propTypes.error} props.checkoutError - Error from starting checkout
  * @param {boolean} props.billingPortalInProgress - Whether the portal is being opened
  * @param {propTypes.error} props.billingPortalError - Error from opening the portal
  * @param {boolean} props.scrollingDisabled - Whether scrolling is disabled
  * @param {Function} props.onFetchStatus - Fetches the subscription status
+ * @param {Function} props.onFetchPrice - Fetches the live plan price
  * @param {Function} props.onStartCheckout - Redirects to Stripe Checkout
  * @param {Function} props.onOpenBillingPortal - Redirects to the Stripe billing portal
  * @returns {JSX.Element}
@@ -63,12 +72,14 @@ export const SubscriptionPageComponent = props => {
     status,
     fetchInProgress,
     fetchError,
+    price,
     checkoutInProgress,
     checkoutError,
     billingPortalInProgress,
     billingPortalError,
     scrollingDisabled,
     onFetchStatus,
+    onFetchPrice,
     onStartCheckout,
     onOpenBillingPortal,
     onLogout,
@@ -78,11 +89,34 @@ export const SubscriptionPageComponent = props => {
 
   // Stripe redirects back here after checkout. The subscription may take a moment
   // to appear, so we simply re-read the live status on mount.
-  const { status: checkoutOutcome } = parse(location.search);
+  // `reason` is set by pages that bounce an unsubscribed brand here (e.g.
+  // PostProjectPage.js), so this can explain why instead of just landing on
+  // a bare pricing card with no context.
+  const { status: checkoutOutcome, reason } = parse(location.search);
+  const reasonMessageId = reason === 'post-project' ? 'SubscriptionPage.reasonPostProject' : null;
 
   useEffect(() => {
     onFetchStatus();
-  }, [onFetchStatus]);
+    onFetchPrice();
+  }, [onFetchStatus, onFetchPrice]);
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
+
+  // Price is a nice-to-have for the sales pitch, not a gate — if it fails to
+  // load, the card and Subscribe button below still work fine without it.
+  const priceMaybe = price ? (
+    <p className={css.price}>
+      <span className={css.priceAmount}>{formatMoney(intl, new Money(price.unitAmount, price.currency))}</span>
+      <span className={css.priceInterval}>
+        <FormattedMessage
+          id="SubscriptionPage.priceSuffix"
+          values={{ intervalCount: price.intervalCount, interval: price.interval }}
+        />
+      </span>
+    </p>
+  ) : null;
 
   const isActive = hasActiveBrandSubscription(status);
   const isResolved = status !== null && !fetchInProgress;
@@ -116,6 +150,10 @@ export const SubscriptionPageComponent = props => {
             <p className={css.notice}>
               <FormattedMessage id="SubscriptionPage.checkoutCanceled" />
             </p>
+          ) : reasonMessageId && !isActive ? (
+            <p className={css.notice}>
+              <FormattedMessage id={reasonMessageId} />
+            </p>
           ) : null}
 
           <Heading as="h1" rootClassName={css.title}>
@@ -133,6 +171,7 @@ export const SubscriptionPageComponent = props => {
             <Heading as="h2" rootClassName={css.planName}>
               <FormattedMessage id="SubscriptionPage.planName" />
             </Heading>
+            {priceMaybe}
             <ul className={css.benefits}>{benefits}</ul>
 
             {!isResolved ? (
@@ -202,6 +241,7 @@ const mapStateToProps = state => {
     status,
     fetchInProgress,
     fetchError,
+    price,
     checkoutInProgress,
     checkoutError,
     billingPortalInProgress,
@@ -213,6 +253,7 @@ const mapStateToProps = state => {
     status,
     fetchInProgress,
     fetchError,
+    price,
     checkoutInProgress,
     checkoutError,
     billingPortalInProgress,
@@ -223,6 +264,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => ({
   onFetchStatus: () => dispatch(fetchBrandSubscription()),
+  onFetchPrice: () => dispatch(fetchBrandSubscriptionPrice()),
   onStartCheckout: () => dispatch(startBrandSubscriptionCheckout()),
   onOpenBillingPortal: () => dispatch(openBillingPortal()),
   onLogout: () => dispatch(logout()),

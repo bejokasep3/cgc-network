@@ -91,6 +91,18 @@ const resolveStripeCustomerId = async (sdk, currentUser) => {
   return customer.id;
 };
 
+const summarizePrice = price => ({
+  unitAmount: price.unit_amount,
+  // Stripe always returns lowercase currency codes ("usd"), but
+  // src/config/settingsCurrency.js's subUnitDivisors map (which
+  // src/util/currency.js's unitDivisor/formatMoney look up) is keyed by
+  // uppercase ISO codes ("USD") — pass it through as-is and formatMoney
+  // throws "No minor unit divisor defined for currency: usd".
+  currency: price.currency.toUpperCase(),
+  interval: price.recurring?.interval || null,
+  intervalCount: price.recurring?.interval_count || 1,
+});
+
 const summarize = subscription => {
   if (!subscription) {
     return { isActive: false, status: 'none' };
@@ -129,6 +141,25 @@ const subscriptionStatus = async (req, res) => {
     // A brand may have an old canceled subscription alongside a current one.
     const relevant = data.find(s => ['active', 'trialing', 'past_due', 'unpaid'].includes(s.status));
     return res.status(200).json(summarize(relevant));
+  } catch (e) {
+    return handleError(res, e);
+  }
+};
+
+/**
+ * GET /api/subscription/price
+ * IMPLEMENTATION-PLAN.md F9.2: SubscriptionPage must not hardcode the price —
+ * this reads the live Stripe Price object for STRIPE_BRAND_SUBSCRIPTION_PRICE_ID,
+ * so a price change in Stripe (or a currency/interval change) shows up here
+ * without a code deploy. Not user-specific, so no currentUser lookup needed.
+ */
+const subscriptionPrice = async (req, res) => {
+  if (!isConfigured()) {
+    return notConfigured(res);
+  }
+  try {
+    const price = await stripeRequest(`/prices/${encodeURIComponent(priceId())}`);
+    return res.status(200).json(summarizePrice(price));
   } catch (e) {
     return handleError(res, e);
   }
@@ -200,4 +231,9 @@ const createBillingPortalSession = async (req, res) => {
   }
 };
 
-module.exports = { subscriptionStatus, createCheckoutSession, createBillingPortalSession };
+module.exports = {
+  subscriptionStatus,
+  subscriptionPrice,
+  createCheckoutSession,
+  createBillingPortalSession,
+};
