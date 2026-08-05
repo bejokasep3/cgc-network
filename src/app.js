@@ -13,7 +13,7 @@ import { RouteConfigurationProvider } from './context/routeConfigurationContext'
 import { ConfigurationProvider } from './context/configurationContext';
 import { parse } from './util/urlHelpers';
 import { difference, isEmpty } from './util/common';
-import { mergeConfig } from './util/configHelpers';
+import { mergeConfig, withCustomListingConfig } from './util/configHelpers';
 import { IntlProvider } from './util/reactIntl';
 import {
   clearReferralDataIfExpired,
@@ -90,6 +90,17 @@ const localeMessages = isTestEnv
   ? Object.fromEntries(Object.entries(defaultMessages).map(([key]) => [key, key]))
   : addMissingTranslations(defaultMessages, messagesInLocale);
 
+// Console's hosted "Listing types" builder can only select the 5 built-in
+// transaction processes — it can't reference cgc-ugc-approval or
+// cgc-application. See withCustomListingConfig in configHelpers.js for why
+// this app-level step exists instead of just merging in `defaultConfig`.
+const buildAppConfig = hostedConfig =>
+  withCustomListingConfig(
+    mergeConfig(hostedConfig, defaultConfig),
+    defaultConfig.listing.listingTypes,
+    defaultConfig.listing.listingFields
+  );
+
 const Configurations = props => {
   const { appConfig, children } = props;
   const routeConfig = routeConfiguration(appConfig.layout, appConfig?.accessControl);
@@ -159,7 +170,7 @@ const EnvironmentVariableWarning = props => {
  */
 export const ClientApp = props => {
   const { store, hostedTranslations = {}, hostedConfig = {} } = props;
-  const appConfig = mergeConfig(hostedConfig, defaultConfig);
+  const appConfig = buildAppConfig(hostedConfig);
 
   useEffect(() => {
     // Clear referral data from session storage the expiration time has passed
@@ -246,7 +257,7 @@ export const ClientApp = props => {
  */
 export const ServerApp = props => {
   const { url, context, helmetContext, store, hostedTranslations = {}, hostedConfig = {} } = props;
-  const appConfig = mergeConfig(hostedConfig, defaultConfig);
+  const appConfig = buildAppConfig(hostedConfig);
   HelmetProvider.canUseDOM = false;
 
   // Show MaintenanceMode if the mandatory configurations are not available

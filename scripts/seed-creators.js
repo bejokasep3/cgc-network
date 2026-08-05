@@ -72,7 +72,7 @@ const createOneCreator = ({ firstName, lastName, email }) => {
       password: SEED_PASSWORD,
       firstName,
       lastName,
-      publicData: { userType: 'provider' },
+      publicData: { userType: 'creator' },
     })
     .then(() => {
       console.log(`  created  ${firstName} ${lastName} <${email}>`);

@@ -1,13 +1,9 @@
-// Cross-check process.edn <-> JS mirror <-> en.json for cgc-ugc-approval.
+// Cross-check process.edn <-> JS mirror <-> en.json for every CGC transaction
+// process (cgc-ugc-approval, cgc-application).
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const edn = fs.readFileSync(
-  path.join(root, 'ext/transaction-processes/cgc-ugc-approval/process.edn'),
-  'utf8'
-);
-const js = fs.readFileSync(path.join(root, 'src/transactions/transactionProcessCGCUGC.js'), 'utf8');
 const stateData = fs.readFileSync(
   path.join(root, 'src/containers/TransactionPage/TransactionPage.stateDataCGCUGC.js'),
   'utf8'
@@ -20,56 +16,108 @@ const err = m => {
   fail++;
 };
 
-// --- 1. transitions declared in the edn :transitions vector
-const transitionsSection = edn.slice(edn.indexOf(':transitions'), edn.indexOf(':notifications'));
-const ednTransitions = new Set(
-  [...transitionsSection.matchAll(/:name :transition\/([a-z0-9-]+)/g)].map(m => m[1])
-);
-const jsTransitions = new Set(
-  [...js.matchAll(/'transition\/([a-z0-9-]+)'/g)].map(m => m[1])
-);
+// =============================================================================
+// Structural checks shared by every CGC transaction process: transitions,
+// states, and notification templates must agree between process.edn, its JS
+// mirror, and disk. Run once per process below (currently cgc-ugc-approval
+// and cgc-application). If you add a third CGC process, add another call
+// here rather than duplicating this function.
+// =============================================================================
+const checkProcessStructure = ({ label, ednPath, jsPath, templatesDir, terminalStates }) => {
+  const edn = fs.readFileSync(ednPath, 'utf8');
+  const js = fs.readFileSync(jsPath, 'utf8');
 
-console.log(`\n[1] edn transitions: ${ednTransitions.size}, js transitions: ${jsTransitions.size}`);
-for (const t of ednTransitions) {
-  if (!jsTransitions.has(t)) err(`transition "${t}" in process.edn but missing from JS mirror`);
-}
-for (const t of jsTransitions) {
-  if (!ednTransitions.has(t)) err(`transition "${t}" in JS mirror but MISSING from process.edn`);
-}
+  console.log(`\n=== ${label} ===`);
 
-// --- 2. states referenced by :from/:to must be reachable in the JS graph
-const ednStates = new Set(
-  [...transitionsSection.matchAll(/:(?:from|to) :state\/([a-z0-9-]+)/g)].map(m => m[1])
-);
-const jsStates = new Set([...js.matchAll(/^  [A-Z_0-9]+: '([a-z0-9-]+)',$/gm)].map(m => m[1]));
-console.log(`[2] edn states: ${ednStates.size}, js states: ${jsStates.size}`);
-for (const s of ednStates) {
-  if (!jsStates.has(s)) err(`state "${s}" used in process.edn but missing from JS states`);
-}
+  // 1. transitions declared in the edn :transitions vector
+  const transitionsSection = edn.slice(edn.indexOf(':transitions'), edn.indexOf(':notifications'));
+  const ednTransitions = new Set(
+    [...transitionsSection.matchAll(/:name :transition\/([a-z0-9-]+)/g)].map(m => m[1])
+  );
+  const jsTransitions = new Set([...js.matchAll(/'transition\/([a-z0-9-]+)'/g)].map(m => m[1]));
+  console.log(
+    `[${label} 1] edn transitions: ${ednTransitions.size}, js transitions: ${jsTransitions.size}`
+  );
+  for (const t of ednTransitions) {
+    if (!jsTransitions.has(t)) {
+      err(`[${label}] transition "${t}" in process.edn but missing from JS mirror`);
+    }
+  }
+  for (const t of jsTransitions) {
+    if (!ednTransitions.has(t)) {
+      err(`[${label}] transition "${t}" in JS mirror but MISSING from process.edn`);
+    }
+  }
 
-// --- 3. every non-terminal state must have an exit (no funds locked forever)
-const terminal = new Set(['payment-expired', 'canceled', 'reviewed']);
-const froms = new Set([...transitionsSection.matchAll(/:from :state\/([a-z0-9-]+)/g)].map(m => m[1]));
-console.log('[3] checking every non-terminal state has an exit transition');
-for (const s of ednStates) {
-  if (!terminal.has(s) && !froms.has(s)) err(`state "${s}" has NO outgoing transition (dead end)`);
-}
+  // 2. states referenced by :from/:to must be reachable in the JS graph
+  const ednStates = new Set(
+    [...transitionsSection.matchAll(/:(?:from|to) :state\/([a-z0-9-]+)/g)].map(m => m[1])
+  );
+  const jsStates = new Set([...js.matchAll(/^  [A-Z_0-9]+: '([a-z0-9-]+)',$/gm)].map(m => m[1]));
+  console.log(`[${label} 2] edn states: ${ednStates.size}, js states: ${jsStates.size}`);
+  for (const s of ednStates) {
+    if (!jsStates.has(s)) err(`[${label}] state "${s}" used in process.edn but missing from JS states`);
+  }
 
-// --- 4. notification templates must exist on disk
-const notifSection = edn.slice(edn.indexOf(':notifications'));
-const templates = new Set([...notifSection.matchAll(/:template :([a-z0-9-]+)/g)].map(m => m[1]));
-const tplDir = path.join(root, 'ext/transaction-processes/cgc-ugc-approval/templates');
-console.log(`[4] notification templates referenced: ${templates.size}`);
-const missingTpl = [];
-for (const t of templates) {
-  const subj = path.join(tplDir, t, `${t}-subject.txt`);
-  const html = path.join(tplDir, t, `${t}-html.html`);
-  if (!fs.existsSync(subj) || !fs.existsSync(html)) missingTpl.push(t);
-}
-if (missingTpl.length) {
-  console.log(`  PENDING ${missingTpl.length} template dirs not created yet:`);
-  missingTpl.forEach(t => console.log(`    - ${t}`));
-}
+  // 3. every non-terminal state must have an exit (nothing — money or an
+  //    application — should ever be stuck forever)
+  const froms = new Set(
+    [...transitionsSection.matchAll(/:from :state\/([a-z0-9-]+)/g)].map(m => m[1])
+  );
+  console.log(`[${label} 3] checking every non-terminal state has an exit transition`);
+  for (const s of ednStates) {
+    if (!terminalStates.has(s) && !froms.has(s)) {
+      err(`[${label}] state "${s}" has NO outgoing transition (dead end)`);
+    }
+  }
+
+  // 4. notification templates must exist on disk
+  const notifSection = edn.slice(edn.indexOf(':notifications'));
+  const templates = new Set([...notifSection.matchAll(/:template :([a-z0-9-]+)/g)].map(m => m[1]));
+  console.log(`[${label} 4] notification templates referenced: ${templates.size}`);
+  const missingTpl = [];
+  for (const t of templates) {
+    const subj = path.join(templatesDir, t, `${t}-subject.txt`);
+    const html = path.join(templatesDir, t, `${t}-html.html`);
+    if (!fs.existsSync(subj) || !fs.existsSync(html)) missingTpl.push(t);
+  }
+  if (missingTpl.length) {
+    console.log(`  PENDING ${missingTpl.length} template dirs not created yet:`);
+    missingTpl.forEach(t => console.log(`    - ${t}`));
+  }
+
+  return { js, jsStates };
+};
+
+const cgcUgc = checkProcessStructure({
+  label: 'cgc-ugc-approval',
+  ednPath: path.join(root, 'ext/transaction-processes/cgc-ugc-approval/process.edn'),
+  jsPath: path.join(root, 'src/transactions/transactionProcessCGCUGC.js'),
+  templatesDir: path.join(root, 'ext/transaction-processes/cgc-ugc-approval/templates'),
+  terminalStates: new Set(['payment-expired', 'canceled', 'reviewed']),
+});
+
+const cgcApplication = checkProcessStructure({
+  label: 'cgc-application',
+  ednPath: path.join(root, 'ext/transaction-processes/cgc-application/process.edn'),
+  jsPath: path.join(root, 'src/transactions/transactionProcessCGCApplication.js'),
+  templatesDir: path.join(root, 'ext/transaction-processes/cgc-application/templates'),
+  // 'accepted' is not terminal: transition/mark-collaborating self-transitions
+  // out of it, so it correctly shows up in `froms` and is not flagged.
+  terminalStates: new Set(['declined', 'withdrawn', 'expired']),
+});
+
+// =============================================================================
+// Everything below through check 11 is UI-wiring verification specific to
+// cgc-ugc-approval's own surfaces (CGCActionModal, TransactionPage.
+// stateDataCGCUGC, CollaborationDetailsMaybe) — cgc-application still has no
+// TransactionPage treatment of its own (it's managed from ProjectDetailPage
+// instead, see InboxPage.js's routing). Check 12 (InboxPage status labels)
+// covers both processes, since every application needs to be visible in the
+// inbox even without a dedicated transaction page (IMPLEMENTATION-PLAN.md
+// F3.4).
+// =============================================================================
+const { js, jsStates } = cgcUgc;
 
 // --- 5. every transition used as an action button must have translations
 const usedInButtons = [
@@ -83,7 +131,7 @@ if (usedInButtons.length !== expectedButtons) {
   );
 }
 const roleMap = { CUSTOMER: 'customer', PROVIDER: 'provider' };
-console.log(`[5] action buttons wired: ${usedInButtons.length}`);
+console.log(`\n[5] action buttons wired: ${usedInButtons.length}`);
 for (const { key, role } of usedInButtons) {
   const m = js.match(new RegExp(`^  ${key}: 'transition/([a-z0-9-]+)',$`, 'm'));
   if (!m) {
@@ -160,12 +208,17 @@ const variantNames = variantBlocks.map(m => m[1]);
 const keyForVariant = {
   addShippingAddress: 'addShippingAddressTransition',
   shipping: 'shippingTransition',
-  submitContent: 'contentSubmitTransition',
+  addDeliverableVersion: 'contentSubmitTransition',
   requestRevision: 'revisionTransition',
 };
+// addDeliverableVersion (F3.1) is opened per-row from DeliverableList via
+// TransactionPage.js's onOpenCGCActionModal, not from a stateData-provided
+// openModal(...) action button — it still needs contentSubmitTransition set
+// (checked below), just not via the same call site as the others.
+const variantsOpenedOutsideStateData = ['addDeliverableVersion'];
 console.log('[10] checking modal variants are wired from stateData');
 for (const v of variantNames) {
-  if (!stateData.includes(`openModal('${v}')`)) {
+  if (!variantsOpenedOutsideStateData.includes(v) && !stateData.includes(`openModal('${v}')`)) {
     err(`modal variant "${v}" is never opened from stateData`);
   }
   const k = keyForVariant[v];
@@ -198,13 +251,39 @@ for (const id of detailIds) {
   if (!tr[id]) err(`missing translation: ${id}`);
 }
 
-// --- 12. InboxPage status label for every state (except 'initial', which is
-//         never shown in the inbox — no transition has fired yet)
-console.log('[12] checking InboxPage status label exists for every state');
-for (const s of jsStates) {
-  if (s === 'initial') continue;
-  const id = `InboxPage.cgc-ugc-approval.${s}.status`;
-  if (!tr[id]) err(`missing translation: ${id}`);
+// --- 12. InboxPage status label for every state, in both processes (except
+//         'initial', which is never shown in the inbox — no transition has
+//         fired yet). A label id is one string shared by both roles (see
+//         InboxPage.js's `values={{ transactionRole }}`), so this also spot
+//         checks that states where the two roles would plausibly read this
+//         differently actually use the `{transactionRole, select, ...}` ICU
+//         form rather than one flat string for both.
+console.log('[12] checking InboxPage status label exists for every state, in both processes');
+const roleAgnosticStates = new Set([
+  'canceled',
+  'completed',
+  'disputed',
+  'inquiry',
+  'payment-expired',
+  'received',
+  'reviewed',
+  'declined',
+  'expired',
+]);
+for (const [label, states] of [
+  ['cgc-ugc-approval', cgcUgc.jsStates],
+  ['cgc-application', cgcApplication.jsStates],
+]) {
+  for (const s of states) {
+    if (s === 'initial') continue;
+    const id = `InboxPage.${label}.${s}.status`;
+    const value = tr[id];
+    if (!value) {
+      err(`missing translation: ${id}`);
+    } else if (!roleAgnosticStates.has(s) && !value.includes('{transactionRole,')) {
+      err(`"${id}" doesn't vary by transactionRole — brand and creator would see the same text`);
+    }
+  }
 }
 
 console.log(fail === 0 ? '\nAll consistency checks passed.' : `\n${fail} problem(s) found.`);
