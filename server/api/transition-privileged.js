@@ -10,6 +10,15 @@ const {
   throwErrorIfNegotiationOfferHasInvalidHistory,
 } = require('../api-util/negotiation');
 const {
+  isApplicationOfferTransition,
+  isCGCCollaborationCheckout,
+  isMarkCollaboratingTransition,
+  buildApplicationOfferMetadata,
+  buildMarkCollaboratingProtectedData,
+  fetchAgreedPriceMoney,
+  fetchProjectDeliverables,
+} = require('../api-util/cgcCheckout');
+const {
   getSdk,
   getTrustedSdk,
   handleError,
@@ -62,12 +71,19 @@ const getRoleBasedBodyParams = (orderData, bodyParams) => {
   }
 };
 
-const getFullOrderData = (orderData, bodyParams, currency, offers) => {
+const getFullOrderData = (orderData, bodyParams, currency, offers, agreedPriceMoney) => {
   const { offerInSubunits } = orderData || {};
   const transitionName = bodyParams.transition;
 
   const roleBasedBodyParams = getRoleBasedBodyParams(orderData, bodyParams);
   const orderDataAndParams = { ...orderData, ...roleBasedBodyParams.params, currency };
+
+  // A cgc-ugc-approval checkout priced from an accepted cgc-application (see
+  // IMPLEMENTATION-PLAN.md 2.6) always wins over the default-negotiation
+  // `offer` path below — the two never apply to the same transition.
+  if (agreedPriceMoney) {
+    return { ...orderDataAndParams, agreedPrice: agreedPriceMoney };
+  }
 
   const isNewOffer =
     isIntentionToMakeOffer(offerInSubunits, transitionName) ||
@@ -120,6 +136,19 @@ module.exports = (req, res) => {
   const transitionName = bodyParams.transition;
   let lineItems = null;
   let metadataMaybe = {};
+  // transition/brand-counter carries no money at all — it must not send a
+  // `lineItems` param, since the transition has no
+  // action/privileged-set-line-items in process.edn to receive it.
+  let includeLineItems = true;
+  // Set only for a fresh cgc-ugc-approval checkout (F3.1/F3.3) — the
+  // project's deliverables and its own id, seeded server-side onto the new
+  // collaboration. projectId is what later lets TransactionPage look up the
+  // PROJECT's requiresProduct (not the creator-profile listing's — see
+  // IMPLEMENTATION-PLAN.md F3.3).
+  let deliverablesMaybe = null;
+  let projectIdMaybe = null;
+
+  const isApplicationOffer = isApplicationOfferTransition(transitionName);
 
   Promise.all([transactionPromise(sdk, bodyParams?.id), fetchCommission(sdk)])
     .then(responses => {
@@ -132,9 +161,6 @@ module.exports = (req, res) => {
       const existingOffers = existingMetadata?.offers || [];
       const transitions = transaction.attributes.transitions;
 
-      // Check if the transition is related to negotiation offers and if the offers are valid
-      throwErrorIfNegotiationOfferHasInvalidHistory(transitionName, existingOffers, transitions);
-
       const currency =
         transaction.attributes.payinTotal?.currency ||
         listing.attributes.price?.currency ||
@@ -142,9 +168,81 @@ module.exports = (req, res) => {
       const { providerCommission, customerCommission } =
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
+      if (isApplicationOffer) {
+        // The brand's one counter-offer on an existing cgc-application
+        // (transition/brand-counter). No lineItems; the only effect is a
+        // metadata write appending the counter amount.
+        includeLineItems = false;
+        metadataMaybe = buildApplicationOfferMetadata({
+          orderData,
+          transitionName,
+          existingMetadata,
+        });
+        return getTrustedSdk(req);
+      }
+
+      if (isMarkCollaboratingTransition(transitionName)) {
+        // The brand linking a just-paid cgc-ugc-approval transaction back
+        // onto this application, right after checkout (IMPLEMENTATION-PLAN.md
+        // 2.6). No lineItems; the only effect is a protectedData write, and
+        // only after the paid transaction has been thoroughly verified.
+        includeLineItems = false;
+        return sdk.currentUser
+          .show()
+          .then(currentUserResponse =>
+            buildMarkCollaboratingProtectedData({
+              orderData,
+              applicationTx: transaction,
+              currentUserId: currentUserResponse.data.data.id,
+            })
+          )
+          .then(result => {
+            metadataMaybe = result;
+            return getTrustedSdk(req);
+          });
+      }
+
+      if (isCGCCollaborationCheckout(transitionName, listing.attributes.publicData)) {
+        // A brand completing checkout after a prior inquiry/invitation
+        // (transition/request-payment-after-inquiry) on a creator-profile
+        // listing. The price MUST come from an accepted cgc-application,
+        // never from the listing's own (indicative-only) price — this is a
+        // hard security invariant, not a convenience. See
+        // IMPLEMENTATION-PLAN.md 2.6.
+        return sdk.currentUser
+          .show()
+          .then(currentUserResponse =>
+            fetchAgreedPriceMoney({
+              applicationId: orderData?.applicationId,
+              listing,
+              currentUserId: currentUserResponse.data.data.id,
+              currency,
+              Money,
+            })
+          )
+          .then(({ agreedPriceMoney, projectId }) => {
+            lineItems = transactionLineItems(
+              listing,
+              getFullOrderData(orderData, bodyParams, currency, existingOffers, agreedPriceMoney),
+              providerCommission,
+              customerCommission
+            );
+            projectIdMaybe = projectId;
+            return fetchProjectDeliverables({ projectId });
+          })
+          .then(deliverables => {
+            deliverablesMaybe = deliverables;
+            return getTrustedSdk(req);
+          });
+      }
+
+      // Existing behaviour, unchanged: default-negotiation's counter-offer /
+      // update-offer / revoke transitions.
+      throwErrorIfNegotiationOfferHasInvalidHistory(transitionName, existingOffers, transitions);
+
       lineItems = transactionLineItems(
         listing,
-        getFullOrderData(orderData, bodyParams, currency, existingOffers),
+        getFullOrderData(orderData, bodyParams, currency, existingOffers, null),
         providerCommission,
         customerCommission
       );
@@ -163,14 +261,24 @@ module.exports = (req, res) => {
       const roleBasedBodyParams = getRoleBasedBodyParams(orderData, bodyParams);
       // Omit listingId from params (transition/request-payment-after-inquiry does not need it)
       const { listingId, ...restParams } = roleBasedBodyParams?.params || {};
+      const deliverablesParamMaybe = deliverablesMaybe
+        ? {
+            protectedData: {
+              ...restParams.protectedData,
+              deliverables: deliverablesMaybe,
+              ...(projectIdMaybe ? { projectId: projectIdMaybe } : {}),
+            },
+          }
+        : {};
 
       // Add lineItems to the body params
       const body = {
         ...bodyParams,
         params: {
           ...restParams,
-          lineItems,
+          ...(includeLineItems ? { lineItems } : {}),
           ...metadataMaybe,
+          ...deliverablesParamMaybe,
         },
       };
 

@@ -6,6 +6,8 @@ import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
 import { setCurrentUserHasOrders, fetchCurrentUser } from '../../ducks/user.duck';
+import { transitions as applicationTransitions } from '../../transactions/transactionProcessCGCApplication';
+import { CGC_APPLICATION_PROCESS_NAME } from '../../transactions/transaction';
 
 // ================ Async thunks ================ //
 
@@ -19,12 +21,28 @@ const initiateOrderPayloadCreator = (
   // If we already have a transaction ID, we should transition, not initiate.
   const isTransition = !!transactionId;
 
-  const { deliveryMethod, quantity, bookingDates, ...otherOrderParams } = orderParams;
+  const {
+    deliveryMethod,
+    quantity,
+    bookingDates,
+    applicationId,
+    currency,
+    ...otherOrderParams
+  } = orderParams;
   const quantityMaybe = quantity ? { stockReservationQuantity: quantity } : {};
   const bookingParamsMaybe = bookingDates || {};
 
-  // Parameters only for client app's server
-  const orderData = deliveryMethod ? { deliveryMethod } : {};
+  // Parameters only for client app's server. `applicationId` (F2.6) is never
+  // sent to the Marketplace API itself — it's how the server looks up the
+  // accepted cgc-application's agreed price (IMPLEMENTATION-PLAN.md 2.6).
+  // `currency` is the marketplace currency, sent for the same reason: a
+  // creator-profile listing has no attributes.price of its own for the
+  // server to derive a currency from.
+  const orderData = {
+    ...(deliveryMethod ? { deliveryMethod } : {}),
+    ...(applicationId ? { applicationId } : {}),
+    ...(currency ? { currency } : {}),
+  };
 
   // Parameters for Marketplace API
   const transitionParams = {
@@ -264,15 +282,25 @@ const speculateTransactionPayloadCreator = (
     priceVariantName,
     quantity,
     bookingDates,
+    applicationId,
+    currency,
     ...otherOrderParams
   } = orderParams;
   const quantityMaybe = quantity ? { stockReservationQuantity: quantity } : {};
   const bookingParamsMaybe = bookingDates || {};
 
-  // Parameters only for client app's server
+  // Parameters only for client app's server. `applicationId` (F2.6) is never
+  // sent to the Marketplace API itself — it's how the server looks up the
+  // accepted cgc-application's agreed price (IMPLEMENTATION-PLAN.md 2.6), for
+  // both this speculative preview and the real transition. `currency` is the
+  // marketplace currency, sent for the same reason: a creator-profile
+  // listing has no attributes.price of its own for the server to derive a
+  // currency from.
   const orderData = {
     ...(deliveryMethod ? { deliveryMethod } : {}),
     ...(priceVariantName ? { priceVariantName } : {}),
+    ...(applicationId ? { applicationId } : {}),
+    ...(currency ? { currency } : {}),
   };
 
   // Parameters for Marketplace API
@@ -395,6 +423,112 @@ export const stripeCustomerThunk = createAsyncThunk(
 // Backward compatible wrapper function for stripeCustomer
 export const stripeCustomer = () => dispatch => {
   return dispatch(stripeCustomerThunk({})).unwrap();
+};
+
+// A project is matched to exactly one creator (client's requirement, not
+// just a UX nicety — quality and the relationship stay clearly owned by one
+// brand-creator pair). Any other applicant still sitting in 'applied' once
+// this project is paid for is no longer a live option, so decline it on the
+// brand's behalf instead of leaving it to go stale on its own. Declining
+// only reaches 'applied' applicants — `transition/brand-decline` isn't
+// available from 'countered' (only the creator can act on their own pending
+// counter-offer there; see process.edn) — that's a rarer edge the brand can
+// still clear by hand.
+//
+// Best-effort per applicant: one failing decline shouldn't stop the others,
+// and none of this should ever surface as a checkout error (the payment that
+// actually matters has already succeeded by the time this runs).
+const declineOtherApplicantsMaybe = (sdk, projectId, applicationId) => {
+  return sdk.transactions
+    .query({
+      only: 'sale',
+      processNames: [CGC_APPLICATION_PROCESS_NAME],
+      'fields.transaction': ['protectedData', 'lastTransition'],
+    })
+    .then(response => {
+      const others = response.data.data.filter(
+        tx =>
+          tx.id.uuid !== applicationId.uuid &&
+          tx.attributes.protectedData?.projectId === projectId.uuid &&
+          tx.attributes.lastTransition === applicationTransitions.APPLY
+      );
+      return Promise.all(
+        others.map(tx =>
+          sdk.transactions
+            .transition(
+              { id: tx.id, transition: applicationTransitions.BRAND_DECLINE, params: {} },
+              {}
+            )
+            .catch(e => {
+              log.error(e, 'auto-decline-other-applicant-failed', {
+                applicationId: tx.id.uuid,
+                projectId: projectId.uuid,
+              });
+            })
+        )
+      );
+    })
+    .catch(e => {
+      log.error(e, 'auto-decline-other-applicants-query-failed', { projectId: projectId.uuid });
+    });
+};
+
+////////////////////////////////////////
+// F2.6: finalize CGC collaboration   //
+////////////////////////////////////////
+// After a brand pays for a creator-profile checkout backed by an accepted
+// cgc-application (IMPLEMENTATION-PLAN.md 2.6), bookkeeping writes still
+// need to happen: link the newly-paid transaction back onto the application
+// (transition/mark-collaborating, privileged — see
+// server/api-util/cgcCheckout.js for why), flip the project listing to
+// 'matched' and close it (a project is matched to one creator — see
+// declineOtherApplicantsMaybe above), and decline any other still-pending
+// applicant. All of this fires only after the payment that actually matters
+// has already succeeded, so a failure here is only logged, never surfaced as
+// a checkout error — see the call site in CheckoutPageWithPayment.js.
+const finalizeCollaborationPayloadCreator = (
+  { applicationId, projectId, collaborationTxId },
+  { extra: sdk, rejectWithValue }
+) => {
+  const transitionPromise = transitionPrivileged({
+    isSpeculative: false,
+    orderData: { collaborationTxId },
+    bodyParams: {
+      id: applicationId,
+      transition: applicationTransitions.MARK_COLLABORATING,
+      params: {},
+    },
+    queryParams: {},
+  });
+  const listingUpdatePromise = sdk.ownListings.update({
+    id: projectId,
+    publicData: { projectStatus: 'matched' },
+  });
+  const listingClosePromise = sdk.ownListings.close({ id: projectId });
+  const declineOthersPromise = declineOtherApplicantsMaybe(sdk, projectId, applicationId);
+
+  return Promise.all([
+    transitionPromise,
+    listingUpdatePromise,
+    listingClosePromise,
+    declineOthersPromise,
+  ])
+    .then(() => true)
+    .catch(e => {
+      log.error(e, 'finalize-cgc-collaboration-failed', {
+        applicationId: applicationId?.uuid,
+        projectId: projectId?.uuid,
+      });
+      return rejectWithValue(storableError(e));
+    });
+};
+
+export const finalizeCollaborationThunk = createAsyncThunk(
+  'CheckoutPage/finalizeCollaboration',
+  finalizeCollaborationPayloadCreator
+);
+export const finalizeCgcCollaboration = params => dispatch => {
+  return dispatch(finalizeCollaborationThunk(params));
 };
 
 // ================ Slice ================ //

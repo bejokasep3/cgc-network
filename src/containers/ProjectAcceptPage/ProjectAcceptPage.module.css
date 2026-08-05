@@ -1,0 +1,162 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 640px;
+  padding: 40px 24px 96px 24px;
+  margin: 0 auto;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 24px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.invalid {
+  padding: 24px 0;
+}
+
+.backLink {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-block;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  margin-top: 16px;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.creatorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+}
+
+.creatorName {
+  composes: h4 from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  margin: 0;
+}
+
+.section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--colorGrey100);
+}
+
+.sectionHeading {
+  composes: h4 from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  margin: 0 0 12px 0;
+}
+
+.deliverablesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deliverableItem {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deliverableSummary {
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightMedium);
+}
+
+.deliverableSpec {
+  color: var(--colorGrey600);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  text-transform: uppercase;
+}
+
+.detailValue {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightMedium);
+}
+
+.priceSection {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.priceLabel {
+  composes: h4 from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  margin: 0;
+}
+
+.priceValue {
+  composes: h2 from global;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+  margin: 0;
+}
+
+.payButton {
+  margin-bottom: 16px;
+}

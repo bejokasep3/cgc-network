@@ -35,6 +35,7 @@ import {
   setOrderPageInitialValues,
 } from './CheckoutPageTransactionHelpers.js';
 import { getErrorMessages } from './ErrorMessages';
+import { finalizeCgcCollaboration } from './CheckoutPage.duck';
 
 import StripePaymentForm from './StripePaymentForm/StripePaymentForm';
 import DetailsSideCard from './DetailsSideCard';
@@ -117,6 +118,20 @@ const getOrderParams = (
   const seatsMaybe = seats ? { seats } : {};
   const deliveryMethod = pageData.orderData?.deliveryMethod;
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
+  // F2.6: a creator-profile checkout backed by an accepted cgc-application
+  // carries only this id — never a price — through to the server, which
+  // looks up the agreed price itself (IMPLEMENTATION-PLAN.md 2.6). See
+  // CheckoutPage.duck.js's initiateOrderPayloadCreator/
+  // speculateTransactionPayloadCreator for where this gets forwarded to the
+  // server's own `orderData`, same as deliveryMethod already is.
+  const applicationId = pageData.orderData?.applicationId;
+  const applicationIdMaybe = applicationId ? { applicationId } : {};
+  // A creator-profile listing has no attributes.price of its own (F2.6 — the
+  // price only exists on the accepted cgc-application). The server falls
+  // back to this when it can't derive a currency from the listing or an
+  // existing transaction (server/api/initiate-privileged.js,
+  // transition-privileged.js).
+  const currencyMaybe = applicationId ? { currency: config.currency } : {};
   const { listingType, unitType, priceVariants } = pageData?.listing?.attributes?.publicData || {};
 
   // price variant data for fixed duration bookings
@@ -150,6 +165,8 @@ const getOrderParams = (
   const orderParams = {
     listingId: pageData?.listing?.id,
     ...deliveryMethodMaybe,
+    ...applicationIdMaybe,
+    ...currencyMaybe,
     ...quantityMaybe,
     ...seatsMaybe,
     ...bookingDatesMaybe(pageData.orderData?.bookingDates),
@@ -332,6 +349,22 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     .then(response => {
       const { orderId, paymentMethodSaved } = response;
       setSubmitting(false);
+
+      // F2.6: this checkout was backed by an accepted cgc-application —
+      // link the newly-paid collaboration transaction back onto it and flip
+      // the project listing to 'matched'. Both pageData.orderData fields are
+      // only ever set together, from ProjectAcceptPage. A failure here is
+      // logged but never blocks the receipt the brand already paid for.
+      const { applicationId: acceptedApplicationId, projectId } = pageData.orderData || {};
+      if (acceptedApplicationId && projectId) {
+        dispatch(
+          finalizeCgcCollaboration({
+            applicationId: acceptedApplicationId,
+            projectId,
+            collaborationTxId: orderId,
+          })
+        );
+      }
 
       const orderDetailsPath = pathByRouteName('OrderDetailsPage', routeConfiguration, {
         id: orderId.uuid,
@@ -556,7 +589,9 @@ export const CheckoutPageWithPayment = props => {
   // ensures it is supported by Stripe, as indicated by the 'stripe' parameter.
   // If using a transaction process without any stripe actions, leave out the 'stripe' parameter.
   const currency =
-    existingTransaction?.attributes?.payinTotal?.currency || listing.attributes.price?.currency;
+    existingTransaction?.attributes?.payinTotal?.currency ||
+    listing.attributes.price?.currency ||
+    config.currency;
   const isStripeCompatibleCurrency = isValidCurrencyForTransactionProcess(
     transactionProcessAlias,
     currency,
