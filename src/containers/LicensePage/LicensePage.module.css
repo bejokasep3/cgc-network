@@ -1,0 +1,100 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+
+  @media print {
+    padding: 0;
+    max-width: none;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 96px 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.printButton {
+  composes: buttonSecondary from global;
+  width: auto;
+  min-height: 40px;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  background-color: var(--colorGrey50);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 32px;
+
+  @media print {
+    background-color: transparent;
+    border: 1px solid var(--colorGrey200);
+  }
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detailValue {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+/* Elements not meant to appear on a printed/PDF copy — the topbar chrome. */
+.noPrint {
+  @media print {
+    display: none;
+  }
+}
+
+@media print {
+  :global(body) {
+    background-color: var(--colorWhite);
+  }
+}

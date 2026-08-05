@@ -1,0 +1,194 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 96px 0;
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 24px 0;
+}
+
+.empty {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey500);
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 48px 24px;
+  text-align: center;
+}
+
+/* ================ Filters ================ */
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.filterSelect {
+  composes: marketplaceSmallFontStyles from global;
+  min-width: 160px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 8px 12px;
+  color: var(--colorGrey700);
+  background-color: var(--colorWhite);
+  cursor: pointer;
+}
+
+/* ================ List / card ================ */
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 20px;
+  transition: box-shadow var(--transitionStyleButton), border-color var(--transitionStyleButton);
+
+  &:hover {
+    border-color: var(--colorGrey200);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.projectTitle {
+  composes: marketplaceSmallFontStyles from global;
+  font-size: 16px;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+.deliverableType {
+  composes: marketplaceTinyFontStyles from global;
+  flex: 0 0 auto;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey600);
+  background-color: var(--colorGrey100);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.meta {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 0 0 10px 0;
+}
+
+.usageRights {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  background-color: var(--colorGrey50);
+  border-radius: 999px;
+  padding: 3px 9px;
+  margin: 0 0 12px 0;
+}
+
+.linkList {
+  list-style: none;
+  padding: 12px 0 0 0;
+  margin: 0;
+  border-top: 1px solid var(--colorGrey100);
+}
+
+.linkItem {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--colorGrey600);
+
+  & + & {
+    margin-top: 4px;
+  }
+}
+
+.linkText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkOpen {
+  flex: 0 0 auto;
+  color: var(--marketplaceColor);
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.note {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  font-style: italic;
+  margin: 12px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--colorGrey100);
+}

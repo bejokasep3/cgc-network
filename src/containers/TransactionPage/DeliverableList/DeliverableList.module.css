@@ -1,0 +1,191 @@
+.root {
+  margin: 24px 0;
+}
+
+/* The divider from the previous section (shipping address/tracking) — only
+   when there is one. Deliverables are seeded at checkout, before shipping
+   info ever exists, so this is very often the first thing rendered inside
+   CollaborationDetailsMaybe's card; an unconditional border-top there sat
+   right against the card's own rounded top edge. */
+.root:not(:first-child) {
+  padding-top: 24px;
+  border-top: 1px solid var(--colorGrey100);
+}
+
+.heading {
+  composes: h4 from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+  margin: 0 0 12px 0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  background-color: var(--colorGrey50);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.rowNeedsAttention {
+  background-color: var(--colorAttentionSubtle);
+}
+
+.rowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rowTitle {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+.rowSpec {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 4px 0 0 0;
+}
+
+.statusBadge {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey600);
+  background-color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.statusBadgeAttention {
+  color: var(--colorAttentionDark);
+}
+
+.statusBadgeReady {
+  color: var(--marketplaceColor);
+}
+
+.versionHistory {
+  margin-top: 8px;
+}
+
+.versionToggle {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--marketplaceColor);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.versionToggleIcon {
+  width: 8px;
+}
+
+.versionList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.versionItem {
+  padding-left: 12px;
+  border-left: 2px solid var(--colorGrey100);
+}
+
+.versionLabel {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey700);
+  margin: 0 0 4px 0;
+}
+
+.versionNote {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 4px 0 0 0;
+}
+
+.linkList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkItem {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.linkText {
+  color: var(--colorGrey700);
+  word-break: break-all;
+}
+
+.linkOpen {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  white-space: nowrap;
+}
+
+.draftPreview {
+  composes: marketplaceTinyFontStyles from global;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background-color: var(--colorWhite);
+  border: 1px dashed var(--colorGrey300);
+  border-radius: 8px;
+  color: var(--colorGrey700);
+}
+
+.addVersionButton {
+  composes: marketplaceTinyFontStyles from global;
+  margin-top: 10px;
+  width: auto;
+  min-height: 32px;
+  padding: 0 14px;
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.submitRow {
+  margin-top: 16px;
+}
+
+.submitHint {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 8px 0 0 0;
+}
+
+.error {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorFail);
+  margin: 0 0 8px 0;
+}
