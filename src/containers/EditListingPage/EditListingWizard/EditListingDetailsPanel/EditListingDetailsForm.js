@@ -32,7 +32,7 @@ const TITLE_MAX_LENGTH = 60;
 // Brands post projects through the same wizard creators use to post their
 // profile — this reads the title/description copy as "post a project" for that
 // listing type only (CGC-FRONTEND-PLAN.md Phase 6).
-const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+const PROJECT_BRIEF_LISTING_TYPE = 'project';
 
 // Show various error messages
 const ErrorMessage = props => {

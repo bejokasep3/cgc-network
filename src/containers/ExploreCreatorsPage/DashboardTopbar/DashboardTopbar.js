@@ -30,12 +30,14 @@ import css from './DashboardTopbar.module.css';
 const BRAND_NAV_ITEMS = [
   { routeName: 'ExploreCreatorsPage', labelId: 'DashboardTopbar.exploreCreators' },
   { routeName: 'ManageCampaignsPage', labelId: 'DashboardTopbar.myCampaigns' },
+  { routeName: 'LibraryPage', labelId: 'DashboardTopbar.library' },
 ];
 
 // Nav items shared by every creator dashboard page that renders this header.
 const CREATOR_NAV_ITEMS = [
   { routeName: 'BrowseProjectsPage', labelId: 'DashboardTopbar.browseProjects' },
   { routeName: 'MyCollaborationsPage', labelId: 'DashboardTopbar.myCollaborations' },
+  { routeName: 'EarningsPage', labelId: 'DashboardTopbar.earnings' },
 ];
 
 /**
@@ -79,10 +81,16 @@ const DashboardTopbar = props => {
   const email = currentUser?.attributes?.email;
 
   const handleLogout = () => {
-    onLogout().then(() => {
-      const path = pathByRouteName('LandingPage', routeConfiguration);
-      history.push(path);
-    });
+    onLogout()
+      .then(() => {
+        const path = pathByRouteName('LandingPage', routeConfiguration);
+        history.push(path);
+      })
+      .catch(() => {
+        // A logout dispatched while one is already in flight (e.g. a
+        // double click) is rejected by auth.duck.js's logoutThunk guard —
+        // not a real failure, the in-flight call already redirects.
+      });
   };
 
   // A creator's "public profile" is their published creator-profile listing

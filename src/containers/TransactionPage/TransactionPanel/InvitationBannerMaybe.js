@@ -6,7 +6,7 @@ import css from './TransactionPanel.module.css';
 
 /**
  * Renders the "invite creator to collaborate" context (CGC-FRONTEND-PLAN.md §3.3)
- * when a brand attached one of its own project-brief listings to the inquiry
+ * when a brand attached one of its own project listings to the inquiry
  * that started this transaction. Without this, the creator only sees a plain
  * message with no indication which project they were invited to.
  *

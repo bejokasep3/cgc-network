@@ -7,23 +7,23 @@ import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { pathByRouteName } from '../../util/routes';
-import { hasPermissionToPostListings, showCreateListingLinkForUser } from '../../util/userHelpers';
+import { hasPermissionToPostListings, isBrandUserType } from '../../util/userHelpers';
 import { NO_ACCESS_PAGE_POST_LISTINGS } from '../../util/urlHelpers';
 import { propTypes } from '../../util/types';
 import { isErrorNoPermissionToPostListings } from '../../util/errors';
 import { isScrollingDisabled, manageDisableScrolling } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
 
 import {
   H3,
   Page,
   PaginationLinks,
-  UserNav,
   LayoutSingleColumn,
   NamedLink,
   Modal,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import ManageListingCard from './ManageListingCard/ManageListingCard';
@@ -129,6 +129,7 @@ export const ManageListingsPageComponent = props => {
     queryParams,
     scrollingDisabled,
     onManageDisableScrolling,
+    onLogout,
   } = props;
 
   useEffect(() => {
@@ -199,7 +200,8 @@ export const ManageListingsPageComponent = props => {
     `${panelWidth / 3}vw`,
   ].join(', ');
 
-  const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
+  const displayName = currentUser?.attributes?.profile?.displayName;
+  const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
 
   return (
     <Page
@@ -208,13 +210,12 @@ export const ManageListingsPageComponent = props => {
     >
       <LayoutSingleColumn
         topbar={
-          <>
-            <TopbarContainer />
-            <UserNav
-              currentPage="ManageListingsPage"
-              showManageListingsLink={showManageListingsLink}
-            />
-          </>
+          <DashboardTopbar
+            displayName={displayName}
+            currentPage="ManageListingsPage"
+            role={role}
+            onLogout={onLogout}
+          />
         }
         footer={<FooterContainer />}
       >
@@ -307,6 +308,7 @@ const mapDispatchToProps = dispatch => ({
   onDiscardDraft: listingId => dispatch(discardDraft(listingId)),
   onManageDisableScrolling: (componentId, disableScrolling) =>
     dispatch(manageDisableScrolling(componentId, disableScrolling)),
+  onLogout: () => dispatch(logout()),
 });
 
 const ManageListingsPage = compose(

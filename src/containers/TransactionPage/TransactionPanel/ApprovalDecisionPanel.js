@@ -5,6 +5,9 @@ import { PrimaryButton, SecondaryButton, InlineTextButton } from '../../../compo
 
 import css from './TransactionPanel.module.css';
 
+// Fixed by BLUEPRINT R15/D2 — not configurable per project.
+const MAX_REVISIONS = 2;
+
 /**
  * Consolidates the brand's content-review decision — approve, request a
  * revision, or escalate — into one place, instead of a primary button, a
@@ -16,11 +19,12 @@ import css from './TransactionPanel.module.css';
  * @param {Object} props
  * @param {Object} props.primaryButtonProps - Fires the approve transition (inProgress, error, onAction, buttonText, errorText)
  * @param {Object} [props.secondaryButtonProps] - Opens the request-revision modal; absent once the revision cap is exhausted
+ * @param {number} [props.revisionsUsed] - How many of the two revisions have been used as of this review (F3.2 — the quota should always be visible, not just implied by which round it is)
  * @param {Function} props.onOpenDisputeModal
  * @returns {JSX.Element|null}
  */
 const ApprovalDecisionPanel = props => {
-  const { primaryButtonProps, secondaryButtonProps, onOpenDisputeModal } = props;
+  const { primaryButtonProps, secondaryButtonProps, revisionsUsed, onOpenDisputeModal } = props;
   const [confirming, setConfirming] = useState(false);
 
   if (!primaryButtonProps) {
@@ -29,6 +33,14 @@ const ApprovalDecisionPanel = props => {
 
   const { inProgress, error, onAction, buttonText, errorText } = primaryButtonProps;
   const errorMessage = error ? <p className={css.genericError}>{errorText}</p> : null;
+  const revisionQuota = Number.isInteger(revisionsUsed) ? (
+    <p className={css.revisionQuota}>
+      <FormattedMessage
+        id="ApprovalDecisionPanel.revisionQuota"
+        values={{ used: revisionsUsed, max: MAX_REVISIONS }}
+      />
+    </p>
+  ) : null;
 
   return (
     <div className={css.approvalPanel}>
@@ -56,6 +68,7 @@ const ApprovalDecisionPanel = props => {
           <p className={css.approvalHeading}>
             <FormattedMessage id="ApprovalDecisionPanel.heading" />
           </p>
+          {revisionQuota}
           {errorMessage}
           <div className={css.approvalActions}>
             <PrimaryButton type="button" onClick={() => setConfirming(true)}>

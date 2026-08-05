@@ -9,7 +9,7 @@ import { camelize } from '../../util/string';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { ensureCurrentUser, getFeaturedListingsProps } from '../../util/data';
-import { getRoleHomeRouteName } from '../../util/userHelpers';
+import { getPostApprovalRouteName, isBrandUserType, isUserAuthorized } from '../../util/userHelpers';
 import {
   isSignupEmailTakenError,
   isTooManyEmailVerificationRequestsError,
@@ -265,6 +265,14 @@ export const AuthenticationPageComponent = props => {
 
   const user = ensureCurrentUser(currentUser);
   const currentUserLoaded = !!user.id;
+  // Reused below both for the post-signup redirect and for
+  // EmailVerificationInfo's close link — a still-`pending-approval` user
+  // (F0.2/F4.1) must land on their application form either way, not
+  // ProfileSettingsPage's stock default (see the isUserAuthorized checks
+  // further down).
+  const applicationRouteName = isBrandUserType(config, currentUser)
+    ? 'RequestAccessPage'
+    : 'ApplyPage';
   // We only want to show the email verification dialog in the signup
   // tab if the user isn't being redirected somewhere else
   // (i.e. `from` is present). We must also check the `emailVerified`
@@ -302,10 +310,18 @@ export const AuthenticationPageComponent = props => {
     // Already authenticated, redirect back to the page the user tried to access
     return <Redirect to={from} />;
   } else if (shouldRedirectToLandingPage) {
+    // A freshly-signed-up user starts in Sharetribe's built-in
+    // 'pending-approval' state (Console: user approval, F0.2) — their role
+    // home page (browse projects / explore creators) isn't useful yet since
+    // they can't act on anything there. Collect what the operator needs to
+    // review them instead (F4.1).
+    if (!isUserAuthorized(currentUser)) {
+      return <NamedRedirect name={applicationRouteName} />;
+    }
     // Already authenticated with no specific page to return to (direct access to
     // /login or /signup) — send the user straight to their role's home base
     // instead of the marketing landing page.
-    return <NamedRedirect name={getRoleHomeRouteName(config, currentUser)} />;
+    return <NamedRedirect name={getPostApprovalRouteName(config, currentUser)} />;
   } else if (show404) {
     // User type not found, show 404
     return <NotFoundPage staticContext={staticContext} />;
@@ -457,6 +473,13 @@ export const AuthenticationPageComponent = props => {
                 />
               }
               sendVerificationEmailInProgress={sendVerificationEmailInProgress}
+              // Stock behavior sends this "skip for now" link to
+              // ProfileSettingsPage — correct once approved, but a
+              // still-pending-approval user must land on their application
+              // form instead, or they bypass F4.1's approval gate entirely.
+              closeRouteName={
+                isUserAuthorized(currentUser) ? 'ProfileSettingsPage' : applicationRouteName
+              }
             />
           ) : null}
         </ResponsiveBackgroundImageContainer>

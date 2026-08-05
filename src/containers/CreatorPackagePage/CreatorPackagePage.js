@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
+import { useHistory, useLocation } from 'react-router-dom';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { useConfiguration } from '../../context/configurationContext';
+import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { isFieldForListingType } from '../../util/fieldHelpers';
 import { LISTING_STATE_DRAFT } from '../../util/types';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
+import { createResourceLocatorString } from '../../util/routes';
+import {
+  isUserAuthorized,
+  getOnboardingRouteName,
+  cameFromOnboardingChecklist,
+} from '../../util/userHelpers';
 import {
   requestCreateListingDraft,
   requestUpdateListing,
@@ -18,7 +26,7 @@ import {
 } from '../EditListingPage/EditListingPage.duck';
 import { fetchOwnListingThunk, setListingId } from './CreatorPackagePage.duck';
 
-import { Heading, Page, LayoutSingleColumn } from '../../components';
+import { Heading, Page, LayoutSingleColumn, NamedRedirect } from '../../components';
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import EditListingPhotosForm from '../EditListingPage/EditListingWizard/EditListingPhotosPanel/EditListingPhotosForm';
 import CreatorPackageDetailsForm from './CreatorPackageDetailsForm';
@@ -28,6 +36,16 @@ import css from './CreatorPackagePage.module.css';
 const CREATOR_PROFILE_LISTING_TYPE = 'creator-profile';
 const CREATOR_PROCESS_ALIAS = 'cgc-ugc-approval/release-1';
 const CREATOR_UNIT_TYPE = 'item';
+
+// configListing.js gives creator-profile listings stockType 'infiniteOneItem'
+// ("always available, not counted stock" — see its comment there), but the
+// Marketplace API still requires an actual stock resource to be set before a
+// checkout can reserve against the listing, or it 409s with
+// transaction-listing-insufficient-stock. The standard EditListingWizard
+// flow sets this via EditListingPricingAndStockPanel's "infinity" checkbox
+// (same BILLIARD constant), but this page builds its own minimal wizard and
+// never goes through that panel, so it has to set it here instead.
+const BILLIARD = 1000000000000000;
 
 // Same merge logic EditListingPage.js uses: images already attached to the
 // listing, plus images uploaded in this session but not yet saved, minus
@@ -78,6 +96,9 @@ const pickRenderableImages = (listing, uploadedImages, uploadedImagesOrder = [],
 export const CreatorPackagePageComponent = props => {
   const intl = useIntl();
   const config = useConfiguration();
+  const routeConfiguration = useRouteConfiguration();
+  const history = useHistory();
+  const location = useLocation();
   const {
     scrollingDisabled,
     currentUser,
@@ -92,12 +113,22 @@ export const CreatorPackagePageComponent = props => {
     onLogout,
   } = props;
 
+  // Opened from the onboarding checklist? A published listing is what
+  // actually satisfies this step (creatorSetupSteps.js), so the return trip
+  // happens once photos are saved (which is also what triggers the publish
+  // below) — not after the details save, which alone doesn't finish the step.
+  const returnToOnboarding = cameFromOnboardingChecklist(location);
+
   const [detailsSubmitError, setDetailsSubmitError] = useState(null);
 
   useEffect(() => {
     onFetchOwnListing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onFetchOwnListing]);
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const displayName = currentUser?.attributes?.profile?.displayName;
   const title = intl.formatMessage({ id: 'CreatorPackagePage.schemaTitle' });
@@ -130,6 +161,7 @@ export const CreatorPackagePageComponent = props => {
             unitType: CREATOR_UNIT_TYPE,
             ...customFieldValues,
           },
+          stockUpdate: { oldTotal: null, newTotal: BILLIARD },
         },
         config
       ).catch(e => setDetailsSubmitError(e));
@@ -140,11 +172,20 @@ export const CreatorPackagePageComponent = props => {
     if (!listing?.id) {
       return;
     }
-    onUpdateListing('photos', { id: listing.id, images: values.images }, config).then(() => {
-      if (listing.attributes.state === LISTING_STATE_DRAFT) {
-        onPublishListingDraft(listing.id);
-      }
-    });
+    onUpdateListing('photos', { id: listing.id, images: values.images }, config)
+      .then(() => {
+        return listing.attributes.state === LISTING_STATE_DRAFT
+          ? onPublishListingDraft(listing.id)
+          : null;
+      })
+      .then(() => {
+        if (returnToOnboarding) {
+          const onboardingRouteName = getOnboardingRouteName(config, currentUser);
+          history.push(
+            createResourceLocatorString(onboardingRouteName, routeConfiguration, {}, {})
+          );
+        }
+      });
   };
 
   const images = pickRenderableImages(

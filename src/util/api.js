@@ -159,12 +159,26 @@ export const listCreators = () => {
   return request('/api/list-creators', { method: methods.GET });
 };
 
+// Submits a creator application or brand access request. `body.type` is
+// `'creator'` or `'brand'` — see ApplyPage.js / RequestAccessPage.js for the
+// rest of the shape, and server/api/applications.js for validation.
+export const submitApplication = body => {
+  return post('/api/applications', body);
+};
+
 // Brand subscriptions. Stripe stays the source of truth for whether a brand's
 // subscription is active, so this is read live rather than cached in the store.
 //
 // See `server/api/subscription.js`.
 export const fetchSubscriptionStatus = () => {
   return request('/api/subscription/status');
+};
+
+// { unitAmount, currency, interval, intervalCount } read live from Stripe —
+// see server/api/subscription.js's subscriptionPrice (IMPLEMENTATION-PLAN.md
+// F9.2: SubscriptionPage must not hardcode the price).
+export const fetchSubscriptionPrice = () => {
+  return request('/api/subscription/price');
 };
 
 // Returns a Stripe-hosted Checkout URL. Card details are entered on Stripe's
@@ -177,4 +191,55 @@ export const createSubscriptionCheckoutSession = () => {
 // cancel the subscription.
 export const createBillingPortalSession = () => {
   return post('/api/subscription/billing-portal', {});
+};
+
+// Asks the server whether the current user is a verified operator (userType
+// 'operator' AND their id is in CGC_OPERATOR_USER_IDS). Called before any
+// /admin/* page renders — see server/api/admin/index.js and
+// src/util/operator.js.
+export const fetchAdminStatus = () => {
+  return request('/api/admin/status', { method: methods.GET });
+};
+
+// Application queue (F5.2). See server/api/admin/applications.js — approve
+// calls Sharetribe's real users/approve endpoint; decide (reject / request
+// more info) records a decision on the applicant's own privateData instead,
+// since there's no reject/ban endpoint (see that file's module doc).
+export const fetchAdminApplicants = () => {
+  return request('/api/admin/applications', { method: methods.GET });
+};
+
+export const approveApplicant = userId => {
+  return post('/api/admin/applications/approve', { userId });
+};
+
+export const decideApplicant = (userId, status, note) => {
+  return post('/api/admin/applications/decide', { userId, status, note });
+};
+
+// Invite codes (F5.3). See server/api/admin/invites.js.
+export const fetchInviteCodes = () => {
+  return request('/api/admin/invites', { method: methods.GET });
+};
+
+export const createInviteCode = ({ note, maxUses, expiresAt }) => {
+  return post('/api/admin/invites', { note, maxUses, expiresAt });
+};
+
+export const revokeInviteCode = listingId => {
+  return post('/api/admin/invites/revoke', { listingId });
+};
+
+// Dispute mediation (F5.3). See server/api/admin/disputes.js.
+export const fetchDisputes = () => {
+  return request('/api/admin/disputes', { method: methods.GET });
+};
+
+export const resolveDispute = (transactionId, resolution) => {
+  return post('/api/admin/disputes/resolve', { transactionId, resolution });
+};
+
+// Network health dashboard (F5.3). See server/api/admin/health.js.
+export const fetchAdminHealth = () => {
+  return request('/api/admin/health', { method: methods.GET });
 };

@@ -213,6 +213,129 @@ export const listingFields = [
   //     placeholderMessage: 'Some private note about this bike...',
   //   },
   // },
+
+  // The CGC Network's custom listing fields (BLUEPRINT.md §2.1/2.2, Appendix
+  // A2). Console's hosted "Listing fields" builder can't reference the
+  // `creator-profile`/`project` listing types below, since those only exist
+  // in this local config (see the comment on mergeListingConfig in
+  // configHelpers.js) — so these fields have to live here too, not in
+  // Console.
+  {
+    key: 'contentNiche',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'beauty', label: 'Beauty' },
+      { option: 'fashion', label: 'Fashion' },
+      { option: 'food', label: 'Food & drink' },
+      { option: 'fitness', label: 'Fitness & wellness' },
+      { option: 'tech', label: 'Tech' },
+      { option: 'home', label: 'Home & lifestyle' },
+      { option: 'travel', label: 'Travel' },
+      { option: 'parenting', label: 'Parenting & family' },
+      { option: 'pets', label: 'Pets' },
+      { option: 'gaming', label: 'Gaming' },
+    ],
+    listingTypeConfig: {
+      limitToListingTypeIds: true,
+      listingTypeIds: ['creator-profile', 'project'],
+    },
+    filterConfig: {
+      indexForSearch: true,
+      filterType: 'SelectMultipleFilter',
+      label: 'Content niche',
+      searchMode: 'has_any',
+      group: 'primary',
+    },
+    showConfig: {
+      label: 'Content niche',
+    },
+    saveConfig: {
+      label: 'Content niche',
+      placeholderMessage: 'Select the niches this applies to…',
+      isRequired: false,
+    },
+  },
+  {
+    key: 'platforms',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'tiktok', label: 'TikTok' },
+      { option: 'instagram-reels', label: 'Instagram Reels' },
+      { option: 'instagram-static', label: 'Instagram (static post)' },
+      { option: 'youtube-shorts', label: 'YouTube Shorts' },
+      { option: 'youtube', label: 'YouTube' },
+      { option: 'facebook', label: 'Facebook' },
+    ],
+    listingTypeConfig: {
+      limitToListingTypeIds: true,
+      listingTypeIds: ['creator-profile', 'project'],
+    },
+    filterConfig: {
+      indexForSearch: true,
+      filterType: 'SelectMultipleFilter',
+      label: 'Platforms',
+      searchMode: 'has_any',
+      group: 'primary',
+    },
+    showConfig: {
+      label: 'Platforms',
+    },
+    saveConfig: {
+      label: 'Platforms',
+      placeholderMessage: 'Select a platform…',
+      isRequired: false,
+    },
+  },
+  {
+    key: 'usageRights',
+    scope: 'public',
+    schemaType: 'enum',
+    enumOptions: [
+      { option: 'organic-only', label: 'Organic only' },
+      { option: 'paid-ads-3m', label: 'Paid ads (3 months)' },
+      { option: 'paid-ads-6m', label: 'Paid ads (6 months)' },
+      { option: 'paid-ads-12m', label: 'Paid ads (12 months)' },
+      { option: 'perpetual', label: 'Perpetual / unlimited' },
+    ],
+    listingTypeConfig: {
+      limitToListingTypeIds: true,
+      listingTypeIds: ['creator-profile', 'project'],
+    },
+    filterConfig: {
+      indexForSearch: true,
+      filterType: 'SelectSingleFilter',
+      label: 'Usage rights',
+      group: 'secondary',
+    },
+    showConfig: {
+      label: 'Usage rights',
+    },
+    saveConfig: {
+      label: 'Usage rights',
+      placeholderMessage: 'Select an option…',
+      isRequired: false,
+    },
+  },
+  {
+    // Lives on the project listing only — it's the campaign that decides
+    // whether a product ships, not the creator (BLUEPRINT §2.2 note).
+    key: 'requiresProduct',
+    scope: 'public',
+    schemaType: 'boolean',
+    listingTypeConfig: {
+      limitToListingTypeIds: true,
+      listingTypeIds: ['project'],
+    },
+    showConfig: {
+      label: 'Requires shipping a product',
+    },
+    saveConfig: {
+      label: 'Requires shipping a product',
+      isRequired: false,
+    },
+  },
 ];
 
 ///////////////////////////////////////////////////////////////////////
@@ -451,6 +574,48 @@ export const listingTypes = [
   //     stock: false,
   //   },
   // },
+
+  // The CGC Network's two listing types (BLUEPRINT.md D1, Appendix A2). Both
+  // run custom transaction processes that Console's hosted "Listing types"
+  // builder can't select (it only offers the 5 built-in processes) — see the
+  // comment on mergeListingConfig in configHelpers.js for why these have to
+  // be defined here in code instead.
+  {
+    listingType: 'creator-profile',
+    label: 'Creator profile',
+    transactionType: {
+      process: 'cgc-ugc-approval',
+      alias: 'cgc-ugc-approval/release-1',
+      unitType: 'item',
+    },
+    // A creator's package is always available, not counted stock — a single
+    // always-in-stock "item".
+    stockType: 'infiniteOneItem',
+    defaultListingFields: {
+      shipping: false,
+      pickup: false,
+      // Payout details are required: this is the listing a brand eventually
+      // pays out against (BLUEPRINT Appendix A2 — "payout wajib").
+      payoutDetails: true,
+    },
+  },
+  {
+    listingType: 'project',
+    label: 'Project',
+    transactionType: {
+      process: 'cgc-application',
+      alias: 'cgc-application/release-1',
+      unitType: 'inquiry',
+    },
+    defaultListingFields: {
+      // Active but purely informational — a project listing is never
+      // checked out against directly (BLUEPRINT Appendix A2).
+      price: true,
+      location: false,
+      // The brand posting a project doesn't receive payouts on this listing.
+      payoutDetails: false,
+    },
+  },
 ];
 
 // SearchPage can enforce listing query to only those listings with valid listingType

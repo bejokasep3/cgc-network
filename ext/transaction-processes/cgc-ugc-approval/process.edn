@@ -434,23 +434,9 @@
    :template :cgc-product-received}
 
   ;; --- Due date reminders -----------------------------------------------------
-  ;; Creator hasn't submitted anything yet: nudge before the auto-cancel window.
-  {:name :notification/content-due-reminder-purchased,
-   :on :transition/confirm-payment,
-   :at
-   {:fn/plus
-    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
-     {:fn/period ["P7D"]}]},
-   :to :actor.role/provider,
-   :template :cgc-content-due-reminder}
-  {:name :notification/content-due-reminder-received-product,
-   :on :transition/mark-product-received,
-   :at
-   {:fn/plus
-    [{:fn/timepoint [:time/first-entered-state :state/product-received]}
-     {:fn/period ["P10D"]}]},
-   :to :actor.role/provider,
-   :template :cgc-content-due-reminder}
+  ;; Content-due nudges (based on how long a status had been entered) are
+  ;; replaced by server/api-util/reminders.js (F7.1), which reads the
+  ;; project's actual contentDueDate instead of guessing from state age.
   {:name :notification/revision-due-reminder-1,
    :on :transition/request-revision-1,
    :at

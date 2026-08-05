@@ -5,6 +5,7 @@ import * as inquiryProcess from './transactionProcessInquiry';
 import * as negotiationProcess from './transactionProcessNegotiation';
 import * as downloadProcess from './transactionProcessDownload';
 import * as cgcUGCProcess from './transactionProcessCGCUGC';
+import * as cgcApplicationProcess from './transactionProcessCGCApplication';
 
 // Supported unit types
 // Note: These are passed to translations/microcopy in certain cases.
@@ -28,6 +29,7 @@ export const INQUIRY_PROCESS_NAME = 'default-inquiry';
 export const NEGOTIATION_PROCESS_NAME = 'default-negotiation';
 export const DOWNLOAD_PROCESS_NAME = 'default-download';
 export const CGC_UGC_PROCESS_NAME = 'cgc-ugc-approval';
+export const CGC_APPLICATION_PROCESS_NAME = 'cgc-application';
 
 /**
  * A process should export:
@@ -48,6 +50,12 @@ const PROCESSES = [
     alias: `${CGC_UGC_PROCESS_NAME}/release-1`,
     process: cgcUGCProcess,
     unitTypes: [ITEM],
+  },
+  {
+    name: CGC_APPLICATION_PROCESS_NAME,
+    alias: `${CGC_APPLICATION_PROCESS_NAME}/release-1`,
+    process: cgcApplicationProcess,
+    unitTypes: [INQUIRY],
   },
   {
     name: PURCHASE_PROCESS_NAME,
@@ -237,6 +245,8 @@ export const resolveLatestProcessName = processName => {
   switch (processName) {
     case CGC_UGC_PROCESS_NAME:
       return CGC_UGC_PROCESS_NAME;
+    case CGC_APPLICATION_PROCESS_NAME:
+      return CGC_APPLICATION_PROCESS_NAME;
     case 'flex-product-default-process':
     case 'default-buying-products':
     case PURCHASE_PROCESS_NAME:
@@ -399,6 +409,27 @@ export const isDownloadProcess = processName => {
 export const isDownloadProcessAlias = processAlias => {
   const processName = processAlias ? processAlias.split('/')[0] : null;
   return processAlias ? isDownloadProcess(processName) : false;
+};
+
+/**
+ * Check if the process is the CGC UGC approval process
+ *
+ * @param {String} processName
+ */
+export const isCgcUgcProcess = processName => {
+  const latestProcessName = resolveLatestProcessName(processName);
+  const processInfo = PROCESSES.find(process => process.name === latestProcessName);
+  return [CGC_UGC_PROCESS_NAME].includes(processInfo?.name);
+};
+
+/**
+ * Check if the process/alias points to the CGC UGC approval process
+ *
+ * @param {String} processAlias
+ */
+export const isCgcUgcProcessAlias = processAlias => {
+  const processName = processAlias ? processAlias.split('/')[0] : null;
+  return processAlias ? isCgcUgcProcess(processName) : false;
 };
 
 /**

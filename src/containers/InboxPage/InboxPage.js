@@ -32,6 +32,7 @@ import {
   isPurchaseProcess,
   isNegotiationProcess,
   CGC_UGC_PROCESS_NAME,
+  CGC_APPLICATION_PROCESS_NAME,
 } from '../../transactions/transaction';
 import {
   REVISION_ROUND_BY_STATE,
@@ -232,6 +233,13 @@ export const InboxItem = props => {
   } = stateData;
   const isCustomer = transactionRole === TX_TRANSITION_ACTOR_CUSTOMER;
   const isCGCProcess = processName === CGC_UGC_PROCESS_NAME;
+  // An application has no TransactionPage treatment of its own — it's
+  // managed from ProjectDetailPage (the creator's "already applied" card /
+  // the brand's ApplicantCard comparison view), so route there instead of
+  // the generic Order/SaleDetailsPage, which would otherwise be a dead end
+  // (IMPLEMENTATION-PLAN.md F3.4).
+  const isCGCApplicationProcess = processName === CGC_APPLICATION_PROCESS_NAME;
+  const projectId = tx.attributes?.protectedData?.projectId;
 
   const lineItems = tx.attributes?.lineItems;
   const hasPricingData = lineItems.length > 0;
@@ -261,8 +269,14 @@ export const InboxItem = props => {
       </div>
       <NamedLink
         className={linkClasses}
-        name={isCustomer ? 'OrderDetailsPage' : 'SaleDetailsPage'}
-        params={{ id: tx.id.uuid }}
+        name={
+          isCGCApplicationProcess && projectId
+            ? 'ProjectDetailPage'
+            : isCustomer
+            ? 'OrderDetailsPage'
+            : 'SaleDetailsPage'
+        }
+        params={{ id: isCGCApplicationProcess && projectId ? projectId : tx.id.uuid }}
       >
         <div className={css.rowNotificationDot}>{rowNotificationDot}</div>
         <div className={css.itemUsername}>{otherUserDisplayName}</div>

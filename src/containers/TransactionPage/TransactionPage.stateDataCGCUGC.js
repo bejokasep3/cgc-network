@@ -17,15 +17,19 @@ import {
  * @param {*} processInfo details about the process
  */
 export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
-  const { transaction, transactionRole, nextTransitions, onOpenCGCActionModal, listing } = txInfo;
+  const { transaction, transactionRole, nextTransitions, onOpenCGCActionModal, projectListing } = txInfo;
   const isProviderBanned = transaction?.provider?.attributes?.banned;
-  // A collaboration only involves shipping when the creator's own listing
-  // requires it — set by the creator, not derived from the brand's checkout
-  // choices. Sharetribe's own delivery methods are never enabled on
-  // creator-profile listings (see CGC-SETUP.md §2a), since that would make the
-  // creator collect a shipping fee instead of the brand shipping its own
-  // product; requiresProduct is the real signal.
-  const isShippable = listing?.attributes?.publicData?.requiresProduct === true;
+  // A collaboration only involves shipping when the PROJECT requires it — a
+  // brand-authored choice, not something derived from the creator's own
+  // profile card (see IMPLEMENTATION-PLAN.md F3.3). The transaction's own
+  // `listing` relationship is the creator-profile listing, which never has
+  // requiresProduct at all (config/configListing.js scopes that field to
+  // `project` listings only) — this must read the project listing instead,
+  // fetched separately by TransactionPage.js via protectedData.projectId.
+  // Sharetribe's own delivery methods are never enabled on creator-profile
+  // listings (see CGC-SETUP.md §2a), since that would make the creator
+  // collect a shipping fee instead of the brand shipping its own product.
+  const isShippable = projectListing?.attributes?.publicData?.requiresProduct === true;
   const hasShippingAddress = !!transaction?.attributes?.protectedData?.shippingAddressLine1;
   const _ = CONDITIONAL_RESOLVER_WILDCARD;
 
@@ -94,7 +98,13 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
     },
   ];
 
-  const base = { processName, processState, transitionMessages, showDetailCardHeadings: true };
+  const base = {
+    processName,
+    processState,
+    transitionMessages,
+    showDetailCardHeadings: true,
+    isShippable,
+  };
 
   // These three transitions need structured input, so their buttons open
   // CGCActionModal instead of transitioning straight away. The modal reads the
@@ -137,8 +147,13 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
       return {
         ...base,
         showExtraInfo: true,
-        showActionButtons: true,
+        // Once the shipping address is on file, submission is owned by
+        // DeliverableList (F3.1) — its own per-deliverable "add version" and
+        // "submit for review" controls replace the generic action button,
+        // same pattern as showApprovalDecisionPanel below.
+        showActionButtons: needsShippingAddress,
         contentSubmitTransition: transitions.SUBMIT_CONTENT,
+        canSubmitDeliverables: !needsShippingAddress,
         addShippingAddressTransition: transitions.PROVIDER_ADD_SHIPPING_ADDRESS,
         primaryButtonProps: needsShippingAddress
           ? actionButtonProps(
@@ -146,7 +161,7 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
               PROVIDER,
               openModal('addShippingAddress')
             )
-          : actionButtonProps(transitions.SUBMIT_CONTENT, PROVIDER, openModal('submitContent')),
+          : null,
       };
     })
 
@@ -167,13 +182,9 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
     .cond([states.PRODUCT_RECEIVED, PROVIDER], () => {
       return {
         ...base,
-        showActionButtons: true,
+        showActionButtons: false,
         contentSubmitTransition: transitions.SUBMIT_CONTENT_AFTER_SHIPPING,
-        primaryButtonProps: actionButtonProps(
-          transitions.SUBMIT_CONTENT_AFTER_SHIPPING,
-          PROVIDER,
-          openModal('submitContent')
-        ),
+        canSubmitDeliverables: true,
       };
     })
 
@@ -190,6 +201,7 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
         showApprovalDecisionPanel: true,
         disputeTransition: transitions.DISPUTE,
         revisionTransition: transitions.REQUEST_REVISION_1,
+        revisionsUsed: 0,
         primaryButtonProps: actionButtonProps(transitions.APPROVE_CONTENT, CUSTOMER),
         secondaryButtonProps: actionButtonProps(
           transitions.REQUEST_REVISION_1,
@@ -203,13 +215,9 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
     .cond([states.REVISION_REQUESTED_1, PROVIDER], () => {
       return {
         ...base,
-        showActionButtons: true,
+        showActionButtons: false,
         contentSubmitTransition: transitions.RESUBMIT_CONTENT_1,
-        primaryButtonProps: actionButtonProps(
-          transitions.RESUBMIT_CONTENT_1,
-          PROVIDER,
-          openModal('submitContent')
-        ),
+        canSubmitDeliverables: true,
       };
     })
     .cond([states.CONTENT_SUBMITTED_REVISED_1, CUSTOMER], () => {
@@ -220,6 +228,7 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
         showApprovalDecisionPanel: true,
         disputeTransition: transitions.DISPUTE_REVISED_1,
         revisionTransition: transitions.REQUEST_REVISION_2,
+        revisionsUsed: 1,
         primaryButtonProps: actionButtonProps(transitions.APPROVE_CONTENT_REVISED_1, CUSTOMER),
         secondaryButtonProps: actionButtonProps(
           transitions.REQUEST_REVISION_2,
@@ -234,13 +243,9 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
     .cond([states.REVISION_REQUESTED_2, PROVIDER], () => {
       return {
         ...base,
-        showActionButtons: true,
+        showActionButtons: false,
         contentSubmitTransition: transitions.RESUBMIT_CONTENT_2,
-        primaryButtonProps: actionButtonProps(
-          transitions.RESUBMIT_CONTENT_2,
-          PROVIDER,
-          openModal('submitContent')
-        ),
+        canSubmitDeliverables: true,
       };
     })
     .cond([states.CONTENT_SUBMITTED_REVISED_2, CUSTOMER], () => {
@@ -253,6 +258,7 @@ export const getStateDataForCGCUGCProcess = (txInfo, processInfo) => {
         showDispute: false,
         showApprovalDecisionPanel: true,
         disputeTransition: transitions.DISPUTE_REVISED_2,
+        revisionsUsed: 2,
         primaryButtonProps: actionButtonProps(transitions.APPROVE_CONTENT_REVISED_2, CUSTOMER),
       };
     })

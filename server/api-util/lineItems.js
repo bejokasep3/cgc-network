@@ -139,6 +139,11 @@ const getDateRangeQuantityAndLineItems = (orderData, code) => {
  * @param {Object} orderData
  * @param {string} [orderData.priceVariantName] - The name of the price variant (potentially used with bookable unit types)
  * @param {Money} [orderData.offer] - The offer for the offer (if transition intent is "make-offer")
+ * @param {Money} [orderData.agreedPrice] - The price agreed via a cgc-application
+ *   (creator's asking price, or the negotiated counter), for a
+ *   creator-profile checkout. See IMPLEMENTATION-PLAN.md 2.6 — this always
+ *   wins over the listing's own price on that listing type; the server is the
+ *   only caller allowed to set this, never the client directly.
  * @param {Object} providerCommission
  * @param {Object} customerCommission
  * @returns {Array} lineItems
@@ -147,14 +152,15 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
   const publicData = listing.attributes.publicData;
   // Note: the unitType needs to be one of the following:
   // day, night, hour, fixed, or item (these are related to payment processes)
-  const { unitType, priceVariants, priceVariationsEnabled } = publicData;
+  const { unitType, priceVariants, priceVariationsEnabled, listingType } = publicData;
 
   const isBookable = ['day', 'night', 'hour', 'fixed'].includes(unitType);
   const isNegotiationUnitType = ['offer', 'request'].includes(unitType);
+  const isCreatorProfileListing = listingType === 'creator-profile';
   const priceAttribute = listing.attributes.price;
   const currency = priceAttribute?.currency || orderData.currency;
 
-  const { priceVariantName, offer } = orderData || {};
+  const { priceVariantName, offer, agreedPrice } = orderData || {};
   const priceVariantConfig = priceVariants
     ? priceVariants.find(pv => pv.name === priceVariantName)
     : null;
@@ -164,6 +170,8 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
   const unitPrice =
     isBookable && priceVariationsEnabled && isPriceInSubunitsValid
       ? new Money(priceInSubunits, currency)
+      : agreedPrice instanceof Money && isCreatorProfileListing
+      ? agreedPrice
       : offer instanceof Money && isNegotiationUnitType
       ? offer
       : priceAttribute;

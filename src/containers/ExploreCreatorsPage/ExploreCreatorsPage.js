@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
@@ -8,6 +8,9 @@ import { useConfiguration } from '../../context/configurationContext';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { toggleSavedCreator } from '../../ducks/brandRoster.duck';
 import { logout } from '../../ducks/auth.duck';
+import { parse } from '../../util/urlHelpers';
+import { isUserAuthorized } from '../../util/userHelpers';
+import { isFieldForListingType } from '../../util/fieldHelpers';
 import { fetchCreatorsThunk } from './ExploreCreatorsPage.duck';
 
 import {
@@ -15,12 +18,15 @@ import {
   Page,
   LayoutSingleColumn,
   IconSpinner,
+  IconClose,
   AspectRatioWrapper,
   ResponsiveImage,
   NamedLink,
+  NamedRedirect,
 } from '../../components';
 
 import DashboardTopbar from './DashboardTopbar/DashboardTopbar';
+import BrandSetupBanner from '../BrandOnboardingPage/BrandSetupBanner';
 
 import css from './ExploreCreatorsPage.module.css';
 
@@ -39,12 +45,110 @@ const FILTER_TABS = [
   { id: 'industry-top', labelId: 'ExploreCreatorsPage.filterIndustryTop', enabled: false },
 ];
 
+const CREATOR_PROFILE_LISTING_TYPE = 'creator-profile';
+
+const DEFAULT_ADVANCED_FILTERS = {
+  niches: [],
+  platforms: [],
+};
+
+const hasActiveAdvancedFilters = filters =>
+  filters.niches.length > 0 || filters.platforms.length > 0;
+
+const toggleInArray = (array, value) =>
+  array.includes(value) ? array.filter(v => v !== value) : [...array, value];
+
+// Client-side only, same as BrowseProjectsPage's advanced filters — list-creators.js
+// already returns each creator's contentNiche/platforms (from their published
+// creator-profile listing), so this needs no new server-side query.
+const matchesAdvancedFilters = (creator, filters) => {
+  if (filters.niches.length > 0) {
+    const niche = creator.contentNiche || [];
+    if (!filters.niches.some(n => niche.includes(n))) return false;
+  }
+  if (filters.platforms.length > 0) {
+    const platforms = creator.platforms || [];
+    if (!filters.platforms.some(p => platforms.includes(p))) return false;
+  }
+  return true;
+};
+
+const FilterCheckboxGroup = ({ labelId, options, selected, onToggle }) =>
+  options.length > 0 ? (
+    <div className={css.filterGroup}>
+      <span className={css.filterGroupLabel}>
+        <FormattedMessage id={labelId} />
+      </span>
+      <div className={css.filterCheckboxRow}>
+        {options.map(option => (
+          <label key={`${option.option}`} className={css.filterCheckboxLabel}>
+            <input
+              type="checkbox"
+              checked={selected.includes(`${option.option}`)}
+              onChange={() => onToggle(`${option.option}`)}
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+const AdvancedFilters = ({ filters, onChange, nicheOptions, platformOptions, intl, onClose }) => (
+  <div className={css.sidebar}>
+    <div className={css.sidebarHeader}>
+      <Heading as="h2" rootClassName={css.sidebarTitle}>
+        <FormattedMessage id="ExploreCreatorsPage.filtersButton" />
+      </Heading>
+      <button
+        type="button"
+        className={css.sidebarClose}
+        onClick={onClose}
+        aria-label={intl.formatMessage({ id: 'ExploreCreatorsPage.closeFilters' })}
+      >
+        <IconClose size="small" />
+      </button>
+    </div>
+    <FilterCheckboxGroup
+      labelId="ExploreCreatorsPage.nicheFilterLabel"
+      options={nicheOptions}
+      selected={filters.niches}
+      onToggle={value => onChange({ ...filters, niches: toggleInArray(filters.niches, value) })}
+    />
+    <FilterCheckboxGroup
+      labelId="ExploreCreatorsPage.platformFilterLabel"
+      options={platformOptions}
+      selected={filters.platforms}
+      onToggle={value =>
+        onChange({ ...filters, platforms: toggleInArray(filters.platforms, value) })
+      }
+    />
+    {hasActiveAdvancedFilters(filters) ? (
+      <button
+        type="button"
+        className={css.clearFiltersButton}
+        onClick={() => onChange(DEFAULT_ADVANCED_FILTERS)}
+      >
+        <FormattedMessage id="ExploreCreatorsPage.clearFilters" />
+      </button>
+    ) : null}
+  </div>
+);
+
+// Users' profile images only ever carry these two variants (see e.g.
+// user.duck.js) — unlike listing images, they're never generated with the
+// "listing-card" style prefixes, so filtering by that prefix always came up
+// empty and silently fell back to the "no image" placeholder.
+const PROFILE_IMAGE_VARIANTS = ['square-small', 'square-small2x'];
+
 // Thumbnail shows the creator's real profile photo when they have one, or a
 // plain gradient placeholder box (no play icon — this isn't a video preview,
 // just reserved space for the photo) when they don't.
-const CreatorThumbnail = ({ profileImage, variantPrefix, name }) => {
+const CreatorThumbnail = ({ profileImage, name }) => {
   const variants = profileImage
-    ? Object.keys(profileImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
+    ? Object.keys(profileImage?.attributes?.variants || {}).filter(k =>
+        PROFILE_IMAGE_VARIANTS.includes(k)
+      )
     : [];
 
   return (
@@ -62,16 +166,41 @@ const CreatorThumbnail = ({ profileImage, variantPrefix, name }) => {
   );
 };
 
-const CreatorCardReal = ({ creator, variantPrefix, isSaved, onToggleSaved, intl }) => {
+const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) => {
   const name = creator.displayName || '';
   const initial = name.charAt(0) || '?';
+  // F2.5: arriving here with ?project=<id> (from ProjectInvitePage's "browse
+  // all creators" link) threads that project through to CreatorProfilePage,
+  // which preselects it in the invite form's project picker — same
+  // destination either way, just pre-filled instead of a bare "Collab".
+  const buttonLabelId = projectId
+    ? 'ExploreCreatorsPage.inviteToProjectButton'
+    : 'ExploreCreatorsPage.collabButton';
+
+  const avatarVariants = creator.profileImage
+    ? Object.keys(creator.profileImage?.attributes?.variants || {}).filter(k =>
+        PROFILE_IMAGE_VARIANTS.includes(k)
+      )
+    : [];
 
   return (
     <li className={css.card}>
       <div className={css.cardHeader}>
-        <span className={css.avatar} aria-hidden="true">
-          {initial}
-        </span>
+        {avatarVariants.length > 0 ? (
+          <span className={css.avatarImageWrapper}>
+            <ResponsiveImage
+              rootClassName={css.avatarImage}
+              alt={name}
+              image={creator.profileImage}
+              variants={avatarVariants}
+              sizes="40px"
+            />
+          </span>
+        ) : (
+          <span className={css.avatar} aria-hidden="true">
+            {initial}
+          </span>
+        )}
         <span className={css.name}>{name}</span>
         <button
           type="button"
@@ -84,15 +213,16 @@ const CreatorCardReal = ({ creator, variantPrefix, isSaved, onToggleSaved, intl 
         </button>
       </div>
 
-      <CreatorThumbnail profileImage={creator.profileImage} variantPrefix={variantPrefix} name={name} />
+      <CreatorThumbnail profileImage={creator.profileImage} name={name} />
 
       {creator.listingId ? (
         <NamedLink
           className={css.inviteButton}
           name="CreatorProfilePage"
           params={{ id: creator.listingId.uuid }}
+          to={projectId ? { search: `project=${projectId}` } : undefined}
         >
-          <FormattedMessage id="ExploreCreatorsPage.collabButton" />
+          <FormattedMessage id={buttonLabelId} />
         </NamedLink>
       ) : (
         <button
@@ -101,7 +231,7 @@ const CreatorCardReal = ({ creator, variantPrefix, isSaved, onToggleSaved, intl 
           disabled
           title={intl.formatMessage({ id: 'ExploreCreatorsPage.collabNotReady' })}
         >
-          <FormattedMessage id="ExploreCreatorsPage.collabButton" />
+          <FormattedMessage id={buttonLabelId} />
         </button>
       )}
     </li>
@@ -145,25 +275,55 @@ export const ExploreCreatorsPageComponent = props => {
     onToggleSavedCreator,
     currentUser,
     onLogout,
+    location,
   } = props;
 
+  // F2.5: ?project=<id> arrives from ProjectInvitePage's "browse all
+  // creators" link, making this whole page project-aware for the visit.
+  const projectId = parse(location?.search || '')?.project || null;
+
   const [activeFilter, setActiveFilter] = useState('discover');
+  const [advancedFilters, setAdvancedFilters] = useState(DEFAULT_ADVANCED_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     onFetchCreators();
   }, [onFetchCreators]);
 
-  const { variantPrefix = 'listing-card' } = config.layout.listingImage;
+  // Must run on every render, before the auth early-return below — otherwise
+  // a not-yet-authorized user calls fewer hooks than an authorized one did,
+  // and React throws "Rendered fewer hooks than expected" (same reasoning as
+  // BrowseProjectsPage's identical comment).
+  const listingFieldsConfig = config.listing.listingFields;
+  const nicheOptions = useMemo(
+    () =>
+      (listingFieldsConfig || []).find(
+        f => f.key === 'contentNiche' && isFieldForListingType(CREATOR_PROFILE_LISTING_TYPE, f)
+      )?.enumOptions || [],
+    [listingFieldsConfig]
+  );
+  const platformOptions = useMemo(
+    () =>
+      (listingFieldsConfig || []).find(
+        f => f.key === 'platforms' && isFieldForListingType(CREATOR_PROFILE_LISTING_TYPE, f)
+      )?.enumOptions || [],
+    [listingFieldsConfig]
+  );
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const title = intl.formatMessage(
     { id: 'ExploreCreatorsPage.schemaTitle' },
     { marketplaceName: config.marketplaceName }
   );
 
-  const visibleCreators =
-    activeFilter === 'favorites'
-      ? creators.filter(creator => savedCreatorIds.includes(creator.id.uuid))
-      : creators;
+  const visibleCreators = creators
+    .filter(creator =>
+      activeFilter === 'favorites' ? savedCreatorIds.includes(creator.id.uuid) : true
+    )
+    .filter(creator => matchesAdvancedFilters(creator, advancedFilters));
 
   const hasResults = visibleCreators.length > 0;
 
@@ -188,8 +348,23 @@ export const ExploreCreatorsPageComponent = props => {
             <FormattedMessage id="ExploreCreatorsPage.subtitle" />
           </p>
 
+          <BrandSetupBanner currentUser={currentUser} className={css.setupBanner} />
+
+          {projectId ? (
+            <div className={css.projectContextBanner}>
+              <FormattedMessage id="ExploreCreatorsPage.projectContextBanner" />
+            </div>
+          ) : null}
+
           <div className={css.filterRow}>
-            <button type="button" className={css.filtersButton}>
+            <button
+              type="button"
+              className={classNames(css.filtersButton, {
+                [css.filtersButtonActive]: hasActiveAdvancedFilters(advancedFilters),
+              })}
+              onClick={() => setFiltersOpen(open => !open)}
+              aria-expanded={filtersOpen}
+            >
               <FormattedMessage id="ExploreCreatorsPage.filtersButton" />
             </button>
             {FILTER_TABS.map(tab => (
@@ -209,40 +384,55 @@ export const ExploreCreatorsPageComponent = props => {
             ))}
           </div>
 
-          {fetchError ? (
-            <p className={css.error}>
-              <FormattedMessage id="ExploreCreatorsPage.fetchFailed" />
-            </p>
-          ) : null}
-
-          {fetchInProgress ? (
-            <div className={css.loading}>
-              <IconSpinner />
-            </div>
-          ) : hasResults ? (
-            <ul className={css.grid}>
-              {visibleCreators.map(creator => (
-                <CreatorCardReal
-                  key={creator.id.uuid}
-                  creator={creator}
-                  variantPrefix={variantPrefix}
-                  isSaved={savedCreatorIds.includes(creator.id.uuid)}
-                  onToggleSaved={onToggleSavedCreator}
-                  intl={intl}
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className={css.noResults}>
-              <FormattedMessage
-                id={
-                  activeFilter === 'favorites'
-                    ? 'ExploreCreatorsPage.noFavorites'
-                    : 'ExploreCreatorsPage.noResults'
-                }
+          <div className={css.layout}>
+            {filtersOpen ? (
+              <AdvancedFilters
+                filters={advancedFilters}
+                onChange={setAdvancedFilters}
+                nicheOptions={nicheOptions}
+                platformOptions={platformOptions}
+                intl={intl}
+                onClose={() => setFiltersOpen(false)}
               />
-            </p>
-          )}
+            ) : null}
+
+            <div className={css.content}>
+              {fetchError ? (
+                <p className={css.error}>
+                  <FormattedMessage id="ExploreCreatorsPage.fetchFailed" />
+                </p>
+              ) : null}
+
+              {fetchInProgress ? (
+                <div className={css.loading}>
+                  <IconSpinner />
+                </div>
+              ) : hasResults ? (
+                <ul className={css.grid}>
+                  {visibleCreators.map(creator => (
+                    <CreatorCardReal
+                      key={creator.id.uuid}
+                      creator={creator}
+                      isSaved={savedCreatorIds.includes(creator.id.uuid)}
+                      onToggleSaved={onToggleSavedCreator}
+                      projectId={projectId}
+                      intl={intl}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className={css.noResults}>
+                  <FormattedMessage
+                    id={
+                      activeFilter === 'favorites'
+                        ? 'ExploreCreatorsPage.noFavorites'
+                        : 'ExploreCreatorsPage.noResults'
+                    }
+                  />
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </LayoutSingleColumn>
     </Page>

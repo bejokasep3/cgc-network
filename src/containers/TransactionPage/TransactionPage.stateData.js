@@ -1,4 +1,4 @@
-import { bool, func, oneOf, shape, string } from 'prop-types';
+import { bool, func, number, oneOf, shape, string } from 'prop-types';
 import {
   BOOKING_PROCESS_NAME,
   INQUIRY_PROCESS_NAME,
@@ -48,6 +48,18 @@ export const stateDataShape = shape({
   // cgc-ugc-approval only: renders ApprovalDecisionPanel instead of the
   // generic action buttons for the content-review states.
   showApprovalDecisionPanel: bool,
+  // cgc-ugc-approval only (F3.1): true when the creator can currently add
+  // deliverable versions and submit for review — DeliverableList owns that
+  // UI instead of the generic action buttons.
+  canSubmitDeliverables: bool,
+  // cgc-ugc-approval only (F3.2): how many of the two revisions have been
+  // used as of this review — shown by ApprovalDecisionPanel so the quota is
+  // always visible, not just implied by which round it is.
+  revisionsUsed: number,
+  // cgc-ugc-approval only (F3.3): whether the PROJECT requires shipping a
+  // product — always present, not just on states where it drives an action,
+  // so StageTracker can filter product-only stages correctly everywhere.
+  isShippable: bool,
 });
 
 // Transitions are following process.edn format: "transition/my-transtion-name"

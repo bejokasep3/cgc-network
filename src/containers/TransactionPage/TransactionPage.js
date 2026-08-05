@@ -6,6 +6,7 @@ import classNames from 'classnames';
 import appSettings from '../../config/settings.js';
 import { useConfiguration } from '../../context/configurationContext';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
+import { types as sdkTypes } from '../../util/sdkLoader';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { createResourceLocatorString, findRouteByRouteName } from '../../util/routes';
 import {
@@ -17,7 +18,11 @@ import {
 import { timestampToDate } from '../../util/dates';
 import { createSlug } from '../../util/urlHelpers';
 import { requireListingImage } from '../../util/configHelpers';
-import { getCurrentUserTypeRoles, hasPermissionToViewData } from '../../util/userHelpers.js';
+import {
+  getCurrentUserTypeRoles,
+  hasPermissionToViewData,
+  isBrandUserType,
+} from '../../util/userHelpers.js';
 import { userDisplayNameAsString } from '../../util/data';
 import { isMobileSafari } from '../../util/userAgent';
 
@@ -40,6 +45,7 @@ import {
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { isScrollingDisabled, manageDisableScrolling } from '../../ducks/ui.duck';
 import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
+import { logout } from '../../ducks/auth.duck';
 
 import {
   H4,
@@ -53,8 +59,8 @@ import {
   LayoutSingleColumn,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 
 import { getStateData } from './TransactionPage.stateData';
 import ActionButtons, {
@@ -88,7 +94,10 @@ import {
   selectFileUploads,
   downloadFile,
 } from './TransactionPage.duck';
+import { showListing } from '../ListingPage/ListingPage.duck';
 import css from './TransactionPage.module.css';
+
+const { UUID } = sdkTypes;
 
 const MAX_MOBILE_SCREEN_WIDTH = 1023;
 const SEND_MESSAGE_FORM_ID = 'TransactionPanel.SendMessageForm';
@@ -332,10 +341,16 @@ export const TransactionPageComponent = props => {
   const [changeRequestSubmitted, setChangeRequestSubmitted] = useState(false);
   const [isMakeCounterOfferModalOpen, setMakeCounterOfferModalOpen] = useState(false);
   const [counterOfferSubmitted, setCounterOfferSubmitted] = useState(false);
-  // The cgc-ugc-approval process collects structured data on three of its
-  // transitions. One modal serves all three; this tracks which variant is open.
+  // The cgc-ugc-approval process collects structured data on several of its
+  // transitions. One modal serves all of them; this tracks which variant is open.
   const [cgcModalVariant, setCgcModalVariant] = useState(null);
   const [cgcActionSubmitted, setCgcActionSubmitted] = useState(false);
+  // F3.1: which DeliverableList row the addDeliverableVersion modal is
+  // currently open for, and the versions staged so far this round — keyed
+  // by deliverable id, not yet sent to the server until "submit for review"
+  // bundles them into one transition (see onSubmitDeliverables).
+  const [cgcActiveDeliverableId, setCgcActiveDeliverableId] = useState(null);
+  const [cgcDeliverableDrafts, setCgcDeliverableDrafts] = useState({});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -349,6 +364,7 @@ export const TransactionPageComponent = props => {
 
   const config = useConfiguration();
   const routeConfiguration = useRouteConfiguration();
+  const dispatch = useDispatch();
   const intl = useIntl();
   const {
     currentUser,
@@ -384,6 +400,7 @@ export const TransactionPageComponent = props => {
     onDownloadFile,
     fileDownloads,
     fileUploadsDisabled,
+    projectListing,
     ...restOfProps
   } = props;
 
@@ -523,10 +540,12 @@ export const TransactionPageComponent = props => {
     setMakeCounterOfferModalOpen(true);
   };
 
-  // Open one of the cgc-ugc-approval action modals (shipping details, content
-  // submission, revision request). Called from action buttons.
-  const onOpenCGCActionModal = variant => () => {
+  // Open one of the cgc-ugc-approval action modals (shipping details,
+  // revision request, or — with a deliverableId — one row's version upload).
+  // Called from action buttons and from DeliverableList.
+  const onOpenCGCActionModal = (variant, deliverableId = null) => () => {
     setCgcActionSubmitted(false);
+    setCgcActiveDeliverableId(deliverableId);
     setCgcModalVariant(variant);
   };
 
@@ -610,6 +629,16 @@ export const TransactionPageComponent = props => {
     customer: isCustomerUserTypeRole,
     provider: isProviderUserTypeRole,
   } = getCurrentUserTypeRoles(config, currentUser);
+
+  // DashboardTopbar's role is about the viewer's own account type (brand vs
+  // creator), which is fixed regardless of whether that account happens to
+  // be the customer or provider on this particular transaction — unlike
+  // transactionRole, which flips depending on the process (see
+  // ProjectAcceptPage.js's comment on brand-as-provider on cgc-application).
+  const dashboardTopbarRole = isBrandUserType(config, currentUser) ? 'brand' : 'creator';
+  const dashboardTopbarCurrentPage =
+    dashboardTopbarRole === 'brand' ? 'ManageCampaignsPage' : 'MyCollaborationsPage';
+  const handleDashboardTopbarLogout = () => dispatch(logout());
 
   const validListingTypes = config.listing.listingTypes;
   const foundListingTypeConfig = validListingTypes.find(
@@ -750,6 +779,7 @@ export const TransactionPageComponent = props => {
         {
           transaction,
           listing,
+          projectListing,
           transactionRole,
           nextTransitions,
           transitionInProgress,
@@ -777,37 +807,43 @@ export const TransactionPageComponent = props => {
 
   // The cgc-ugc-approval transition each modal variant fires also depends on the
   // current state (submit-content vs. resubmit-content-1, etc.), so stateData
-  // tells us which one applies right now.
+  // tells us which one applies right now. addDeliverableVersion never fires a
+  // transition itself (see onStageDeliverableVersion) — contentSubmitTransition
+  // is reused here only as a truthy sentinel so the modal renders while
+  // submission is possible.
   const cgcModalTransitions = {
     addShippingAddress: stateData.addShippingAddressTransition,
     shipping: stateData.shippingTransition,
-    submitContent: stateData.contentSubmitTransition,
+    addDeliverableVersion: stateData.contentSubmitTransition,
     requestRevision: stateData.revisionTransition,
   };
   const cgcModalTransition = cgcModalVariant ? cgcModalTransitions[cgcModalVariant] : null;
 
-  // The submitContent/requestRevision modal fields (contentLinks, submissionNote,
-  // revisionNote) are reused for every round, but each round needs its own
-  // protectedData keys — otherwise resubmitting overwrites the previous round's
-  // data, and CollaborationDetailsMaybe can't show a revision history. Round 0
-  // (the original submission and its first revision request) keeps the bare
-  // field names; later rounds get a suffix.
+  // The requestRevision modal's fields (revisionNote, targetDeliverableIds)
+  // are reused for every round, but each round needs its own protectedData
+  // keys — otherwise a second revision request overwrites the first round's,
+  // and CollaborationDetailsMaybe/DeliverableList can't show both. Round 1
+  // keeps the bare field names; round 2 gets a suffix. (Deliverable versions
+  // don't need this — they accumulate in each deliverable's own `versions`
+  // array instead, see onSubmitDeliverables.)
   const cgcRoundKeySuffix = transitionName => {
     if (!process?.transitions) return '';
-    if (transitionName === process.transitions.RESUBMIT_CONTENT_1) return 'Revision1';
-    if (transitionName === process.transitions.RESUBMIT_CONTENT_2) return 'Revision2';
     if (transitionName === process.transitions.REQUEST_REVISION_2) return '2';
     return '';
   };
   const cgcRoundSuffix = cgcRoundKeySuffix(cgcModalTransition);
 
   // Everything the form collects goes into protected data, which is what makes
-  // it readable by the other party and by the notification templates.
+  // it readable by the other party and by the notification templates. Used by
+  // every modal variant except addDeliverableVersion (see below).
   const onSubmitCGCAction = values => {
     const protectedData = Object.entries(values).reduce((acc, [key, value]) => {
       const trimmed = typeof value === 'string' ? value.trim() : value;
       const dataKey = cgcRoundSuffix ? `${key}${cgcRoundSuffix}` : key;
-      return trimmed ? { ...acc, [dataKey]: trimmed } : acc;
+      // An empty array (no deliverables checked) is still meaningful data,
+      // not an omission — only strip genuinely empty strings.
+      const isEmptyString = trimmed === '';
+      return !isEmptyString ? { ...acc, [dataKey]: trimmed } : acc;
     }, {});
 
     onTransition(transaction?.id, cgcModalTransition, { protectedData })
@@ -817,6 +853,55 @@ export const TransactionPageComponent = props => {
       })
       .catch(() => {
         // Error is surfaced through transitionError inside the modal.
+      });
+  };
+
+  // F3.1: stages one deliverable's new version locally — the process only
+  // allows a single content-submission transition per round, so uploads
+  // across every row are collected here first and bundled into one
+  // transition by onSubmitDeliverables, not sent as they're added.
+  const onStageDeliverableVersion = values => {
+    const contentLinks = values.contentLinks ? values.contentLinks.trim() : '';
+    if (!cgcActiveDeliverableId || !contentLinks) {
+      return;
+    }
+    setCgcDeliverableDrafts(prev => ({
+      ...prev,
+      [cgcActiveDeliverableId]: {
+        contentLinks,
+        submissionNote: values.submissionNote ? values.submissionNote.trim() : '',
+      },
+    }));
+    setCgcModalVariant(null);
+    setCgcActiveDeliverableId(null);
+  };
+
+  // Bundles every staged draft into the deliverables array and fires the
+  // actual content-submission transition. DeliverableList only enables this
+  // once every deliverable has at least one version (existing or staged) —
+  // see IMPLEMENTATION-PLAN.md F3.1.
+  const onSubmitDeliverables = () => {
+    const existingDeliverables = transaction?.attributes?.protectedData?.deliverables || [];
+    const submittedAt = new Date().toISOString();
+    const nextDeliverables = existingDeliverables.map(d => {
+      const draft = cgcDeliverableDrafts[d.id];
+      if (!draft) {
+        return d;
+      }
+      return {
+        ...d,
+        versions: [...(Array.isArray(d.versions) ? d.versions : []), { ...draft, submittedAt }],
+      };
+    });
+
+    onTransition(transaction?.id, stateData.contentSubmitTransition, {
+      protectedData: { deliverables: nextDeliverables },
+    })
+      .then(() => {
+        setCgcDeliverableDrafts({});
+      })
+      .catch(() => {
+        // Error is surfaced through transitionError, read by DeliverableList.
       });
   };
 
@@ -925,6 +1010,19 @@ export const TransactionPageComponent = props => {
       showBookingLocation={showBookingLocation}
       hasViewingRights={hasViewingRights}
       showListingImage={showListingImage}
+      cgcDeliverableDrafts={cgcDeliverableDrafts}
+      // Unlike onOpenCGCActionModal's other callers (which hand it straight
+      // to onClick, letting it fire on click), DeliverableList calls this
+      // directly with a deliverable id — so the returned closure needs to
+      // be invoked here, not just returned.
+      onOpenDeliverableVersionModal={deliverableId =>
+        onOpenCGCActionModal('addDeliverableVersion', deliverableId)()
+      }
+      onSubmitDeliverables={onSubmitDeliverables}
+      submitDeliverablesInProgress={transitionInProgress === stateData.contentSubmitTransition}
+      submitDeliverablesError={
+        transitionInProgress === stateData.contentSubmitTransition ? null : transitionError
+      }
       sendMessageForm={
         showSendMessageForm ? (
           <SendMessageForm
@@ -1102,7 +1200,17 @@ export const TransactionPageComponent = props => {
       )}
       scrollingDisabled={scrollingDisabled}
     >
-      <LayoutSingleColumn topbar={<TopbarContainer />} footer={<FooterContainer />}>
+      <LayoutSingleColumn
+        topbar={
+          <DashboardTopbar
+            displayName={currentUser?.attributes?.profile?.displayName}
+            currentPage={dashboardTopbarCurrentPage}
+            role={dashboardTopbarRole}
+            onLogout={handleDashboardTopbarLogout}
+          />
+        }
+        footer={<FooterContainer />}
+      >
         <div className={css.root}>{panel}</div>
         <ReviewModal
           id="ReviewOrderModal"
@@ -1180,12 +1288,29 @@ export const TransactionPageComponent = props => {
             variant={cgcModalVariant}
             isOpen={!!cgcModalVariant}
             focusElementId={`${actionButtonContainer}_${ACTION_BUTTON_1_ID}`}
-            onCloseModal={() => setCgcModalVariant(null)}
+            onCloseModal={() => {
+              setCgcModalVariant(null);
+              setCgcActiveDeliverableId(null);
+            }}
             onManageDisableScrolling={onManageDisableScrolling}
-            onSubmitAction={onSubmitCGCAction}
+            onSubmitAction={
+              cgcModalVariant === 'addDeliverableVersion'
+                ? onStageDeliverableVersion
+                : onSubmitCGCAction
+            }
+            deliverables={transaction?.attributes?.protectedData?.deliverables}
+            initialValues={
+              cgcModalVariant === 'addShippingAddress'
+                ? currentUser?.attributes?.profile?.privateData?.shippingAddress
+                : undefined
+            }
             submitted={cgcActionSubmitted}
-            inProgress={transitionInProgress === cgcModalTransition}
-            error={transitionError}
+            inProgress={
+              cgcModalVariant === 'addDeliverableVersion'
+                ? false
+                : transitionInProgress === cgcModalTransition
+            }
+            error={cgcModalVariant === 'addDeliverableVersion' ? null : transitionError}
           />
         ) : null}
         {showMakeCounterOfferModal ? (
@@ -1229,6 +1354,7 @@ export const TransactionPageComponent = props => {
 const TransactionPage = props => {
   const dispatch = useDispatch();
   const history = useHistory();
+  const config = useConfiguration();
 
   // State selectors
   const {
@@ -1263,6 +1389,24 @@ const TransactionPage = props => {
     const [tx] = getMarketplaceEntities(state, transactionRef ? [transactionRef] : []);
     return tx || null;
   });
+
+  // cgc-ugc-approval only (F3.3): the transaction's own `listing` relationship
+  // is the creator-profile listing, but whether this collaboration ships a
+  // product is a property of the PROJECT (protectedData.projectId, seeded
+  // server-side at checkout — see cgcCheckout.js), not the creator's card.
+  // Fetched as a plain marketplace listing, same pattern as
+  // ProjectDetailPage.js's own showListing usage.
+  const projectId = transaction?.attributes?.protectedData?.projectId;
+  useEffect(() => {
+    if (!projectId) {
+      return;
+    }
+    dispatch(showListing(new UUID(projectId), config)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+  const projectListing = useSelector(state =>
+    projectId ? getMarketplaceEntities(state, [{ id: new UUID(projectId), type: 'listing' }])[0] : null
+  );
 
   const fileUploads = useSelector(selectFileUploads, shallowEqual);
 
@@ -1326,6 +1470,7 @@ const TransactionPage = props => {
       transitionError={transitionError}
       scrollingDisabled={scrollingDisabled}
       transaction={transaction}
+      projectListing={projectListing}
       fetchMessagesInProgress={fetchMessagesInProgress}
       fetchMessagesError={fetchMessagesError}
       totalMessagePages={totalMessagePages}

@@ -7,9 +7,13 @@ import BrowseProjectsPage from './BrowseProjectsPage/BrowseProjectsPage.duck';
 import CheckoutPage from './CheckoutPage/CheckoutPage.duck';
 import ContactDetailsPage from './ContactDetailsPage/ContactDetailsPage.duck';
 import CreatorPackagePage from './CreatorPackagePage/CreatorPackagePage.duck';
+import EarningsPage from './EarningsPage/EarningsPage.duck';
 import EditListingPage from './EditListingPage/EditListingPage.duck';
+import EditProjectPage from './EditProjectPage/EditProjectPage.duck';
 import ExploreCreatorsPage from './ExploreCreatorsPage/ExploreCreatorsPage.duck';
 import InboxPage from './InboxPage/InboxPage.duck';
+import LibraryPage from './LibraryPage/LibraryPage.duck';
+import LicensePage from './LicensePage/LicensePage.duck';
 import ListingPage from './ListingPage/ListingPage.duck';
 import MakeOfferPage from './MakeOfferPage/MakeOfferPage.duck';
 import ManageCampaignsPage from './ManageCampaignsPage/ManageCampaignsPage.duck';
@@ -23,9 +27,13 @@ import ManageAccountPage from './ManageAccountPage/ManageAccountPage.duck';
 import PostProjectPage from './PostProjectPage/PostProjectPage.duck';
 import ProfilePage from './ProfilePage/ProfilePage.duck';
 import ProfileSettingsPage from './ProfileSettingsPage/ProfileSettingsPage.duck';
+import ProjectAcceptPage from './ProjectAcceptPage/ProjectAcceptPage.duck';
+import ProjectDetailPage from './ProjectDetailPage/ProjectDetailPage.duck';
+import ProjectInvitePage from './ProjectInvitePage/ProjectInvitePage.duck';
 import RequestQuotePage from './RequestQuotePage/RequestQuotePage.duck';
 import RosterPage from './RosterPage/RosterPage.duck';
 import SearchPage from './SearchPage/SearchPage.duck';
+import ShippingAddressPage from './ShippingAddressPage/ShippingAddressPage.duck';
 import StripePayoutPage from './StripePayoutPage/StripePayoutPage.duck';
 import TransactionPage from './TransactionPage/TransactionPage.duck';
 
@@ -34,9 +42,13 @@ export {
   CheckoutPage,
   ContactDetailsPage,
   CreatorPackagePage,
+  EarningsPage,
   EditListingPage,
+  EditProjectPage,
   ExploreCreatorsPage,
   InboxPage,
+  LibraryPage,
+  LicensePage,
   ListingPage,
   MakeOfferPage,
   ManageCampaignsPage,
@@ -50,9 +62,13 @@ export {
   PostProjectPage,
   ProfilePage,
   ProfileSettingsPage,
+  ProjectAcceptPage,
+  ProjectDetailPage,
+  ProjectInvitePage,
   RequestQuotePage,
   RosterPage,
   SearchPage,
+  ShippingAddressPage,
   StripePayoutPage,
   TransactionPage,
 };

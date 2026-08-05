@@ -92,18 +92,16 @@ const relativeTimeFromNow = (date, intl) => {
   }
 };
 
-// Decorative starburst next to the review score, purely visual (aria-hidden).
+// Decorative sparkle next to the review score, purely visual (aria-hidden).
 const ReviewStarBurst = props => (
   <svg
     className={props.className}
-    viewBox="0 0 80 80"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
+    viewBox="0 0 24 24"
+    fill="currentColor"
     aria-hidden="true"
     focusable="false"
   >
-    <path d="M40 2c2 16 6 30 16 38 10 8 22 12 22 12s-16 4-26 14-14 26-14 26-4-16-14-26S4 52 4 52s16-4 26-14S38 18 40 2Z" />
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.937A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" />
   </svg>
 );
 

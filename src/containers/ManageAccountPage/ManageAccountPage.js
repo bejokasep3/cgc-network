@@ -13,13 +13,14 @@ import {
   initialValuesForUserFields,
   pickUserFieldsData,
   isBrandUserType,
+  isUserAuthorized,
 } from '../../util/userHelpers';
 import { pathByRouteName } from '../../util/routes';
 
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 
-import { H3, H4, Page, LayoutSideNavigation } from '../../components';
+import { H3, H4, Page, LayoutSideNavigation, NamedRedirect } from '../../components';
 
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../FooterContainer/FooterContainer';
@@ -60,6 +61,10 @@ export const ManageAccountPageComponent = props => {
     updateProfileInProgress = false,
     updateProfileError,
   } = props;
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const displayName = currentUser?.attributes?.profile?.displayName;
   const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';

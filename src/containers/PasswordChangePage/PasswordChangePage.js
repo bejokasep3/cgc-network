@@ -7,9 +7,9 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
-import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers';
+import { showPaymentDetailsForUser, isBrandUserType, isUserAuthorized } from '../../util/userHelpers';
 
-import { Page, H3, LayoutSideNavigation } from '../../components';
+import { Page, H3, LayoutSideNavigation, NamedRedirect } from '../../components';
 
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -50,6 +50,10 @@ export const PasswordChangePageComponent = props => {
     scrollingDisabled,
     onLogout,
   } = props;
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const changePasswordForm =
     currentUser && currentUser.id ? (

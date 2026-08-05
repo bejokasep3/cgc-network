@@ -1399,6 +1399,38 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   };
 };
 
+/**
+ * Layers a fixed set of custom listing types/fields (the CGC Network's
+ * `creator-profile`/`project`, see src/config/configListing.js) on top of an
+ * already-merged app config.
+ *
+ * This is intentionally separate from mergeConfig/mergeListingConfig above,
+ * rather than just flipping mergeDefaultTypesAndFieldsForDebugging on:
+ * that toggle is shared with test helpers that supply their OWN unrelated
+ * local `defaultConfigs.listing` fixtures (see testHelpers.js's
+ * getDefaultConfiguration), so turning it on for everyone made those
+ * fixtures collide with each test's own hosted-config overrides. This
+ * function is called explicitly, only from the real app's bootstrap
+ * (app.js) — Console's hosted "Listing types" builder can't select a custom
+ * transaction process (cgc-ugc-approval, cgc-application), so this is how
+ * creator-profile/project become part of the live config in every
+ * environment without touching the shared merge behavior everything else
+ * relies on.
+ *
+ * @param {Object} appConfig - result of mergeConfig(hostedConfig, defaultConfig)
+ * @param {Array<Object>} customListingTypes
+ * @param {Array<Object>} customListingFields
+ * @returns {Object} appConfig with the custom listing types/fields unioned in
+ */
+export const withCustomListingConfig = (appConfig, customListingTypes, customListingFields) => ({
+  ...appConfig,
+  listing: {
+    ...appConfig.listing,
+    listingTypes: union(appConfig.listing.listingTypes, customListingTypes, 'listingType'),
+    listingFields: union(appConfig.listing.listingFields, customListingFields, 'key'),
+  },
+});
+
 const mergeUserConfig = (hostedConfig, defaultConfigs) => {
   const hostedUserTypes = restructureUserTypes(hostedConfig?.userTypes?.userTypes);
   const hostedUserFields = restructureUserFields(hostedConfig?.userFields?.userFields);

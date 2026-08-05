@@ -362,13 +362,11 @@ export const handleSubmitInquiry = parameters => values => {
 
   const listingId = new UUID(params.id);
   const listing = getListing(listingId);
-  const { message, inviteBriefId } = values;
-  const projectListing = inviteBriefId
-    ? ownProjects.find(l => l.id.uuid === inviteBriefId)
-    : null;
-  const protectedData = projectListing
-    ? { inviteBriefId, inviteBriefTitle: projectListing.attributes.title }
-    : undefined;
+  const { message, projectId } = values;
+  const projectListing = projectId ? ownProjects.find(l => l.id.uuid === projectId) : null;
+  // IMPLEMENTATION-PLAN.md §2.5/F2.5: `invitationStatus` starts 'sent' and is
+  // otherwise derived (accepted/expired), never written again from the client.
+  const protectedData = projectListing ? { projectId, invitationStatus: 'sent' } : undefined;
 
   onSendInquiry(listing, message.trim(), protectedData)
     .then(txId => {

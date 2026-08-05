@@ -29,6 +29,19 @@
   margin: 0 0 28px 0;
 }
 
+.setupBanner {
+  margin-bottom: 24px;
+}
+
+.projectContextBanner {
+  composes: marketplaceSmallFontStyles from global;
+  background-color: var(--marketplaceColorLight, var(--colorGrey50));
+  color: var(--marketplaceColorDark);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: -16px 0 20px 0;
+}
+
 .loading {
   display: flex;
   justify-content: center;
@@ -102,6 +115,150 @@
   }
 }
 
+.filtersButtonActive {
+  background-color: var(--marketplaceColor);
+}
+
+/* ================ Sidebar filters panel ================ */
+
+/* Side-by-side layout (sidebar + results), Billo-style, instead of the
+   panel dropping in as a full-width strip above the grid. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+  }
+}
+
+.content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* colorGrey50 is nearly white (98% lightness) — invisible as a fill on a
+     white page. A real border + shadow gives the panel a visible edge
+     instead of relying on a background tint that doesn't read. */
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  @media (--viewportMedium) {
+    flex: 0 0 260px;
+    /* Only above mobile — sticky on a stacked mobile layout would pin the
+       panel over the grid instead of the page edge. */
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+}
+
+.sidebarTitle {
+  composes: h4 from global;
+  margin: 0;
+  color: var(--colorGrey900);
+}
+
+.sidebarClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--colorGrey500);
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    color: var(--colorGrey900);
+  }
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.filterGroupLabel {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--colorGrey500);
+}
+
+.filterCheckboxRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Explicit resets on every property that could otherwise be knocked over by
+   an inherited/global `label` rule (marketplaceDefaults.css sets a bare
+   `label { display: block }`) — pinned here rather than trusting class
+   specificity alone, since the checkbox + text must always sit side by side
+   on one line, never stack or center. */
+.filterCheckboxLabel {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  color: var(--colorGrey700);
+  cursor: pointer;
+
+  & input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+  }
+}
+
+.clearFiltersButton {
+  composes: marketplaceSmallFontStyles from global;
+  background: none;
+  border: none;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 /* ================ Grid & card ================ */
 
 /* auto-fill instead of fixed breakpoints: column count adapts continuously
@@ -149,6 +306,22 @@
   background-color: var(--marketplaceColor);
   color: var(--colorWhite);
   font-weight: var(--fontWeightBold);
+}
+
+.avatarImageWrapper {
+  flex: 0 0 auto;
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatarImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .name {

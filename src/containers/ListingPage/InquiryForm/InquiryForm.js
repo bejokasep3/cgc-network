@@ -33,10 +33,15 @@ import css from './InquiryForm.module.css';
  * @param {string} props.authorDisplayName - The author display name
  * @param {propTypes.error} props.sendInquiryError - The send inquiry error
  * @param {boolean} [props.isInviteFlow] - CGC only: true when contacting a creator-profile
- *   listing, so the brand can attach one of its own project-brief listings to the inquiry
- *   (CGC-FRONTEND-PLAN.md §3.3) instead of sending a bare message.
+ *   listing, so the brand can attach one of its own project listings to the inquiry
+ *   (IMPLEMENTATION-PLAN.md F2.5) instead of sending a bare message.
  * @param {Array<{id: string, title: string}>} [props.projectOptions] - The brand's own open
- *   project-brief listings, offered as the "attach a project" choices.
+ *   project listings, offered as the "attach a project" choices.
+ * @param {boolean} [props.showHeader] - Whether to render the icon + heading.
+ *   Defaults to true (the standalone/modal usage in SectionAuthorMaybe.js
+ *   needs it as its own title). CreatorProfilePage.js sets this to false
+ *   since it already renders an equivalent heading+subtitle above this form,
+ *   which would otherwise duplicate it.
  * @returns {JSX.Element} inquiry form component
  */
 const InquiryForm = props => (
@@ -55,6 +60,7 @@ const InquiryForm = props => (
         sendInquiryError,
         isInviteFlow = false,
         projectOptions = [],
+        showHeader = true,
       } = fieldRenderProps;
 
       const intl = useIntl();
@@ -84,15 +90,19 @@ const InquiryForm = props => (
 
       return (
         <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
-          <IconInquiry className={css.icon} />
-          <Heading as="h2" rootClassName={css.heading}>
-            <FormattedMessage id={headingId} values={{ listingTitle, authorDisplayName }} />
-          </Heading>
+          {showHeader ? (
+            <>
+              <IconInquiry className={css.icon} />
+              <Heading as="h2" rootClassName={css.heading}>
+                <FormattedMessage id={headingId} values={{ listingTitle, authorDisplayName }} />
+              </Heading>
+            </>
+          ) : null}
           {hasProjectOptions ? (
             <FieldSelect
               className={css.field}
-              name="inviteBriefId"
-              id={formId ? `${formId}.inviteBriefId` : 'inviteBriefId'}
+              name="projectId"
+              id={formId ? `${formId}.projectId` : 'projectId'}
               label={intl.formatMessage({ id: 'InquiryForm.projectLabel' })}
             >
               <option value="">{intl.formatMessage({ id: 'InquiryForm.projectNoneOption' })}</option>

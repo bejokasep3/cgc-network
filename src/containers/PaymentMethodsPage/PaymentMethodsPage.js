@@ -6,13 +6,13 @@ import { useConfiguration } from '../../context/configurationContext.js';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { ensureCurrentUser, ensureStripeCustomer, ensurePaymentMethodCard } from '../../util/data';
 import { propTypes } from '../../util/types';
-import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers.js';
+import { showPaymentDetailsForUser, isBrandUserType, isUserAuthorized } from '../../util/userHelpers.js';
 import { savePaymentMethod, deletePaymentMethod } from '../../ducks/paymentMethods.duck';
 import { handleCardSetup } from '../../ducks/stripe.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 
-import { H3, SavedCardDetails, Page, LayoutSideNavigation } from '../../components';
+import { H3, SavedCardDetails, Page, LayoutSideNavigation, NamedRedirect } from '../../components';
 
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -65,6 +65,10 @@ const PaymentMethodsPageComponent = props => {
     stripeCustomerFetched,
     onLogout,
   } = props;
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const getClientSecret = setupIntent => {
     return setupIntent && setupIntent.attributes ? setupIntent.attributes.clientSecret : null;

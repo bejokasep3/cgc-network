@@ -1,5 +1,22 @@
 # AGENTS.md – AI Agent guide for Sharetribe Web Template
 
+> **Read [BLUEPRINT.md](BLUEPRINT.md) first.** This marketplace is The CGC Network, and
+> BLUEPRINT.md is its single source of truth: what the client asked for, which product
+> decisions are locked, and how far the current code is from them. Where existing code
+> contradicts the blueprint, the blueprint wins — the code is what changes.
+>
+> **Then read [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md).** It turns the blueprint
+> into ordered tasks with data contracts, file paths, and acceptance criteria. Phases are
+> dependency-ordered — do not skip ahead. §2 (Kontrak data) is the single source of truth
+> for every `publicData` / `protectedData` / `metadata` shape, and §2.6 is a hard security
+> invariant about pricing.
+>
+> This file (AGENTS.md) covers *how* to write code in this repo — conventions, structure,
+> tooling. It says nothing about what to build. Earlier planning docs (CGC-FRONTEND-PLAN,
+> CGC-SETUP, PLAN-CREATOR-SIDE, PLAN-PROFILEPAGE-REDESIGN, README-REVIEW,
+> CGC-CONSOLE-LANDING) were written against a superseded product model and have been
+> deleted; anything still valid from them lives in BLUEPRINT.md.
+
 Sharetribe Web Template is a React-based marketplace web application with server-side rendering.
 
 # Technology Stack

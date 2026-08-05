@@ -75,7 +75,7 @@ const STRIPE_ONBOARDING_RETURN_URL_FAILURE = 'failure';
 
 // Brands post projects through this same wizard — the details tab reads
 // as "project details" for that listing type only (CGC-FRONTEND-PLAN.md Phase 6).
-const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+const PROJECT_BRIEF_LISTING_TYPE = 'project';
 
 /**
  * Pick only allowed tabs for the given process and listing type configuration.

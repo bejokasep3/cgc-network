@@ -461,6 +461,130 @@ describe('transactionLineItems', () => {
     });
   });
 
+  describe('CGC creator-profile checkout — agreedPrice from an accepted application', () => {
+    // See IMPLEMENTATION-PLAN.md 2.6: the price on a creator-profile
+    // checkout must come from the server-computed agreedPrice, never from
+    // the listing's own (indicative-only) price — and never from any other
+    // number the client might smuggle into orderData.
+    const creatorProfileListing = {
+      ...mockListing,
+      attributes: {
+        ...mockListing.attributes,
+        price: new Money(10000, 'EUR'), // the creator's indicative "starting at" rate
+        publicData: {
+          ...mockListing.attributes.publicData,
+          unitType: 'item',
+          listingType: 'creator-profile',
+        },
+      },
+    };
+
+    it('uses agreedPrice instead of the listing price when present', () => {
+      const orderData = {
+        stockReservationQuantity: 1,
+        currency: 'EUR',
+        agreedPrice: new Money(47500, 'EUR'), // negotiated down from the €100 indicative rate
+      };
+
+      const result = transactionLineItems(
+        creatorProfileListing,
+        orderData,
+        mockProviderCommission,
+        mockCustomerCommission
+      );
+
+      expect(result[0]).toEqual({
+        code: 'line-item/item',
+        unitPrice: new Money(47500, 'EUR'),
+        quantity: 1,
+        includeFor: ['customer', 'provider'],
+      });
+    });
+
+    it('ignores agreedPrice on a listing type other than creator-profile', () => {
+      const nonCreatorListing = {
+        ...mockListing,
+        attributes: {
+          ...mockListing.attributes,
+          publicData: {
+            ...mockListing.attributes.publicData,
+            unitType: 'item',
+            listingType: 'some-other-listing-type',
+          },
+        },
+      };
+      const orderData = {
+        stockReservationQuantity: 1,
+        currency: 'EUR',
+        // A client trying to smuggle a price override onto a listing type
+        // this mechanism was never meant for — must be ignored.
+        agreedPrice: new Money(1, 'EUR'),
+      };
+
+      const result = transactionLineItems(
+        nonCreatorListing,
+        orderData,
+        mockProviderCommission,
+        mockCustomerCommission
+      );
+
+      // Falls back to the listing's own price, exactly as before this
+      // feature existed.
+      expect(result[0]).toEqual({
+        code: 'line-item/item',
+        unitPrice: new Money(10000, 'EUR'),
+        quantity: 1,
+        includeFor: ['customer', 'provider'],
+      });
+    });
+
+    it('falls back to the listing price on a creator-profile listing when agreedPrice is absent', () => {
+      const orderData = {
+        stockReservationQuantity: 1,
+        currency: 'EUR',
+      };
+
+      const result = transactionLineItems(
+        creatorProfileListing,
+        orderData,
+        mockProviderCommission,
+        mockCustomerCommission
+      );
+
+      expect(result[0]).toEqual({
+        code: 'line-item/item',
+        unitPrice: new Money(10000, 'EUR'),
+        quantity: 1,
+        includeFor: ['customer', 'provider'],
+      });
+    });
+
+    it('ignores a plain number sent as agreedPrice — only a real Money instance is honored', () => {
+      const orderData = {
+        stockReservationQuantity: 1,
+        currency: 'EUR',
+        // Simulates a client sending a raw number instead of a Money
+        // instance (e.g. by calling the local API directly, bypassing the
+        // server's own Money construction).
+        agreedPrice: 47500,
+      };
+
+      const result = transactionLineItems(
+        creatorProfileListing,
+        orderData,
+        mockProviderCommission,
+        mockCustomerCommission
+      );
+
+      expect(result[0]).toEqual({
+        code: 'line-item/item',
+        unitPrice: new Money(10000, 'EUR'),
+        quantity: 1,
+        includeFor: ['customer', 'provider'],
+      });
+    });
+  });
+
   describe('Default Negotiation Process - Request Unit Type (Reverse Flow)', () => {
     it('should create line items for negotiation request with offer', () => {
       const listing = {

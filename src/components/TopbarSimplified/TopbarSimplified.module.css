@@ -21,3 +21,28 @@
     justify-content: center;
   }
 }
+
+/* Modifier: an onLogout handler was given, so there's a second child
+   (the logout button) to lay out alongside the centered logo. */
+.withLogout {
+  justify-content: space-between;
+  padding: 0 24px;
+
+  @media (--viewportMedium) {
+    padding: 0 36px;
+  }
+}
+
+.logoutButton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--colorGrey700);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--colorGrey900);
+    text-decoration: underline;
+  }
+}

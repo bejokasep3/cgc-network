@@ -25,6 +25,18 @@ const stripeRelatedStatesForDigitalDownload = [
   'state/purchased',
   'state/reported',
 ];
+const stripeRelatedStatesForCGCUGC = [
+  'state/pending-payment',
+  'state/purchased',
+  'state/shipped',
+  'state/product-received',
+  'state/content-submitted',
+  'state/content-submitted-revised-1',
+  'state/content-submitted-revised-2',
+  'state/revision-requested-1',
+  'state/revision-requested-2',
+  'state/disputed',
+];
 
 const HAS_INCOMPLETE_TRANSACTIONS =
   'User has transactions on states that include incomplete payment processing';
@@ -61,12 +73,20 @@ module.exports = (req, res) => {
       states: stripeRelatedStatesForDigitalDownload.join(','),
     });
 
+  // CGC UGC approval states that contain Stripe payment processing
+  const ongoingCGCUGCWithIncompletePaymentProcessing = () =>
+    sdk.transactions.query({
+      processNames: 'cgc-ugc-approval',
+      states: stripeRelatedStatesForCGCUGC.join(','),
+    });
+
   // Check for any states that may contain incomplete Stripe actions
   Promise.all([
     ongoingBookingsWithIncompletePaymentProcessing(),
     ongoingPurchasesWithIncompletePaymentProcessing(),
     ongoingNegotiationsWithIncompletePaymentProcessing(),
     ongoingDigitalDownloadsWithIncompletePaymentProcessing(),
+    ongoingCGCUGCWithIncompletePaymentProcessing(),
   ])
     .then(responses => {
       if (hasOngoingTransactionsWithIncompletePaymentProcessing(responses)) {

@@ -106,6 +106,7 @@ export class TransactionPanelComponent extends Component {
       rootClassName,
       className,
       currentUser,
+      transactionId,
       transactionRole,
       listing,
       customer,
@@ -135,6 +136,11 @@ export class TransactionPanelComponent extends Component {
       hasViewingRights,
       transactionFieldsComponent,
       sendMessageForm,
+      cgcDeliverableDrafts,
+      onOpenDeliverableVersionModal,
+      onSubmitDeliverables,
+      submitDeliverablesInProgress,
+      submitDeliverablesError,
     } = this.props;
 
     const hasTransitions = transitions.length > 0;
@@ -189,7 +195,19 @@ export class TransactionPanelComponent extends Component {
     const showDiminishedButton = stateData.showDispute || stateData.showReport;
     const onOpenDiminishedModal = stateData.showReport ? onOpenReportModal : onOpenDisputeModal;
     const isCGCProcess = stateData.processName === CGC_UGC_PROCESS_NAME;
-    const isShippable = listing?.attributes?.publicData?.requiresProduct === true;
+    // The license record (F6.1) freezes what was actually delivered and
+    // approved — nothing to show before the content has been received, and
+    // a canceled collaboration never got there.
+    const showLicenseLink =
+      isCGCProcess &&
+      ['received', 'completed', 'reviewed', 'reviewed-by-customer', 'reviewed-by-provider'].includes(
+        stateData.processState
+      );
+    // Sourced from stateData (F3.3), not recomputed here — it needs the
+    // PROJECT listing's requiresProduct, not this.listing (the creator-profile
+    // listing related to the transaction), which TransactionPanel never
+    // fetches on its own. See TransactionPage.stateDataCGCUGC.js.
+    const isShippable = !!stateData.isShippable;
     const disputeMessageId = isCGCProcess
       ? 'TransactionPanel.cgc-ugc-approval.disputeOrder'
       : 'TransactionPanel.disputeOrder';
@@ -197,6 +215,221 @@ export class TransactionPanelComponent extends Component {
       <FormattedMessage id="TransactionPanel.reportOrder" />
     ) : (
       <FormattedMessage id={disputeMessageId} />
+    );
+
+    const detailCardImageMobile = (
+      <DetailCardImage
+        rootClassName={css.imageWrapperMobile}
+        avatarWrapperClassName={css.avatarWrapperMobile}
+        listingTitle={listingTitle}
+        image={firstImage}
+        provider={provider}
+        isCustomer={isCustomer}
+        showListingImage={showListingImage}
+        listingImageConfig={config.layout.listingImage}
+      />
+    );
+
+    // Heading + banners, kept as one block so the cgc-ugc-approval layout
+    // (below) can promote it above the two-column row — see .containerSplitHeader.
+    const headerBlock = (
+      <>
+        {isProvider ? (
+          <div className={css.avatarWrapperProviderDesktop}>
+            <AvatarLarge user={customer} className={css.avatarDesktop} />
+          </div>
+        ) : null}
+
+        <PanelHeading
+          processName={stateData.processName}
+          processState={stateData.processState}
+          showExtraInfo={allowShowingExtraInfo(stateData.showExtraInfo, transactionPartyInfo)}
+          showPriceOnMobile={showPrice}
+          price={listing?.attributes?.price}
+          intl={intl}
+          deliveryMethod={deliveryMethod}
+          isPendingPayment={!!stateData.isPendingPayment}
+          transactionRole={transactionRole}
+          providerName={authorDisplayName}
+          customerName={customerDisplayName}
+          marketplaceName={marketplaceName}
+          listingId={listing?.id?.uuid}
+          listingTitle={listingTitle}
+          listingDeleted={listingDeleted}
+        />
+
+        {requestQuote}
+        {offer}
+        {transactionFieldsComponent}
+        {fileAttachments}
+        {isCGCProcess ? (
+          <InvitationBannerMaybe
+            protectedData={protectedData}
+            isCustomer={isCustomer}
+            providerName={authorDisplayName}
+          />
+        ) : null}
+      </>
+    );
+
+    const restOfTxInfo = (
+      <>
+        <CollaborationDetailsMaybe
+          rootClassName={css.collaborationDetailsCard}
+          processName={stateData.processName}
+          protectedData={protectedData}
+          canManageDeliverables={isProvider && !!stateData.canSubmitDeliverables}
+          deliverableDrafts={cgcDeliverableDrafts}
+          onAddDeliverableVersion={onOpenDeliverableVersionModal}
+          onSubmitDeliverables={onSubmitDeliverables}
+          submitDeliverablesInProgress={submitDeliverablesInProgress}
+          submitDeliverablesError={submitDeliverablesError}
+        />
+        {showLicenseLink ? (
+          <NamedLink
+            className={css.licenseLink}
+            name="LicensePage"
+            params={{ id: transactionId.uuid }}
+          >
+            <FormattedMessage id="TransactionPanel.viewLicenseRecord" />
+          </NamedLink>
+        ) : null}
+        {stateData.showApprovalDecisionPanel ? (
+          <ApprovalDecisionPanel
+            primaryButtonProps={stateData.primaryButtonProps}
+            secondaryButtonProps={stateData.secondaryButtonProps}
+            revisionsUsed={stateData.revisionsUsed}
+            onOpenDisputeModal={onOpenDisputeModal}
+          />
+        ) : null}
+
+        {!isInquiryProcess ? (
+          <div className={css.orderDetails}>
+            <div className={css.orderDetailsMobileSection}>
+              {showBreakDown ? (
+                <BreakdownMaybe
+                  orderBreakdown={orderBreakdown}
+                  processName={stateData.processName}
+                  priceVariantName={priceVariantName}
+                />
+              ) : null}
+              <DiminishedActionButtonMaybe
+                id="mobile_disputeOrderButton"
+                showButton={showDiminishedButton}
+                onOpenModal={onOpenDiminishedModal}
+                buttonMessage={diminishedButtonMessage}
+              />
+            </div>
+
+            {savePaymentMethodFailed ? (
+              <p className={css.genericError}>
+                <FormattedMessage
+                  id="TransactionPanel.savePaymentMethodFailed"
+                  values={{
+                    paymentMethodsPageLink: (
+                      <NamedLink name="PaymentMethodsPage">
+                        <FormattedMessage id="TransactionPanel.paymentMethodsPageLink" />
+                      </NamedLink>
+                    ),
+                  }}
+                />
+              </p>
+            ) : null}
+            {!isCGCProcess ? (
+              <DeliveryInfoMaybe
+                className={css.deliveryInfoSection}
+                protectedData={protectedData}
+                listing={listing}
+                locale={config.localization.locale}
+              />
+            ) : null}
+            <BookingLocationMaybe
+              className={css.deliveryInfoSection}
+              listing={listing}
+              showBookingLocation={showBookingLocation}
+            />
+          </div>
+        ) : null}
+        <FeedSection
+          rootClassName={isCGCProcess ? css.feedContainerCard : css.feedContainer}
+          hasMessages={messages.length > 0}
+          hasTransitions={hasTransitions}
+          fetchMessagesError={fetchMessagesError}
+          activityFeed={activityFeed}
+          isConversation={isInquiryProcess}
+        />
+        {sendMessageForm || (
+          <div className={css.sendingMessageNotAllowed}>
+            <FormattedMessage id="TransactionPanel.sendingMessageNotAllowed" />
+          </div>
+        )}
+
+        {stateData.showActionButtons ? (
+          <>
+            <div className={css.mobileActionButtonSpacer}></div>
+            <div className={css.mobileActionButtons}>{actionButtons('mobile')}</div>
+          </>
+        ) : null}
+      </>
+    );
+
+    const asideDesktop = (
+      <div className={classNames(css.asideDesktop, { [css.asideDesktopGrid]: isCGCProcess })}>
+        <div
+          className={classNames(css.stickySection, { [css.noListingImage]: !showListingImage })}
+        >
+          <div className={css.detailCard}>
+            <DetailCardImage
+              avatarWrapperClassName={css.avatarWrapperDesktop}
+              listingTitle={listingTitle}
+              image={firstImage}
+              provider={provider}
+              isCustomer={isCustomer}
+              showListingImage={showListingImage}
+              listingImageConfig={config.layout.listingImage}
+            />
+
+            <DetailCardHeadingsMaybe
+              showDetailCardHeadings={showDetailCardHeadings}
+              showListingImage={showListingImage}
+              listingTitle={
+                listingDeleted ? (
+                  listingTitle
+                ) : (
+                  <NamedLink
+                    name="ListingPage"
+                    params={{ id: listing.id?.uuid, slug: createSlug(listingTitle) }}
+                  >
+                    {listingTitle}
+                  </NamedLink>
+                )
+              }
+              showPrice={showPrice}
+              price={listing?.attributes?.price}
+              intl={intl}
+            />
+            {showOrderPanel ? orderPanel : null}
+            {showBreakDown ? (
+              <BreakdownMaybe
+                className={css.breakdownContainer}
+                orderBreakdown={orderBreakdown}
+                processName={stateData.processName}
+                priceVariantName={priceVariantName}
+              />
+            ) : null}
+
+            {stateData.showActionButtons ? (
+              <div className={css.desktopActionButtons}>{actionButtons('desktop')}</div>
+            ) : null}
+          </div>
+          <DiminishedActionButtonMaybe
+            id="desktop_disputeOrderButton"
+            showButton={showDiminishedButton}
+            onOpenModal={onOpenDiminishedModal}
+            buttonMessage={diminishedButtonMessage}
+          />
+        </div>
+      </div>
     );
 
     return (
@@ -209,190 +442,22 @@ export class TransactionPanelComponent extends Component {
             isShippable={isShippable}
           />
         ) : null}
-        <div className={css.container}>
-          <div className={css.txInfo}>
-            <DetailCardImage
-              rootClassName={css.imageWrapperMobile}
-              avatarWrapperClassName={css.avatarWrapperMobile}
-              listingTitle={listingTitle}
-              image={firstImage}
-              provider={provider}
-              isCustomer={isCustomer}
-              showListingImage={showListingImage}
-              listingImageConfig={config.layout.listingImage}
-            />
-            {isProvider ? (
-              <div className={css.avatarWrapperProviderDesktop}>
-                <AvatarLarge user={customer} className={css.avatarDesktop} />
-              </div>
-            ) : null}
-
-            <PanelHeading
-              processName={stateData.processName}
-              processState={stateData.processState}
-              showExtraInfo={allowShowingExtraInfo(stateData.showExtraInfo, transactionPartyInfo)}
-              showPriceOnMobile={showPrice}
-              price={listing?.attributes?.price}
-              intl={intl}
-              deliveryMethod={deliveryMethod}
-              isPendingPayment={!!stateData.isPendingPayment}
-              transactionRole={transactionRole}
-              providerName={authorDisplayName}
-              customerName={customerDisplayName}
-              marketplaceName={marketplaceName}
-              listingId={listing?.id?.uuid}
-              listingTitle={listingTitle}
-              listingDeleted={listingDeleted}
-            />
-
-            {requestQuote}
-            {offer}
-            {transactionFieldsComponent}
-            {fileAttachments}
-            {isCGCProcess ? (
-              <InvitationBannerMaybe
-                protectedData={protectedData}
-                isCustomer={isCustomer}
-                providerName={authorDisplayName}
-              />
-            ) : null}
-            <CollaborationDetailsMaybe
-              processName={stateData.processName}
-              protectedData={protectedData}
-            />
-            {stateData.showApprovalDecisionPanel ? (
-              <ApprovalDecisionPanel
-                primaryButtonProps={stateData.primaryButtonProps}
-                secondaryButtonProps={stateData.secondaryButtonProps}
-                onOpenDisputeModal={onOpenDisputeModal}
-              />
-            ) : null}
-
-            {!isInquiryProcess ? (
-              <div className={css.orderDetails}>
-                <div className={css.orderDetailsMobileSection}>
-                  {showBreakDown ? (
-                    <BreakdownMaybe
-                      orderBreakdown={orderBreakdown}
-                      processName={stateData.processName}
-                      priceVariantName={priceVariantName}
-                    />
-                  ) : null}
-                  <DiminishedActionButtonMaybe
-                    id="mobile_disputeOrderButton"
-                    showButton={showDiminishedButton}
-                    onOpenModal={onOpenDiminishedModal}
-                    buttonMessage={diminishedButtonMessage}
-                  />
-                </div>
-
-                {savePaymentMethodFailed ? (
-                  <p className={css.genericError}>
-                    <FormattedMessage
-                      id="TransactionPanel.savePaymentMethodFailed"
-                      values={{
-                        paymentMethodsPageLink: (
-                          <NamedLink name="PaymentMethodsPage">
-                            <FormattedMessage id="TransactionPanel.paymentMethodsPageLink" />
-                          </NamedLink>
-                        ),
-                      }}
-                    />
-                  </p>
-                ) : null}
-                {!isCGCProcess ? (
-                  <DeliveryInfoMaybe
-                    className={css.deliveryInfoSection}
-                    protectedData={protectedData}
-                    listing={listing}
-                    locale={config.localization.locale}
-                  />
-                ) : null}
-                <BookingLocationMaybe
-                  className={css.deliveryInfoSection}
-                  listing={listing}
-                  showBookingLocation={showBookingLocation}
-                />
-              </div>
-            ) : null}
-            <FeedSection
-              rootClassName={css.feedContainer}
-              hasMessages={messages.length > 0}
-              hasTransitions={hasTransitions}
-              fetchMessagesError={fetchMessagesError}
-              activityFeed={activityFeed}
-              isConversation={isInquiryProcess}
-            />
-            {sendMessageForm || (
-              <div className={css.sendingMessageNotAllowed}>
-                <FormattedMessage id="TransactionPanel.sendingMessageNotAllowed" />
-              </div>
-            )}
-
-            {stateData.showActionButtons ? (
-              <>
-                <div className={css.mobileActionButtonSpacer}></div>
-                <div className={css.mobileActionButtons}>{actionButtons('mobile')}</div>
-              </>
-            ) : null}
-          </div>
-
-          <div className={css.asideDesktop}>
-            <div
-              className={classNames(css.stickySection, { [css.noListingImage]: !showListingImage })}
-            >
-              <div className={css.detailCard}>
-                <DetailCardImage
-                  avatarWrapperClassName={css.avatarWrapperDesktop}
-                  listingTitle={listingTitle}
-                  image={firstImage}
-                  provider={provider}
-                  isCustomer={isCustomer}
-                  showListingImage={showListingImage}
-                  listingImageConfig={config.layout.listingImage}
-                />
-
-                <DetailCardHeadingsMaybe
-                  showDetailCardHeadings={showDetailCardHeadings}
-                  showListingImage={showListingImage}
-                  listingTitle={
-                    listingDeleted ? (
-                      listingTitle
-                    ) : (
-                      <NamedLink
-                        name="ListingPage"
-                        params={{ id: listing.id?.uuid, slug: createSlug(listingTitle) }}
-                      >
-                        {listingTitle}
-                      </NamedLink>
-                    )
-                  }
-                  showPrice={showPrice}
-                  price={listing?.attributes?.price}
-                  intl={intl}
-                />
-                {showOrderPanel ? orderPanel : null}
-                {showBreakDown ? (
-                  <BreakdownMaybe
-                    className={css.breakdownContainer}
-                    orderBreakdown={orderBreakdown}
-                    processName={stateData.processName}
-                    priceVariantName={priceVariantName}
-                  />
-                ) : null}
-
-                {stateData.showActionButtons ? (
-                  <div className={css.desktopActionButtons}>{actionButtons('desktop')}</div>
-                ) : null}
-              </div>
-              <DiminishedActionButtonMaybe
-                id="desktop_disputeOrderButton"
-                showButton={showDiminishedButton}
-                onOpenModal={onOpenDiminishedModal}
-                buttonMessage={diminishedButtonMessage}
-              />
+        <div className={classNames(css.container, { [css.containerSplitHeader]: isCGCProcess })}>
+          {isCGCProcess ? (
+            <>
+              {detailCardImageMobile}
+              <div className={css.headerRow}>{headerBlock}</div>
+              <div className={classNames(css.txInfo, css.txInfoGrid)}>{restOfTxInfo}</div>
+            </>
+          ) : (
+            <div className={css.txInfo}>
+              {detailCardImageMobile}
+              {headerBlock}
+              {restOfTxInfo}
             </div>
-          </div>
+          )}
+
+          {asideDesktop}
         </div>
       </div>
     );

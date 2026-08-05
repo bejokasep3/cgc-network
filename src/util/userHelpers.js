@@ -292,3 +292,67 @@ export const isBrandUserType = (config, currentUser) => {
 export const getRoleHomeRouteName = (config, currentUser) => {
   return isBrandUserType(config, currentUser) ? 'ExploreCreatorsPage' : 'BrowseProjectsPage';
 };
+
+/**
+ * Where a freshly-authorized user should land: the role's setup/welcome
+ * screen (BrandOnboardingPage / CreatorOnboardingPage) the first time, then
+ * their normal role home (getRoleHomeRouteName) on every visit after that.
+ * "Seen" is tracked via privateData.welcomeSeenAt, set once by
+ * markWelcomeSeenThunk (ducks/user.duck.js) when the welcome screen mounts.
+ *
+ * Deliberately a separate helper from getRoleHomeRouteName, which is also
+ * used as the "you're not an operator, go home" fallback on admin pages —
+ * sending a non-operator to a welcome screen there would be the wrong
+ * context.
+ *
+ * @param {Object} config Marketplace configuration
+ * @param {Object} currentUser API entity
+ * @returns {string} route name to redirect to
+ */
+export const getPostApprovalRouteName = (config, currentUser) => {
+  const welcomeSeen = !!currentUser?.attributes?.profile?.privateData?.welcomeSeenAt;
+  if (welcomeSeen) {
+    return getRoleHomeRouteName(config, currentUser);
+  }
+  return isBrandUserType(config, currentUser) ? 'BrandOnboardingPage' : 'CreatorOnboardingPage';
+};
+
+/**
+ * The role's setup checklist route (BrandOnboardingPage / CreatorOnboardingPage),
+ * regardless of whether the welcome screen has already been seen. Unlike
+ * getPostApprovalRouteName, this is for sending a user *back* to an
+ * in-progress checklist (e.g. after saving a step opened from
+ * SetupChecklist — see ONBOARDING_LINK_STATE below), not for the one-time
+ * post-signup landing decision.
+ *
+ * @param {Object} config Marketplace configuration
+ * @param {Object} currentUser API entity
+ * @returns {string} route name to redirect to
+ */
+export const getOnboardingRouteName = (config, currentUser) => {
+  return isBrandUserType(config, currentUser) ? 'BrandOnboardingPage' : 'CreatorOnboardingPage';
+};
+
+/**
+ * History/NamedLink `state` passed on every SetupChecklist step CTA
+ * (SetupChecklist.js), so the destination page can tell "opened from the
+ * onboarding checklist" apart from "opened normally" (e.g. from account nav)
+ * and only redirect back to the checklist in the former case. Scoped to the
+ * single navigation entry that carries it — a fresh visit to the same page
+ * later (without going through the checklist again) won't have it, so the
+ * redirect-back only ever fires for that one in-progress checklist visit,
+ * never permanently.
+ */
+export const ONBOARDING_LINK_STATE = { from: 'onboarding' };
+
+/**
+ * Whether the current page was navigated to from the onboarding checklist
+ * (see ONBOARDING_LINK_STATE) — i.e. whether a successful save here should
+ * redirect back to the checklist instead of staying put.
+ *
+ * @param {Object} location - React Router location (must include `state`)
+ * @returns {boolean}
+ */
+export const cameFromOnboardingChecklist = location => {
+  return location?.state?.from === ONBOARDING_LINK_STATE.from;
+};

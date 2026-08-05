@@ -21,6 +21,9 @@ import css from './TopbarSimplified.module.css';
  * @param {string} props.rootClassName - The root class name for the topbar
  * @param {Object} props.intl - The intl object
  * @param {boolean} props.linkToExternalSite - Whether to link to the external site
+ * @param {Function} [props.onLogout] - If given, renders a log-out link next to the logo
+ *   (used on pages reached before a full nav makes sense, e.g. while pending approval,
+ *   where the user otherwise has no way to switch accounts).
  * @returns {JSX.Element}
  */
 const TopbarSimplified = props => {
@@ -57,10 +60,12 @@ const TopbarSimplified = props => {
     };
   }, [mounted]);
 
-  const { className, rootClassName } = props;
+  const { className, rootClassName, onLogout } = props;
   const linkToExternalSite = config?.topbar?.logoLink;
 
-  const classes = classNames(rootClassName || css.root, className);
+  const classes = classNames(rootClassName || css.root, className, {
+    [css.withLogout]: !!onLogout,
+  });
 
   return (
     <nav className={classes}>
@@ -69,6 +74,11 @@ const TopbarSimplified = props => {
         alt={intl.formatMessage({ id: 'TopbarSimplified.goToLandingPage' })}
         linkToExternalSite={linkToExternalSite}
       />
+      {onLogout ? (
+        <button type="button" className={css.logoutButton} onClick={onLogout}>
+          {intl.formatMessage({ id: 'TopbarSimplified.logout' })}
+        </button>
+      ) : null}
     </nav>
   );
 };

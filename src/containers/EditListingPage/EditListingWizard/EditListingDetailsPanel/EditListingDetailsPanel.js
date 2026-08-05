@@ -23,7 +23,7 @@ import { H3, ListingLink } from '../../../../components';
 // Brands post projects through this same panel — the heading and intro
 // copy read as "post a project" for that listing type only, without touching
 // the shared wizard markup used by other listing types (CGC-FRONTEND-PLAN.md Phase 6).
-const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+const PROJECT_BRIEF_LISTING_TYPE = 'project';
 
 // Import modules from this directory
 import ErrorMessage from './ErrorMessage';

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Form as FinalForm } from 'react-final-form';
+import arrayMutators from 'final-form-arrays';
 import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
@@ -24,7 +25,7 @@ const TITLE_MAX_LENGTH = 60;
  * fields) for the creator-profile listing type — contentNiche, platforms,
  * usageRights, deliverableCount, turnaroundDays (see util/creatorFields.js).
  * Rendered generically via CustomExtendedDataField, same approach
- * PostProjectForm uses for the project-brief listing type's fields.
+ * PostProjectForm uses for the project listing type's fields.
  */
 const CreatorPackageCustomFields = ({ listingFieldsConfig, formId, intl }) => {
   const fields = listingFieldsConfig.filter(fieldConfig =>
@@ -59,6 +60,7 @@ const CreatorPackageCustomFields = ({ listingFieldsConfig, formId, intl }) => {
 const CreatorPackageDetailsForm = props => (
   <FinalForm
     {...props}
+    mutators={{ ...arrayMutators }}
     render={fieldRenderProps => {
       const {
         rootClassName,

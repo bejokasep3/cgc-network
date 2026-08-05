@@ -263,7 +263,7 @@
   @media (--viewportLarge) {
     background-color: var(--colorWhite);
     border: 1px solid var(--colorGrey100);
-    border-radius: 2px;
+    border-radius: 16px;
   }
 }
 
@@ -378,6 +378,80 @@
   margin-bottom: 16px;
 }
 
+/* White card wrapper for the cgc-ugc-approval detail sections — "Shipping &
+   tracking", "Deliverables", "Content history" — so they read as one bounded,
+   separated section instead of floating directly on the page background.
+   Mirrors ProjectDetailPage's .card; margin values match .deliveryInfoContainer
+   below (can't `composes` from it — postcss-modules-scope can't resolve
+   composes against a class declared as part of a grouped selector). */
+.collaborationDetailsCard {
+  margin: 24px 24px 24px 24px;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 16px;
+  padding: 20px;
+
+  @media (--viewportMedium) {
+    padding: 24px 28px;
+  }
+  @media (--viewportLarge) {
+    margin: 24px 0 24px 0;
+  }
+}
+
+/* Same treatment for the Activity feed, kept as its own card below the
+   collaboration details rather than merged into one — only used for the
+   cgc-ugc-approval process; other processes keep the plain .feedContainer. */
+.feedContainerCard {
+  margin: 24px 24px 0 24px;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 16px;
+  padding: 20px;
+
+  @media (--viewportMedium) {
+    padding: 24px 28px;
+  }
+  @media (--viewportLarge) {
+    margin: 24px 0 0 0;
+  }
+}
+
+/* Shipping/tracking as a collapsed-by-default disclosure — reference info
+   the reviewer rarely needs to re-check, so it shouldn't compete for space
+   with Deliverables and Content history below it. */
+.collapsibleSection {
+  margin-bottom: 16px;
+}
+
+.collapsibleToggle {
+  composes: sectionHeading;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.collapsibleToggleIcon {
+  width: 10px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.collapsibleContent {
+  margin-top: 16px;
+}
+
 /* Collaboration details (cgc-ugc-approval): tracking, delivered content, notes */
 .collaborationRow {
   display: flex;
@@ -396,6 +470,7 @@
   margin: 0;
   padding: 0;
   flex-shrink: 0;
+  font-size: 14px;
 
   @media (--viewportMedium) {
     width: 40%;
@@ -408,15 +483,23 @@
   padding: 0;
   word-break: break-word;
   hyphens: auto;
+  font-size: 14px;
 }
 
-/* Approve / revise / escalate decision panel (cgc-ugc-approval) */
+/* Approve / revise / escalate decision panel (cgc-ugc-approval) — same white
+   card treatment as .collaborationDetailsCard, so "Review this submission"
+   reads as its own separated section instead of a grey box that blended
+   into the (also grey) page background. */
 .approvalPanel {
   margin: 0 24px 24px 24px;
-  padding: 16px;
-  background-color: var(--colorGrey50);
-  border-radius: var(--borderRadiusMedium);
+  padding: 20px;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 16px;
 
+  @media (--viewportMedium) {
+    padding: 24px 28px;
+  }
   @media (--viewportLarge) {
     margin: 0 0 24px 0;
   }
@@ -431,6 +514,26 @@
   color: var(--colorGrey900);
 }
 
+.revisionQuota {
+  composes: p from global;
+  margin: -4px 0 12px 0;
+  padding: 0;
+  color: var(--colorGrey600);
+  font-size: 13px;
+}
+
+.licenseLink {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-block;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  margin: -8px 0 24px 0;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
 .approvalActions {
   display: flex;
   flex-direction: column-reverse;
@@ -442,6 +545,16 @@
 }
 .approvalActions > * {
   flex: 1;
+}
+
+/* PrimaryButton/SecondaryButton reuse the app's block CTA styles (min-height
+   56px, 16px vertical padding) meant for standalone actions like checkout —
+   oversized once there are two of them side by side in a compact card.
+   Right-sized here only, without touching the shared Button component. */
+.approvalActions button {
+  min-height: 44px;
+  padding: 10px 20px;
+  font-size: 15px;
 }
 
 .revisionExhaustedNote {
@@ -617,6 +730,41 @@
   }
 }
 
+/* cgc-ugc-approval Activity card: cap the feed's height and scroll inside it
+   once there's a lot of history, instead of the whole page growing and
+   pushing the scroll a long way down to reach new messages. */
+.feedContainerCard .feedContent {
+  max-height: 420px;
+  overflow-y: auto;
+
+  /* Thin, transparent-track scrollbar instead of the browser's default bulky
+     one — Firefox via scrollbar-width/-color, Chrome/Edge/Safari via the
+     ::-webkit-scrollbar pseudo-elements below. */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover {
+    scrollbar-color: var(--colorGrey200) transparent;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--colorGrey200);
+  }
+}
+
 .messageError {
   color: var(--colorFail);
   margin: 13px 0 22px 0;
@@ -718,5 +866,56 @@
   @media (--viewportLarge) {
     padding: 0px 75px;
     margin-top: 16px;
+  }
+}
+
+/* ================ cgc-ugc-approval: split-header layout ================ */
+/* cgc-ugc-approval only: splits the panel heading out of the two-column row
+   (see .headerRow) so the "Shipping & tracking" card and the sidebar
+   order-summary card start at the same height, instead of the left column
+   being pushed down by heading text the right column doesn't have. Other
+   process types (booking/purchase/inquiry) keep the plain flex .container
+   untouched, via TransactionPanel.js's isCGCProcess branch. Declared last in
+   this file so these overrides win over .container/.txInfo/.asideDesktop's
+   own same-specificity rules regardless of where those are defined above. */
+.containerSplitHeader {
+  @media (--viewportLarge) {
+    display: grid;
+    grid-template-columns: minmax(0, 538px) 409px;
+    column-gap: 56px;
+    align-items: start;
+  }
+}
+
+/* Heading/banner row, spanning both grid columns above txInfo/asideDesktop. */
+.headerRow {
+  @media (--viewportLarge) {
+    grid-column: 1 / -1;
+    margin-bottom: 24px;
+  }
+}
+
+/* Overrides .txInfo's flex-sizing (irrelevant once .containerSplitHeader
+   switches the parent to grid) and un-does its own first child's top margin,
+   so it starts flush with .asideDesktopGrid on the row below .headerRow. */
+.txInfoGrid {
+  @media (--viewportLarge) {
+    margin-right: 0;
+    max-width: none;
+  }
+}
+
+.txInfoGrid > :first-child {
+  @media (--viewportLarge) {
+    margin-top: 0;
+  }
+}
+
+/* .asideDesktop normally carries a top margin to roughly line up with the
+   heading text that used to sit beside it — now that the heading has moved
+   into .headerRow above, it should start flush at the top of the row. */
+.asideDesktopGrid {
+  @media (--viewportLarge) {
+    margin-top: 0;
   }
 }

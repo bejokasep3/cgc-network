@@ -6,6 +6,7 @@ import {
   NEGOTIATION_PROCESS_NAME,
   DOWNLOAD_PROCESS_NAME,
   CGC_UGC_PROCESS_NAME,
+  CGC_APPLICATION_PROCESS_NAME,
   resolveLatestProcessName,
   getProcess,
 } from '../../transactions/transaction';
@@ -16,6 +17,7 @@ import { getStateDataForPurchaseProcess } from './InboxPage.stateDataPurchase.js
 import { getStateDataForNegotiationProcess } from './InboxPage.stateDataNegotiation.js';
 import { getStateDataForDownloadProcess } from './InboxPage.stateDataDownload.js';
 import { getStateDataForCGCUGCProcess } from './InboxPage.stateDataCGCUGC.js';
+import { getStateDataForCGCApplicationProcess } from './InboxPage.stateDataCGCApplication.js';
 
 export const stateDataShape = shape({
   processName: string.isRequired,
@@ -43,6 +45,8 @@ export const getStateData = params => {
 
   if (processName === CGC_UGC_PROCESS_NAME) {
     return getStateDataForCGCUGCProcess(params, processInfo());
+  } else if (processName === CGC_APPLICATION_PROCESS_NAME) {
+    return getStateDataForCGCApplicationProcess(params, processInfo());
   } else if (processName === PURCHASE_PROCESS_NAME) {
     return getStateDataForPurchaseProcess(params, processInfo());
   } else if (processName === DOWNLOAD_PROCESS_NAME) {

@@ -16,7 +16,6 @@ import {
   LimitedAccessBanner,
   LinkedLogo,
   Modal,
-  ModalMissingInformation,
 } from '../../../components';
 import { getSearchPageResourceLocatorStringParams } from '../../SearchPage/SearchPage.shared';
 
@@ -143,16 +142,12 @@ const TopbarComponent = props => {
     authInProgress,
     currentUser,
     currentUserHasListings,
-    currentUserHasOrders,
     currentPage,
     notificationCount = 0,
     intl,
     history,
     location,
     onManageDisableScrolling,
-    onResendVerificationEmail,
-    sendVerificationEmailInProgress,
-    sendVerificationEmailError,
     showGenericError,
     config,
     routeConfiguration,
@@ -193,19 +188,26 @@ const TopbarComponent = props => {
 
   const handleLogout = () => {
     const { onLogout, history, routeConfiguration } = props;
-    onLogout().then(() => {
-      const path = pathByRouteName('LandingPage', routeConfiguration);
+    onLogout()
+      .then(() => {
+        const path = pathByRouteName('LandingPage', routeConfiguration);
 
-      // In production we ensure that data is really lost,
-      // but in development mode we use stored values for debugging
-      if (appSettings.dev) {
-        history.push(path);
-      } else if (typeof window !== 'undefined') {
-        window.location = path;
-      }
+        // In production we ensure that data is really lost,
+        // but in development mode we use stored values for debugging
+        if (appSettings.dev) {
+          history.push(path);
+        } else if (typeof window !== 'undefined') {
+          window.location = path;
+        }
 
-      console.log('logged out'); // eslint-disable-line
-    });
+        console.log('logged out'); // eslint-disable-line
+      })
+      .catch(() => {
+        // A logout dispatched while one is already in flight (e.g. both
+        // the desktop and mobile topbar menus wired to the same handler)
+        // is rejected by auth.duck.js's logoutThunk guard — not a real
+        // failure, the in-flight call already redirects.
+      });
   };
 
   const showCreateListingsLink = showCreateListingLinkForUser(config, currentUser);
@@ -417,18 +419,6 @@ const TopbarComponent = props => {
           </p>
         </div>
       </Modal>
-      <ModalMissingInformation
-        id="MissingInformationReminder"
-        containerClassName={css.missingInformationModal}
-        currentUser={currentUser}
-        currentUserHasListings={currentUserHasListings}
-        currentUserHasOrders={currentUserHasOrders}
-        location={location}
-        onManageDisableScrolling={onManageDisableScrolling}
-        onResendVerificationEmail={onResendVerificationEmail}
-        sendVerificationEmailInProgress={sendVerificationEmailInProgress}
-        sendVerificationEmailError={sendVerificationEmailError}
-      />
 
       <GenericError show={showGenericError} />
     </div>
@@ -449,14 +439,10 @@ const TopbarComponent = props => {
  * @param {boolean} props.isLoggedInAs
  * @param {Object} props.currentUser
  * @param {boolean} props.currentUserHasListings
- * @param {boolean} props.currentUserHasOrders
  * @param {string} props.currentPage
  * @param {number} props.notificationCount
  * @param {Function} props.onLogout
  * @param {Function} props.onManageDisableScrolling
- * @param {Function} props.onResendVerificationEmail
- * @param {Object} props.sendVerificationEmailInProgress
- * @param {Object} props.sendVerificationEmailError
  * @param {boolean} props.showGenericError
  * @param {Object} props.history
  * @param {Function} props.history.push

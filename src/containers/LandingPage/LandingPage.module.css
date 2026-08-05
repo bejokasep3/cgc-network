@@ -52,6 +52,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .heroCta {
@@ -71,6 +73,19 @@
   &:focus {
     background-color: var(--marketplaceColorDark);
     text-decoration: none;
+  }
+}
+
+.heroCtaSecondary {
+  composes: heroCta;
+  background-color: transparent;
+  color: var(--colorGrey900);
+  border: 1px solid var(--colorGrey200);
+
+  &:hover,
+  &:focus {
+    background-color: var(--colorGrey50);
+    color: var(--colorGrey900);
   }
 }
 
@@ -101,6 +116,88 @@
 .trustText {
   composes: marketplaceTinyFontStyles from global;
   color: var(--colorGrey500);
+}
+
+/* ================ Showcase (curated work teaser) ================ */
+
+.showcase {
+  max-width: var(--contentMaxWidth);
+  margin: 0 auto;
+  padding: 8px 24px 64px 24px;
+  text-align: center;
+}
+
+.showcaseHeading {
+  composes: h1 from global;
+  font-size: 28px;
+  font-weight: var(--fontWeightBold);
+  color: var(--colorGrey900);
+  margin: 0 0 12px 0;
+
+  @media (--viewportMedium) {
+    font-size: 34px;
+  }
+}
+
+.showcaseSubtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  max-width: 560px;
+  margin: 0 auto 32px auto;
+}
+
+.showcaseGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (--viewportMedium) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.showcaseCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 4px;
+}
+
+.showcaseThumb {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--borderRadiusMedium);
+  margin-bottom: 8px;
+  background-image: linear-gradient(160deg, rgba(99, 102, 241, 0.35) 0%, rgba(219, 228, 255, 0.5) 100%);
+}
+
+.showcaseCard:nth-child(2n) .showcaseThumb {
+  background-image: linear-gradient(160deg, rgba(219, 228, 255, 0.6) 0%, rgba(99, 102, 241, 0.25) 100%);
+}
+
+.showcaseCard:nth-child(4n) .showcaseThumb {
+  background-image: linear-gradient(160deg, rgba(99, 102, 241, 0.2) 0%, rgba(129, 140, 248, 0.45) 100%);
+}
+
+.showcaseNiche {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+.showcaseFormat {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+.showcaseNote {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 0;
 }
 
 /* ================ Pipeline (feature cards) ================ */

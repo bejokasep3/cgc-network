@@ -62,6 +62,8 @@
   "BookingTimeForm.timeSlotsError": "Beim Laden der verfügbaren Daten ist ein Fehler aufgetreten. Bitte aktualisiere die Seite.",
   "CheckoutPage.bookingTimeNotAvailableMessage": "Leider ist die gewünschte Zeit gerade gebucht.",
   "CheckoutPage.chargeDisabledMessage": "Diese Transaktion kann nicht fortgesetzt werden, da die Auszahlungsdetails des Anbieters unvollständig sind. Bitte wende dich an den Support.",
+  "CheckoutPage.cgc-ugc-approval.orderBreakdown": "Bestellübersicht",
+  "CheckoutPage.cgc-ugc-approval.title": "Bestellung abschließen",
   "CheckoutPage.correctQuantityInformationMissing": "In den Bestelldaten fehlen korrekte Mengenangaben",
   "CheckoutPage.default-booking.orderBreakdown": "Buchungsübersicht",
   "CheckoutPage.default-booking.title": "Buchungsanfrage abschließen",

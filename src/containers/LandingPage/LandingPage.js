@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { useConfiguration } from '../../context/configurationContext';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
-import { getRoleHomeRouteName } from '../../util/userHelpers';
+import { getPostApprovalRouteName } from '../../util/userHelpers';
 
 import { Heading, Page, LayoutSingleColumn, NamedLink, NamedRedirect } from '../../components';
 
@@ -13,6 +13,19 @@ import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
 import css from './LandingPage.module.css';
+
+// Placeholder teaser cards (IMPLEMENTATION-PLAN.md F9.1's "curated work
+// showcase") — the real creator directory is behind login (BLUEPRINT A3), so
+// a logged-out visitor never sees actual creator work here. These are
+// deliberately abstract category/format tags, not fabricated creator names,
+// brand names, or testimonial quotes, since no real showcase content exists
+// yet to feature honestly. Swap for real (consented) creator work once available.
+const SHOWCASE_ITEMS = [
+  { id: 'item-1', nicheId: 'LandingPage.showcaseItem1Niche', formatId: 'LandingPage.showcaseItem1Format' },
+  { id: 'item-2', nicheId: 'LandingPage.showcaseItem2Niche', formatId: 'LandingPage.showcaseItem2Format' },
+  { id: 'item-3', nicheId: 'LandingPage.showcaseItem3Niche', formatId: 'LandingPage.showcaseItem3Format' },
+  { id: 'item-4', nicheId: 'LandingPage.showcaseItem4Niche', formatId: 'LandingPage.showcaseItem4Format' },
+];
 
 // Feature cards mirroring Billo's "always-on creator pipeline" composition,
 // reworded for the CGC Network's brand + creator workflow.
@@ -41,9 +54,11 @@ const PIPELINE_STEPS = [
 
 /**
  * The CGC Network's landing page. Fully custom (not managed through Console/PageBuilder):
- * centered hero + pipeline feature cards, styled after a minimalist reference
- * (Dreamflux.ai / Aoxa) with the section composition of Billo's homepage
- * (minus Billo's "trusted by" logo row).
+ * centered hero (two entry points — brand "Request access" vs creator "Apply
+ * as creator", IMPLEMENTATION-PLAN.md F9.1) + a placeholder work showcase +
+ * pipeline feature cards, styled after a minimalist reference (Dreamflux.ai /
+ * Aoxa) with the section composition of Billo's homepage (minus Billo's
+ * "trusted by" logo row).
  *
  * @param {Object} props
  * @param {boolean} props.scrollingDisabled - Whether scrolling is disabled
@@ -60,7 +75,7 @@ export const LandingPageComponent = props => {
   // page — this is what they'd see anyway if they went through /login, so a
   // direct visit to "/" shouldn't show it again.
   if (isAuthenticated && currentUser?.id) {
-    return <NamedRedirect name={getRoleHomeRouteName(config, currentUser)} />;
+    return <NamedRedirect name={getPostApprovalRouteName(config, currentUser)} />;
   }
 
   const title = intl.formatMessage(
@@ -87,8 +102,25 @@ export const LandingPageComponent = props => {
                 <FormattedMessage id="LandingPage.heroSubtitle" />
               </p>
               <div className={css.ctaRow}>
-                <NamedLink name="SignupPage" className={css.heroCta}>
-                  <FormattedMessage id="LandingPage.heroCta" />
+                {/* Logged-out visitors don't have an account yet, so these
+                    must go to signup (preselecting the right role) rather
+                    than straight to the auth-gated RequestAccessPage/ApplyPage
+                    routes, which would just bounce them to /login. Signup
+                    itself redirects pending users to the right form right
+                    after (AuthenticationPage.js). */}
+                <NamedLink
+                  name="SignupForUserTypePage"
+                  params={{ userType: 'brand' }}
+                  className={css.heroCtaSecondary}
+                >
+                  <FormattedMessage id="LandingPage.heroCtaBrand" />
+                </NamedLink>
+                <NamedLink
+                  name="SignupForUserTypePage"
+                  params={{ userType: 'creator' }}
+                  className={css.heroCta}
+                >
+                  <FormattedMessage id="LandingPage.heroCtaCreator" />
                 </NamedLink>
               </div>
               <div className={css.trustRow}>
@@ -102,6 +134,33 @@ export const LandingPageComponent = props => {
                 </span>
               </div>
             </div>
+          </section>
+
+          <section className={css.showcase}>
+            <Heading as="h2" rootClassName={css.showcaseHeading}>
+              <FormattedMessage id="LandingPage.showcaseHeading" />
+            </Heading>
+            <p className={css.showcaseSubtitle}>
+              <FormattedMessage id="LandingPage.showcaseSubtitle" />
+            </p>
+
+            <ul className={css.showcaseGrid}>
+              {SHOWCASE_ITEMS.map(item => (
+                <li key={item.id} className={css.showcaseCard}>
+                  <div className={css.showcaseThumb} aria-hidden="true" />
+                  <span className={css.showcaseNiche}>
+                    <FormattedMessage id={item.nicheId} />
+                  </span>
+                  <span className={css.showcaseFormat}>
+                    <FormattedMessage id={item.formatId} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className={css.showcaseNote}>
+              <FormattedMessage id="LandingPage.showcaseNote" />
+            </p>
           </section>
 
           <section className={css.pipeline}>

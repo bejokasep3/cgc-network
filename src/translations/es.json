@@ -62,6 +62,8 @@
   "BookingTimeForm.timeSlotsError": "Encontramos un error al cargar las fechas disponibles. Por favor, actualiza la página.",
   "CheckoutPage.bookingTimeNotAvailableMessage": "Desafortunadamente, el horario solicitado acaba de ser reservado.",
   "CheckoutPage.chargeDisabledMessage": "Esta transacción no se puede mover adelante porque la información de pago del proveedor está incompleta. Por favor, contacta al equipo de soporte.",
+  "CheckoutPage.cgc-ugc-approval.orderBreakdown": "Detalles del pedido",
+  "CheckoutPage.cgc-ugc-approval.title": "Completar el pedido",
   "CheckoutPage.correctQuantityInformationMissing": "A los datos del pedido les falta información sobre la cantidad correcta.",
   "CheckoutPage.default-booking.orderBreakdown": "Desglose de la reserva",
   "CheckoutPage.default-booking.title": "Completar solicitud de reserva",

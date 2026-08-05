@@ -2,7 +2,7 @@ const { getIntegrationSdk } = require('../api-util/integrationSdk');
 const { handleError, serialize } = require('../api-util/sdk');
 
 const PER_PAGE = 100;
-const PROVIDER_USER_TYPE = 'provider';
+const CREATOR_USER_TYPE = 'creator';
 const CREATOR_PROFILE_LISTING_TYPE = 'creator-profile';
 const PUBLISHED_STATE = 'published';
 
@@ -40,7 +40,16 @@ module.exports = (req, res) => {
   };
 
   const fetchUsers = fetchAllPages(page =>
-    integrationSdk.users.query({ page, perPage: PER_PAGE, include: ['profileImage'] })
+    integrationSdk.users.query({
+      page,
+      perPage: PER_PAGE,
+      include: ['profileImage'],
+      // Sparse fieldsets: image variant URLs are only returned for variants
+      // explicitly requested here — without this, the included profileImage
+      // comes back with no usable variants and every avatar/thumbnail falls
+      // back to "no image", even for creators who did upload a photo.
+      'fields.image': ['variants.square-small', 'variants.square-small2x'],
+    })
   );
 
   // Every listing, so each creator card can link straight to the listing
@@ -51,7 +60,11 @@ module.exports = (req, res) => {
   // has nothing to link to, so the frontend disables the button in that
   // case instead of linking to a broken page.
   const fetchCreatorProfileListings = fetchAllPages(page =>
-    integrationSdk.listings.query({ page, perPage: PER_PAGE })
+    // include: ['author'] is required for relationships.author.data to be
+    // populated at all on the Integration API — without it every listing's
+    // `relationships` comes back empty, so listingByAuthorId below would
+    // never match anyone and every creator's listingId would be null.
+    integrationSdk.listings.query({ page, perPage: PER_PAGE, include: ['author'] })
   );
 
   Promise.all([fetchUsers, fetchCreatorProfileListings])
@@ -68,22 +81,29 @@ module.exports = (req, res) => {
 
       // First published listing per author wins — a creator is only
       // expected to have one live creator-profile listing at a time.
-      const listingIdByAuthorId = listings.reduce((acc, listing) => {
+      const listingByAuthorId = listings.reduce((acc, listing) => {
         const authorId = listing.relationships?.author?.data?.id?.uuid;
-        return authorId && !acc[authorId] ? { ...acc, [authorId]: listing.id } : acc;
+        return authorId && !acc[authorId] ? { ...acc, [authorId]: listing } : acc;
       }, {});
 
       const creators = users
-        .filter(user => user.attributes?.profile?.publicData?.userType === PROVIDER_USER_TYPE)
+        .filter(user => user.attributes?.profile?.publicData?.userType === CREATOR_USER_TYPE)
         .map(user => {
           const profileImageRef = user.relationships?.profileImage?.data;
           const profileImage = profileImageRef ? profileImagesById[profileImageRef.id.uuid] : null;
+          const listing = listingByAuthorId[user.id.uuid] || null;
+          const listingPublicData = listing?.attributes?.publicData || {};
 
           return {
             id: user.id,
             displayName: user.attributes?.profile?.displayName || null,
             profileImage,
-            listingId: listingIdByAuthorId[user.id.uuid] || null,
+            listingId: listing?.id || null,
+            // Used by ProjectInvitePage (F2.5) to suggest creators whose
+            // niche/platforms match a project, and by ExploreCreatorsPage to
+            // show the same tags shown elsewhere for a creator's listing.
+            contentNiche: listingPublicData.contentNiche || [],
+            platforms: listingPublicData.platforms || [],
           };
         });
 

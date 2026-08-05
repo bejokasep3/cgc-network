@@ -2,6 +2,7 @@
 
 .root {
   max-width: 640px;
+  margin: 0 auto;
   padding: 40px 24px 96px 24px;
 
   @media (--viewportMedium) {
@@ -31,7 +32,14 @@
 }
 
 .section {
-  margin-bottom: 48px;
+  background-color: var(--colorGrey50);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 32px;
+
+  @media (--viewportMedium) {
+    padding: 32px;
+  }
 }
 
 .sectionHeading {

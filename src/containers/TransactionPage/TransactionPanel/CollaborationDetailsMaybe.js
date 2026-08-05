@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import classNames from 'classnames';
 
 import { FormattedMessage } from '../../../util/reactIntl';
 import { CGC_UGC_PROCESS_NAME } from '../../../transactions/transaction';
-import { Heading, ExternalLink } from '../../../components';
+import { Heading, ExternalLink, IconArrowHead } from '../../../components';
+import DeliverableList from '../DeliverableList/DeliverableList';
 
 import css from './TransactionPanel.module.css';
 
@@ -40,12 +41,10 @@ const DeliverablesList = ({ value }) => {
 /**
  * Shows the collaboration data both parties have added over the course of a
  * cgc-ugc-approval transaction: the creator's delivery address, shipping/tracking
- * details from the brand, and a chronological timeline of every submission and
- * revision request. All of it lives in the transaction's protected data,
- * written by the update-protected-data action on each transition. Each round
- * writes to its own keys (see TransactionPage.js's cgcRoundKeySuffix) so a
- * resubmission never overwrites the previous round's data — that's what makes
- * the timeline possible.
+ * details from the brand, the deliverables list (DeliverableList, F3.1), and —
+ * for transactions from before that — the old free-text submission timeline.
+ * All of it lives in the transaction's protected data, written by the
+ * update-protected-data action on each transition.
  *
  * @component
  * @param {Object} props
@@ -53,10 +52,34 @@ const DeliverablesList = ({ value }) => {
  * @param {string} [props.rootClassName]
  * @param {string} props.processName
  * @param {Object} props.protectedData - The transaction's protected data
+ * @param {boolean} [props.canManageDeliverables] - true only for the creator,
+ *   only while a content-submission transition is currently available
+ * @param {Object} [props.deliverableDrafts] - staged, not-yet-submitted
+ *   versions, keyed by deliverable id (TransactionPage.js's cgcDeliverableDrafts)
+ * @param {Function} [props.onAddDeliverableVersion] - `(deliverableId) => void`
+ * @param {Function} [props.onSubmitDeliverables]
+ * @param {boolean} [props.submitDeliverablesInProgress]
+ * @param {propTypes.error} [props.submitDeliverablesError]
  * @returns {JSX.Element|null}
  */
 const CollaborationDetailsMaybe = props => {
-  const { className, rootClassName, processName, protectedData } = props;
+  // Collapsed by default — shipping/tracking is reference info the reviewer
+  // rarely needs to re-check, so it shouldn't compete for space with the
+  // deliverables and content history below it.
+  const [shippingOpen, setShippingOpen] = useState(false);
+
+  const {
+    className,
+    rootClassName,
+    processName,
+    protectedData,
+    canManageDeliverables = false,
+    deliverableDrafts,
+    onAddDeliverableVersion,
+    onSubmitDeliverables,
+    submitDeliverablesInProgress,
+    submitDeliverablesError,
+  } = props;
 
   if (processName !== CGC_UGC_PROCESS_NAME || !protectedData) {
     return null;
@@ -72,6 +95,9 @@ const CollaborationDetailsMaybe = props => {
     shippingCarrier,
     trackingNumber,
     trackingUrl,
+    deliverables,
+    targetDeliverableIds,
+    targetDeliverableIds2,
     contentLinks,
     submissionNote,
     revisionNote,
@@ -82,6 +108,11 @@ const CollaborationDetailsMaybe = props => {
     submissionNoteRevision2,
     disputeReason,
   } = protectedData;
+
+  // Transactions checked out after F3.1 carry a structured `deliverables`
+  // array (seeded server-side at checkout — see cgcCheckout.js). Anything
+  // older falls through to the legacy free-text timeline below it never had.
+  const hasStructuredDeliverables = Array.isArray(deliverables) && deliverables.length > 0;
 
   // The creator's own delivery address, supplied via the
   // provider-add-shipping-address self-transition — the brand has no other way
@@ -138,7 +169,13 @@ const CollaborationDetailsMaybe = props => {
       : null,
   ].filter(Boolean);
 
-  if (!hasShippingAddress && !hasTracking && timeline.length === 0 && !disputeReason) {
+  if (
+    !hasShippingAddress &&
+    !hasTracking &&
+    timeline.length === 0 &&
+    !disputeReason &&
+    !hasStructuredDeliverables
+  ) {
     return null;
   }
 
@@ -153,44 +190,77 @@ const CollaborationDetailsMaybe = props => {
     </div>
   );
 
+  const shippingHeadingId = hasTracking
+    ? 'CollaborationDetails.trackingHeading'
+    : 'CollaborationDetails.shippingAddressHeading';
+
   return (
     <div className={classes}>
-      {hasShippingAddress ? (
-        <>
-          <Heading as="h3" rootClassName={css.sectionHeading}>
-            <FormattedMessage id="CollaborationDetails.shippingAddressHeading" />
-          </Heading>
-          {row('CollaborationDetails.recipient', shippingRecipientName)}
-          {row(
-            'CollaborationDetails.address',
-            <>
-              {shippingAddressLine1}
-              {shippingAddressLine2 ? `, ${shippingAddressLine2}` : ''}
-              <br />
-              {shippingPostalCode} {shippingCity}
-              <br />
-              {shippingCountry}
-            </>
-          )}
-        </>
+      {hasShippingAddress || hasTracking ? (
+        <div className={css.collapsibleSection}>
+          <button
+            type="button"
+            className={css.collapsibleToggle}
+            onClick={() => setShippingOpen(!shippingOpen)}
+            aria-expanded={shippingOpen}
+          >
+            <FormattedMessage id={shippingHeadingId} />
+            <IconArrowHead
+              direction={shippingOpen ? 'up' : 'down'}
+              rootClassName={css.collapsibleToggleIcon}
+            />
+          </button>
+          {shippingOpen ? (
+            <div className={css.collapsibleContent}>
+              {hasShippingAddress ? (
+                <>
+                  {row('CollaborationDetails.recipient', shippingRecipientName)}
+                  {row(
+                    'CollaborationDetails.address',
+                    <>
+                      {shippingAddressLine1}
+                      {shippingAddressLine2 ? `, ${shippingAddressLine2}` : ''}
+                      <br />
+                      {shippingPostalCode} {shippingCity}
+                      <br />
+                      {shippingCountry}
+                    </>
+                  )}
+                </>
+              ) : null}
+
+              {hasTracking ? (
+                <>
+                  {shippingCarrier ? row('CollaborationDetails.carrier', shippingCarrier) : null}
+                  {trackingNumber
+                    ? row('CollaborationDetails.trackingNumber', trackingNumber)
+                    : null}
+                  {trackingUrl && isSafeUrl(trackingUrl)
+                    ? row(
+                        'CollaborationDetails.trackingUrl',
+                        <ExternalLink href={trackingUrl}>
+                          <FormattedMessage id="CollaborationDetails.trackShipment" />
+                        </ExternalLink>
+                      )
+                    : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
-      {hasTracking ? (
-        <>
-          <Heading as="h3" rootClassName={css.sectionHeading}>
-            <FormattedMessage id="CollaborationDetails.trackingHeading" />
-          </Heading>
-          {shippingCarrier ? row('CollaborationDetails.carrier', shippingCarrier) : null}
-          {trackingNumber ? row('CollaborationDetails.trackingNumber', trackingNumber) : null}
-          {trackingUrl && isSafeUrl(trackingUrl)
-            ? row(
-                'CollaborationDetails.trackingUrl',
-                <ExternalLink href={trackingUrl}>
-                  <FormattedMessage id="CollaborationDetails.trackShipment" />
-                </ExternalLink>
-              )
-            : null}
-        </>
+      {hasStructuredDeliverables ? (
+        <DeliverableList
+          deliverables={deliverables}
+          canManage={canManageDeliverables}
+          drafts={deliverableDrafts}
+          targetDeliverableIds={targetDeliverableIds2 || targetDeliverableIds || []}
+          onAddVersion={onAddDeliverableVersion}
+          onSubmitForReview={onSubmitDeliverables}
+          submitInProgress={submitDeliverablesInProgress}
+          submitError={submitDeliverablesError}
+        />
       ) : null}
 
       {timeline.length > 0 ? (

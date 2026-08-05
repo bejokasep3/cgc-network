@@ -39,7 +39,7 @@ const SectionAuthorMaybe = props => {
   );
 
   // The "invite creator to collaborate" flow (CGC-FRONTEND-PLAN.md §3.3) lets a
-  // brand attach one of its own open project-brief listings to the inquiry, so
+  // brand attach one of its own open project listings to the inquiry, so
   // fetch that list once the brand actually opens the modal on a creator's
   // listing rather than on every ListingPage visit.
   const isCreatorProfileListing =

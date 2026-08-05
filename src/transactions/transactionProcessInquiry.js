@@ -21,7 +21,7 @@ export const transitions = {
   // sendInquiry looks it up generically via getProcess(processName).transitions.INQUIRE
   // (see ProjectDetailPage.js, CreatorProfilePage.js) — without this alias
   // that generic lookup silently sends `transition: undefined` for any
-  // listing on this process, e.g. applying to a project-brief listing.
+  // listing on this process, e.g. applying to a project listing.
   INQUIRE: 'transition/inquire-without-payment',
 };
 

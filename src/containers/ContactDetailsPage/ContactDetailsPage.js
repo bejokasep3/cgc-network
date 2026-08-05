@@ -7,13 +7,13 @@ import { useConfiguration } from '../../context/configurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { ensureCurrentUser } from '../../util/data';
-import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers';
+import { showPaymentDetailsForUser, isBrandUserType, isUserAuthorized } from '../../util/userHelpers';
 
 import { sendVerificationEmail } from '../../ducks/user.duck';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 
-import { H3, Page, LayoutSideNavigation } from '../../components';
+import { H3, Page, LayoutSideNavigation, NamedRedirect } from '../../components';
 
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -65,6 +65,11 @@ export const ContactDetailsPageComponent = props => {
     resetPasswordError,
     onLogout,
   } = props;
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
+
   const { userTypes = [] } = config.user;
 
   const user = ensureCurrentUser(currentUser);

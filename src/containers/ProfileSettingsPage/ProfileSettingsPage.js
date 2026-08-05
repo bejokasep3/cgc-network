@@ -1,22 +1,27 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
+import { useHistory, useLocation } from 'react-router-dom';
 
 import { useConfiguration } from '../../context/configurationContext';
+import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { PROFILE_PAGE_PENDING_APPROVAL_VARIANT } from '../../util/urlHelpers';
 import { ensureCurrentUser } from '../../util/data';
+import { createResourceLocatorString } from '../../util/routes';
 import {
   initialValuesForUserFields,
   isUserAuthorized,
   pickUserFieldsData,
   isBrandUserType,
+  getOnboardingRouteName,
+  cameFromOnboardingChecklist,
 } from '../../util/userHelpers';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 
-import { H3, Page, NamedLink, LayoutSingleColumn } from '../../components';
+import { H3, Page, NamedLink, NamedRedirect, LayoutSingleColumn } from '../../components';
 
 import DashboardTopbar from '../../containers/ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
@@ -72,7 +77,10 @@ const ViewProfileLink = props => {
  */
 export const ProfileSettingsPageComponent = props => {
   const config = useConfiguration();
+  const routeConfiguration = useRouteConfiguration();
   const intl = useIntl();
+  const history = useHistory();
+  const location = useLocation();
   const {
     currentUser,
     image,
@@ -85,6 +93,27 @@ export const ProfileSettingsPageComponent = props => {
     uploadImageError,
     uploadInProgress,
   } = props;
+
+  // Opened from the onboarding checklist (SetupChecklist.js) rather than
+  // account nav? Then a successful save should return there instead of
+  // leaving the user sitting on this page — but only for this one visit
+  // (see ONBOARDING_LINK_STATE), so saving again later from account
+  // settings doesn't force them back into onboarding.
+  const returnToOnboarding = cameFromOnboardingChecklist(location);
+  const wasUpdating = useRef(updateInProgress);
+  useEffect(() => {
+    const justSucceeded = wasUpdating.current && !updateInProgress && !updateProfileError;
+    wasUpdating.current = updateInProgress;
+    if (justSucceeded && returnToOnboarding) {
+      const onboardingRouteName = getOnboardingRouteName(config, currentUser);
+      history.push(createResourceLocatorString(onboardingRouteName, routeConfiguration, {}, {}));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateInProgress, updateProfileError, returnToOnboarding]);
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const topbarDisplayName = currentUser?.attributes?.profile?.displayName;
   const role = isBrandUserType(config, currentUser) ? 'brand' : 'creator';

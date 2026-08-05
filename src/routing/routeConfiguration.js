@@ -20,9 +20,24 @@ const PostProjectPage = loadable(() => import(/* webpackChunkName: "PostProjectP
 const CreatorProfilePage = loadable(() => import(/* webpackChunkName: "CreatorProfilePage" */ '../containers/CreatorProfilePage/CreatorProfilePage'));
 const BrowseProjectsPage = loadable(() => import(/* webpackChunkName: "BrowseProjectsPage" */ '../containers/BrowseProjectsPage/BrowseProjectsPage'));
 const ProjectDetailPage = loadable(() => import(/* webpackChunkName: "ProjectDetailPage" */ '../containers/ProjectDetailPage/ProjectDetailPage'));
+const EditProjectPage = loadable(() => import(/* webpackChunkName: "EditProjectPage" */ '../containers/EditProjectPage/EditProjectPage'));
+const ProjectInvitePage = loadable(() => import(/* webpackChunkName: "ProjectInvitePage" */ '../containers/ProjectInvitePage/ProjectInvitePage'));
+const ProjectAcceptPage = loadable(() => import(/* webpackChunkName: "ProjectAcceptPage" */ '../containers/ProjectAcceptPage/ProjectAcceptPage'));
 const MyCollaborationsPage = loadable(() => import(/* webpackChunkName: "MyCollaborationsPage" */ '../containers/MyCollaborationsPage/MyCollaborationsPage'));
 const CreatorOnboardingPage = loadable(() => import(/* webpackChunkName: "CreatorOnboardingPage" */ '../containers/CreatorOnboardingPage/CreatorOnboardingPage'));
 const CreatorPackagePage = loadable(() => import(/* webpackChunkName: "CreatorPackagePage" */ '../containers/CreatorPackagePage/CreatorPackagePage'));
+const ShippingAddressPage = loadable(() => import(/* webpackChunkName: "ShippingAddressPage" */ '../containers/ShippingAddressPage/ShippingAddressPage'));
+const AdminPage = loadable(() => import(/* webpackChunkName: "AdminPage" */ '../containers/AdminPage/AdminPage'));
+const AdminApplicationsPage = loadable(() => import(/* webpackChunkName: "AdminApplicationsPage" */ '../containers/AdminApplicationsPage/AdminApplicationsPage'));
+const AdminInvitesPage = loadable(() => import(/* webpackChunkName: "AdminInvitesPage" */ '../containers/AdminInvitesPage/AdminInvitesPage'));
+const AdminDisputesPage = loadable(() => import(/* webpackChunkName: "AdminDisputesPage" */ '../containers/AdminDisputesPage/AdminDisputesPage'));
+const AdminHealthPage = loadable(() => import(/* webpackChunkName: "AdminHealthPage" */ '../containers/AdminHealthPage/AdminHealthPage'));
+const LicensePage = loadable(() => import(/* webpackChunkName: "LicensePage" */ '../containers/LicensePage/LicensePage'));
+const LibraryPage = loadable(() => import(/* webpackChunkName: "LibraryPage" */ '../containers/LibraryPage/LibraryPage'));
+const EarningsPage = loadable(() => import(/* webpackChunkName: "EarningsPage" */ '../containers/EarningsPage/EarningsPage'));
+const ApplyPage = loadable(() => import(/* webpackChunkName: "ApplyPage" */ '../containers/ApplyPage/ApplyPage'));
+const RequestAccessPage = loadable(() => import(/* webpackChunkName: "RequestAccessPage" */ '../containers/RequestAccessPage/RequestAccessPage'));
+const PendingPage = loadable(() => import(/* webpackChunkName: "PendingPage" */ '../containers/PendingPage/PendingPage'));
 const CheckoutPage = loadable(() => import(/* webpackChunkName: "CheckoutPage" */ '../containers/CheckoutPage/CheckoutPage'));
 const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../containers/CMSPage/CMSPage'));
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
@@ -406,10 +421,10 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: ManageCampaignsPage,
     },
     {
-      // "New campaign" button on ManageCampaignsPage — a purpose-built form
-      // for posting a project-brief listing (see PostProjectPage.js), instead
+      // "New project" button on ManageCampaignsPage — a purpose-built form
+      // for posting a project listing (see PostProjectPage.js), instead
       // of routing into the general EditListingPage wizard.
-      path: '/campaigns/new',
+      path: '/projects/new',
       name: 'PostProjectPage',
       auth: true,
       authPage: 'LoginPage',
@@ -443,6 +458,36 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       component: BrandOnboardingPage,
     },
     {
+      // Creator application form (F4.1) — landed on right after signup while
+      // the account is in Sharetribe's built-in pending-approval state (see
+      // AuthenticationPage.js's redirect). auth: true so a pending user can
+      // still reach it (only isUserAuthorized-gated pages should ever block
+      // pending users, and this deliberately isn't one).
+      path: '/apply',
+      name: 'ApplyPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ApplyPage,
+    },
+    {
+      // Brand access-request form (F4.1 / BLUEPRINT B2) — same timing as
+      // ApplyPage above, for the brand side.
+      path: '/request-access',
+      name: 'RequestAccessPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: RequestAccessPage,
+    },
+    {
+      // Shown after submitting either form above, while still pending
+      // approval (F4.1 / BLUEPRINT B3).
+      path: '/pending',
+      name: 'PendingPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: PendingPage,
+    },
+    {
       // Creator's home base after login (see AuthenticationPage.js redirect).
       path: '/projects',
       name: 'BrowseProjectsPage',
@@ -453,12 +498,43 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
     {
       // "View project" link on BrowseProjectsPage — a purpose-built project page
       // (brand's project details + an apply form), instead of routing into
-      // the generic ListingPage. :id is the project-brief listing id.
+      // the generic ListingPage. :id is the project listing id.
       path: '/projects/:id',
       name: 'ProjectDetailPage',
       auth: true,
       authPage: 'LoginPage',
       component: ProjectDetailPage,
+    },
+    {
+      // "Edit project" from ProjectDetailPage's owner-view menu — reuses
+      // PostProjectForm pre-filled from the existing listing (see
+      // EditProjectPage.js). :id is the project listing id.
+      path: '/projects/:id/edit',
+      name: 'EditProjectPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: EditProjectPage,
+    },
+    {
+      // "Invite creators" from ProjectDetailPage's owner view (F2.5) — a
+      // brand picks a creator to invite to this specific project. :id is the
+      // project listing id.
+      path: '/projects/:id/invite',
+      name: 'ProjectInvitePage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ProjectInvitePage,
+    },
+    {
+      // "Proceed to payment" from an ACCEPTED applicant card on
+      // ProjectDetailPage's owner view (F2.6) — B9's confirm-the-deal-then-pay
+      // screen. :id is the project listing id; ?applicationId=<uuid> picks
+      // which accepted application this checkout is for.
+      path: '/projects/:id/accept',
+      name: 'ProjectAcceptPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ProjectAcceptPage,
     },
     {
       // "My Collaborations" nav item in DashboardTopbar — status-based view
@@ -469,6 +545,15 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       auth: true,
       authPage: 'LoginPage',
       component: MyCollaborationsPage,
+    },
+    {
+      // Creator's earnings breakdown (F8.2): paid out / awaiting review /
+      // held, from the creator's own cgc-ugc-approval sale transactions.
+      path: '/earnings',
+      name: 'EarningsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: EarningsPage,
     },
     {
       // Creator's setup checklist: approval status, profile, package listing,
@@ -491,6 +576,79 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       auth: true,
       authPage: 'LoginPage',
       component: CreatorPackagePage,
+    },
+    {
+      // A creator's own default shipping address (F4.2) — one step in the
+      // onboarding checklist, saved to privateData so it can prefill the
+      // per-collaboration "addShippingAddress" modal later.
+      path: '/account/shipping-address',
+      name: 'ShippingAddressPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ShippingAddressPage,
+    },
+    {
+      // Operator console (F5.1). auth:true only confirms someone is logged
+      // in — the real operator check happens server-side on every visit
+      // (AdminPage.js calls /api/admin/status), since userType alone can't
+      // be trusted as proof (see server/api-util/operator.js).
+      path: '/admin',
+      name: 'AdminPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: AdminPage,
+    },
+    {
+      // Application queue (F5.2) — pending-approval creators and brands,
+      // gated the same server-verified way as AdminPage.
+      path: '/admin/applications',
+      name: 'AdminApplicationsPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: AdminApplicationsPage,
+    },
+    {
+      // Invite codes (F5.3) — gated the same server-verified way.
+      path: '/admin/invites',
+      name: 'AdminInvitesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: AdminInvitesPage,
+    },
+    {
+      // Dispute mediation (F5.3).
+      path: '/admin/disputes',
+      name: 'AdminDisputesPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: AdminDisputesPage,
+    },
+    {
+      // Network health dashboard (F5.3).
+      path: '/admin/health',
+      name: 'AdminHealthPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: AdminHealthPage,
+    },
+    {
+      // Frozen, printable license record for a completed collaboration
+      // (F6.1) — viewable once the transaction has reached `received`.
+      path: '/collaborations/:id/license',
+      name: 'LicensePage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: LicensePage,
+    },
+    {
+      // Brand's content library (F6.2) — deliberately NOT subscription-gated
+      // (BLUEPRINT D5): access to already-delivered assets survives a
+      // lapsed subscription, only starting new work is blocked.
+      path: '/library',
+      name: 'LibraryPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: LibraryPage,
     },
     {
       path: '/account/payment-methods',

@@ -294,6 +294,25 @@ export const sendVerificationEmail = () => (dispatch, getState, sdk) => {
   return dispatch(sendVerificationEmailThunk()).unwrap();
 };
 
+///////////////////////////////////////////////////////////////////////
+// Mark the post-approval welcome screen (CreatorOnboardingPage /    //
+// BrandOnboardingPage) as seen, so a returning user lands on their  //
+// normal role home instead of the welcome screen every time.        //
+///////////////////////////////////////////////////////////////////////
+
+export const markWelcomeSeenThunk = createAsyncThunk(
+  'user/markWelcomeSeen',
+  (_, { dispatch, extra: sdk, rejectWithValue }) =>
+    sdk.currentUser
+      .updateProfile({ privateData: { welcomeSeenAt: new Date().toISOString() } }, { expand: true })
+      .then(response => {
+        const entities = denormalisedResponseEntities(response);
+        dispatch(setCurrentUser(entities[0]));
+        return entities[0];
+      })
+      .catch(e => rejectWithValue(storableError(e)))
+);
+
 // ================ Slice ================ //
 
 const userSlice = createSlice({
@@ -303,6 +322,12 @@ const userSlice = createSlice({
     currentUserShowTimestamp: 0,
     currentUserShowError: null,
     currentUserHasListings: false,
+    // Distinguishes "confirmed no published listing" from "haven't checked
+    // yet" — the initial `false` above is a default, not an answer. Consumers
+    // like BrandSetupBanner need this to avoid flashing an incomplete step
+    // while the very first fetchCurrentUserHasListings() call (fired
+    // fire-and-forget from fetchCurrentUserThunk, see below) is still in flight.
+    currentUserHasListingsFetched: false,
     currentUserHasListingsError: null,
     currentUserSaleNotificationCount: 0,
     currentUserOrderNotificationCount: 0,
@@ -317,6 +342,7 @@ const userSlice = createSlice({
       state.currentUser = null;
       state.currentUserShowError = null;
       state.currentUserHasListings = false;
+      state.currentUserHasListingsFetched = false;
       state.currentUserHasListingsError = null;
       state.currentUserSaleNotificationCount = 0;
       state.currentUserOrderNotificationCount = 0;
@@ -350,10 +376,15 @@ const userSlice = createSlice({
       })
       .addCase(fetchCurrentUserHasListingsThunk.fulfilled, (state, action) => {
         state.currentUserHasListings = action.payload.hasListings;
+        state.currentUserHasListingsFetched = true;
       })
       .addCase(fetchCurrentUserHasListingsThunk.rejected, (state, action) => {
         console.error(action.payload);
         state.currentUserHasListingsError = action.payload;
+        // Marked fetched even on failure — a stuck "not fetched yet" would
+        // leave BrandSetupBanner hidden forever on a transient network error
+        // instead of just (safely) assuming no published listing.
+        state.currentUserHasListingsFetched = true;
       })
       // fetchCurrentUserNotifications
       .addCase(fetchCurrentUserNotificationsThunk.pending, state => {

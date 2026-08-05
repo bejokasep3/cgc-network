@@ -246,12 +246,11 @@ const sendInquiryPayloadCreator = (
   const bodyParams = {
     transition: transitions.INQUIRE,
     processAlias,
-    // protectedData carries the "invite creator to a project" context (see
-    // CGC-FRONTEND-PLAN.md §3.3) when the brand attaches one of their own
-    // project-brief listings. transition/inquire already runs
-    // action/update-protected-data in process.edn, so no process change
-    // is needed to store it. (protectedData still uses the historical
-    // `inviteBriefId`/`inviteBriefTitle` keys — see InquiryForm.js.)
+    // protectedData carries the "invite creator to a project" context
+    // (IMPLEMENTATION-PLAN.md F2.5 / §2.5: `projectId` + `invitationStatus`)
+    // when the brand attaches one of their own project listings.
+    // transition/inquire already runs action/update-protected-data in
+    // process.edn, so no process change is needed to store it.
     params: protectedData ? { listingId, protectedData } : { listingId },
   };
   return sdk.transactions
@@ -284,12 +283,12 @@ export const sendInquiry = (listing, message, protectedData) => (dispatch, getSt
 ///////////////////////////////
 
 // Used by the "invite creator to collaborate" flow (CGC-FRONTEND-PLAN.md §3.3):
-// lets a brand pick one of its own open project-brief listings to attach to an
+// lets a brand pick one of its own open project listings to attach to an
 // inquiry, so the creator sees an invitation with the project attached rather
 // than a bare message.
 const fetchOwnProjectsPayloadCreator = (_, { rejectWithValue, extra: sdk }) => {
   return sdk.ownListings
-    .query({ pub_listingType: 'project-brief' })
+    .query({ pub_listingType: 'project' })
     .then(response => {
       return denormalisedResponseEntities(response).filter(
         l => l.attributes.state === 'published'

@@ -8,7 +8,7 @@ import { createResourceLocatorString } from '../../util/routes';
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { ensureCurrentUser } from '../../util/data';
 import { propTypes } from '../../util/types';
-import { showPaymentDetailsForUser, isBrandUserType } from '../../util/userHelpers';
+import { showPaymentDetailsForUser, isBrandUserType, isUserAuthorized } from '../../util/userHelpers';
 import { getDisplayAccountType } from '../../util/stripeConnect';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
@@ -123,6 +123,10 @@ export const StripePayoutPageComponent = props => {
     authScopes,
     onLogout,
   } = props;
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const { returnURLType } = params || {};
   const ensuredCurrentUser = ensureCurrentUser(currentUser);

@@ -23,10 +23,10 @@ import { ensureOwnListing } from '../../util/data';
 import { hasPermissionToPostListings, isUserAuthorized } from '../../util/userHelpers';
 import { checkBrandAccess, isSubscriptionStatusResolved } from '../../util/subscription';
 
-// A brand posting a project-brief listing needs an active subscription. Only
+// A brand posting a project listing needs an active subscription. Only
 // this listing type is gated — creators posting creator-profile listings
 // never are (see util/subscription.js).
-const PROJECT_BRIEF_LISTING_TYPE = 'project-brief';
+const PROJECT_BRIEF_LISTING_TYPE = 'project';
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 import {
@@ -201,10 +201,10 @@ export const EditListingPageComponent = props => {
   const shouldRedirectNoPostingRights =
     !!currentUser?.id && ((isNewListingFlow && !hasPostingRights) || hasPostingRightsError);
 
-  // Only project-brief listings are brand-subscription gated. The listing
+  // Only project listings are brand-subscription gated. The listing
   // type isn't known until the draft's first tab is submitted, so nothing
   // gates before that — this check only bites once publicData.listingType
-  // is actually 'project-brief'.
+  // is actually 'project'.
   const isProjectBriefListing =
     currentListing.attributes?.publicData?.listingType === PROJECT_BRIEF_LISTING_TYPE;
   const subscriptionResolved = isSubscriptionStatusResolved(brandSubscription);
