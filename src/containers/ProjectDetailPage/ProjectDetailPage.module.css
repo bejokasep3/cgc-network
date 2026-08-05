@@ -25,6 +25,7 @@
   flex-direction: column;
   gap: 32px;
   max-width: 1040px;
+  margin: 0 auto;
 
   @media (--viewportMedium) {
     flex-direction: row;
@@ -35,6 +36,15 @@
 .main {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Owner view has no sidebar to share .layout's flex row with, but still
+   needs the same width cap — without it, every grid/flex section below
+   (header actions, overview cards, Terms/Creator criteria) stretches across
+   the full viewport on a wide screen instead of staying a readable width. */
+.ownerRoot {
+  max-width: 1040px;
+  margin: 0 auto;
 }
 
 .sidebar {
@@ -94,8 +104,35 @@
 
 /* ================ Sections ================ */
 
-.section {
-  margin-bottom: 32px;
+/* A bordered white box grouping a set of sections — the visual boundary
+   Billo uses between "Brief overview", "Brief information", etc. Without
+   it, headings are the only thing separating one group of facts from the
+   next, which reads as one long undifferentiated page. */
+.card {
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+
+  @media (--viewportMedium) {
+    padding: 28px 32px;
+  }
+}
+
+/* One labeled group inside a .card (e.g. "Deliverables" inside the combined
+   brief card) — separated from the previous group by a rule instead of
+   .card's own margin, so multiple groups can share one box. */
+.cardSection {
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid var(--colorGrey100);
+
+  &:first-child {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+  }
 }
 
 .sectionHeading {
@@ -110,38 +147,6 @@
   color: var(--colorGrey700);
   margin: 0;
   white-space: pre-line;
-}
-
-.detailGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.detailItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.detailLabel {
-  composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey500);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.detailValue {
-  composes: marketplaceSmallFontStyles from global;
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey900);
-}
-
-.postedOn {
-  composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey400);
-  margin: 0;
 }
 
 /* ================ Apply sidebar ================ */
@@ -163,8 +168,64 @@
   flex-direction: column;
 }
 
+.field {
+  margin-bottom: 16px;
+}
+
+.applySubmitRow {
+  margin-top: 8px;
+}
+
 .applySubmitButtonWrapper {
   margin-top: 8px;
+}
+
+/* ================ Apply form: propose-a-different-price toggle ================ */
+
+.proposeDifferentPrice {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  align-self: flex-start;
+  margin-bottom: 16px;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.counterFields {
+  border-top: 1px solid var(--colorGrey100);
+  padding-top: 16px;
+  margin-bottom: 8px;
+}
+
+.cancelCounter {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  align-self: flex-start;
+
+  &:hover {
+    color: var(--colorGrey700);
+  }
+}
+
+/* ================ Already applied ================ */
+
+.alreadyApplied {
+  text-align: center;
+}
+
+.alreadyAppliedTitle {
+  composes: h4 from global;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+}
+
+.alreadyAppliedBody {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0;
 }
 
 .pendingApproval {
@@ -202,4 +263,424 @@
     color: var(--colorWhite);
     text-decoration: none;
   }
+}
+
+/* ================ Owner view: applicant comparison (F2.4) ================ */
+
+.applicantsEmpty {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey500);
+  background-color: var(--colorGrey50);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.applicantsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.applicantCard {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--colorGrey50);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.applicantCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.applicantCardHeaderInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.applicantName {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.applicantAppliedOn {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey400);
+}
+
+.applicantStatusBadge {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey600);
+  background-color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.applicantCardBody {
+  margin-bottom: 12px;
+}
+
+.applicantPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.applicantPrice {
+  composes: h4 from global;
+  color: var(--colorGrey900);
+  margin: 0;
+}
+
+.priceMatch {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.priceDelta {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+.priceDeltaOver {
+  color: var(--colorFail);
+}
+
+.applicantDetailRow {
+  display: flex;
+  gap: 6px;
+  composes: marketplaceTinyFontStyles from global;
+  margin-bottom: 4px;
+}
+
+.applicantDetailLabel {
+  color: var(--colorGrey500);
+}
+
+.applicantDetailValue {
+  color: var(--colorGrey700);
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.applicantNote {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 8px 0 0 0;
+}
+
+.applicantCardActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.applicantCounterLink {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.applicantDeclineLink {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+
+  &:hover {
+    color: var(--colorFail);
+  }
+}
+
+.applicantWaiting {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 4px 0 0 0;
+}
+
+.applicantPaid {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorSuccess);
+  font-weight: var(--fontWeightSemiBold);
+  margin: 4px 0 0 0;
+}
+
+.applicantPayLink {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-block;
+  color: var(--colorWhite);
+  background-color: var(--colorGrey900);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: var(--fontWeightSemiBold);
+  text-decoration: none;
+  margin-top: 4px;
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+  }
+}
+
+/* ================ Owner view: header (Project overview) ================ */
+
+.ownerHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ownerHeaderTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ownerHeaderTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ownerHeading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0;
+
+  @media (--viewportMedium) {
+    font-size: 20px;
+    line-height: 26px;
+  }
+}
+
+/* Indented to align under the title text rather than the back button —
+   back button width (34px) + .ownerHeaderTitleRow's gap (10px). */
+.ownerHeaderMeta {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 44px;
+  color: var(--colorGrey500);
+}
+
+.ownerHeaderMetaDot {
+  color: var(--colorGrey300);
+}
+
+.ownerHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* Small circular icon buttons (edit/duplicate/close) — mirrors Billo's
+   header exactly: plain icon buttons, no dropdown, no solid pill. */
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--colorGrey200);
+  border-radius: 50%;
+  background-color: var(--colorWhite);
+  color: var(--colorGrey600);
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--colorGrey400);
+    color: var(--colorGrey900);
+    text-decoration: none;
+  }
+}
+
+.iconButtonIcon {
+  width: 15px;
+  height: 15px;
+}
+
+/* ================ Owner view: overview cards ================ */
+
+.overviewSubtitle {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 0 0 20px 0;
+}
+
+.overviewCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.overviewCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: var(--colorGrey50);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.overviewCardLabel {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+}
+
+.overviewCardValue {
+  font-size: 22px;
+  font-weight: var(--fontWeightBold);
+  line-height: 26px;
+  color: var(--colorGrey900);
+  margin: 0;
+}
+
+.overviewCardCtaWrapper {
+  margin-top: 8px;
+}
+
+.overviewCardCta {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  color: var(--colorGrey700);
+  font-weight: var(--fontWeightSemiBold);
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey200);
+  border-radius: 999px;
+  padding: 6px 14px;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--marketplaceColor);
+    color: var(--marketplaceColor);
+    text-decoration: none;
+  }
+}
+
+.overviewCardCtaMuted .overviewCardCta {
+  color: var(--colorGrey400);
+  border-color: var(--colorGrey100);
+
+  &:hover {
+    border-color: var(--colorGrey200);
+    color: var(--colorGrey500);
+  }
+}
+
+/* ================ Brief information / deliverables table ================ */
+
+.infoRows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label-left / value-right rows divided by a thin rule, matching Billo's
+   "Brief information" table — used for every fact group (Brief info, Terms,
+   Creator criteria) instead of mixing that pattern with a separate boxed
+   tile grid, which read as visually inconsistent. */
+.infoRow {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--colorGrey100);
+  composes: marketplaceSmallFontStyles from global;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.infoLabel {
+  flex: 0 0 140px;
+  color: var(--colorGrey500);
+}
+
+.infoValue {
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightSemiBold);
+  word-break: break-word;
+}
+
+.deliverablesTableWrapper {
+  overflow-x: auto;
+}
+
+.deliverablesTable {
+  composes: marketplaceSmallFontStyles from global;
+  width: 100%;
+  border-collapse: collapse;
+
+  & th {
+    text-align: left;
+    color: var(--colorGrey500);
+    font-weight: var(--fontWeightSemiBold);
+    padding: 8px 12px 8px 0;
+    border-bottom: 1px solid var(--colorGrey100);
+    white-space: nowrap;
+  }
+
+  & td {
+    color: var(--colorGrey900);
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--colorGrey100);
+  }
+
+  & tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+/* ================ Close project modal ================ */
+
+.closeModalTitle {
+  composes: h3 from global;
+  color: var(--colorGrey900);
+  margin: 0 0 12px 0;
+}
+
+.closeModalBody {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 24px 0;
+}
+
+.closeModalActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
 }

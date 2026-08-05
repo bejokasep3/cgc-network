@@ -1,16 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
 import { logout } from '../../ducks/auth.duck';
 import { fetchOwnCreatorProfileThunk } from '../../ducks/creatorProfile.duck';
 import { fetchStripeAccount } from '../../ducks/stripeConnectAccount.duck';
+import { markWelcomeSeenThunk } from '../../ducks/user.duck';
+import { isUserAuthorized } from '../../util/userHelpers';
 import { getCreatorSetupSteps } from './creatorSetupSteps';
 
-import { Heading, Page, LayoutSingleColumn, NamedLink } from '../../components';
+import {
+  Heading,
+  Page,
+  LayoutSingleColumn,
+  NamedLink,
+  NamedRedirect,
+  SetupChecklist,
+} from '../../components';
 import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 
 import css from './CreatorOnboardingPage.module.css';
@@ -29,6 +37,7 @@ import css from './CreatorOnboardingPage.module.css';
  * @param {Object} props.stripeConnectAccount - state.stripeConnectAccount
  * @param {Function} props.onFetchOwnCreatorProfile
  * @param {Function} props.onFetchStripeAccount
+ * @param {Function} props.onMarkWelcomeSeen
  * @param {Function} props.onLogout
  * @returns {JSX.Element}
  */
@@ -41,8 +50,16 @@ export const CreatorOnboardingPageComponent = props => {
     stripeConnectAccount,
     onFetchOwnCreatorProfile,
     onFetchStripeAccount,
+    onMarkWelcomeSeen,
     onLogout,
   } = props;
+
+  // Captured once on mount rather than derived from currentUser on every
+  // render — otherwise the welcome heading would disappear mid-visit the
+  // moment onMarkWelcomeSeen's setCurrentUser lands.
+  const [isFirstVisit] = useState(
+    () => !currentUser?.attributes?.profile?.privateData?.welcomeSeenAt
+  );
 
   useEffect(() => {
     onFetchOwnCreatorProfile();
@@ -52,8 +69,15 @@ export const CreatorOnboardingPageComponent = props => {
     if (currentUser?.stripeAccount) {
       onFetchStripeAccount();
     }
+    if (isFirstVisit && isUserAuthorized(currentUser)) {
+      onMarkWelcomeSeen();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onFetchOwnCreatorProfile, onFetchStripeAccount, currentUser?.stripeAccount]);
+
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
   const title = intl.formatMessage({ id: 'CreatorOnboardingPage.schemaTitle' });
   const displayName = currentUser?.attributes?.profile?.displayName;
@@ -63,9 +87,7 @@ export const CreatorOnboardingPageComponent = props => {
     ownProfileListing: creatorProfile?.ownProfileListing,
     stripeAccount: stripeConnectAccount?.stripeAccount,
   });
-  const currentStepIndex = steps.findIndex(step => !step.done);
-  const allDone = currentStepIndex === -1;
-  const doneCount = steps.filter(step => step.done).length;
+  const allDone = steps.every(step => step.done);
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
@@ -76,65 +98,23 @@ export const CreatorOnboardingPageComponent = props => {
       >
         <div className={css.root}>
           <Heading as="h1" rootClassName={css.heading}>
-            <FormattedMessage id="CreatorOnboardingPage.heading" />
+            <FormattedMessage
+              id={isFirstVisit ? 'CreatorOnboardingPage.welcomeHeading' : 'CreatorOnboardingPage.heading'}
+            />
           </Heading>
           <p className={css.subtitle}>
-            <FormattedMessage id="CreatorOnboardingPage.subtitle" />
-          </p>
-
-          <div className={css.progressBarTrack}>
-            <div
-              className={css.progressBarFill}
-              style={{ width: `${(doneCount / steps.length) * 100}%` }}
-            />
-          </div>
-          <p className={css.progressLabel}>
             <FormattedMessage
-              id="CreatorOnboardingPage.progressLabel"
-              values={{ done: doneCount, total: steps.length }}
+              id={isFirstVisit ? 'CreatorOnboardingPage.welcomeSubtitle' : 'CreatorOnboardingPage.subtitle'}
             />
           </p>
 
-          <div className={css.stepList}>
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={classNames(css.stepCard, {
-                  [css.stepCardDone]: step.done,
-                  [css.stepCardCurrent]: index === currentStepIndex,
-                })}
-              >
-                <span
-                  className={classNames(css.stepIcon, {
-                    [css.stepIconDone]: step.done,
-                    [css.stepIconCurrent]: index === currentStepIndex,
-                  })}
-                >
-                  {step.done ? '✓' : index + 1}
-                </span>
-                <div className={css.stepInfo}>
-                  <Heading
-                    as="h2"
-                    rootClassName={classNames(css.stepTitle, { [css.stepTitleDone]: step.done })}
-                  >
-                    <FormattedMessage id={step.titleId} />
-                  </Heading>
-                  <p className={css.stepBody}>
-                    <FormattedMessage id={step.bodyId} />
-                  </p>
-                </div>
-                {step.done ? (
-                  <span className={css.stepDoneBadge}>
-                    <FormattedMessage id="CreatorOnboardingPage.stepDone" />
-                  </span>
-                ) : step.routeName ? (
-                  <NamedLink name={step.routeName} className={css.stepCta}>
-                    <FormattedMessage id={step.ctaLabelId} />
-                  </NamedLink>
-                ) : null}
-              </div>
-            ))}
-          </div>
+          <SetupChecklist steps={steps} progressLabelId="CreatorOnboardingPage.progressLabel" />
+
+          {!allDone ? (
+            <NamedLink name="BrowseProjectsPage" className={css.skipLink}>
+              <FormattedMessage id="CreatorOnboardingPage.skipLink" />
+            </NamedLink>
+          ) : null}
 
           {allDone ? (
             <div className={css.allDoneCard}>
@@ -168,6 +148,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => ({
   onFetchOwnCreatorProfile: () => dispatch(fetchOwnCreatorProfileThunk()),
   onFetchStripeAccount: () => dispatch(fetchStripeAccount()).catch(() => {}),
+  onMarkWelcomeSeen: () => dispatch(markWelcomeSeenThunk()).unwrap().catch(() => {}),
   onLogout: () => dispatch(logout()),
 });
 

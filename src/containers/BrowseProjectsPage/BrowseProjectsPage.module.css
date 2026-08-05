@@ -45,9 +45,44 @@
   margin: 0 0 16px 0;
 }
 
-.noResults {
+.emptyState {
+  text-align: center;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 48px 24px;
+}
+
+.emptyStateTitle {
+  composes: h3 from global;
+  margin: 0 0 8px 0;
+  color: var(--colorGrey900);
+}
+
+.emptyStateBody {
   composes: p from global;
   color: var(--colorGrey600);
+  margin: 0 0 20px 0;
+}
+
+.emptyStateCta {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 14px 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
 }
 
 /* ================ Filters ================ */
@@ -63,9 +98,10 @@
 .filterTab {
   composes: marketplaceSmallFontStyles from global;
   font-weight: var(--fontWeightSemiBold);
+  line-height: 20px;
   border: none;
   border-radius: 999px;
-  padding: 10px 18px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: background-color var(--transitionStyleButton), color var(--transitionStyleButton);
 }
@@ -106,6 +142,187 @@
   }
 }
 
+.filterTabCount {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-block;
+  margin-left: 6px;
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.filtersButtonActive {
+  background-color: var(--marketplaceColor);
+}
+
+/* ================ Sidebar filters panel ================ */
+
+/* Side-by-side layout (sidebar + results), Billo-style, instead of the
+   panel dropping in as a full-width strip above the grid. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+  }
+}
+
+.content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* colorGrey50 is nearly white (98% lightness) — invisible as a fill on a
+     white page. A real border + shadow gives the panel a visible edge
+     instead of relying on a background tint that doesn't read. */
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  @media (--viewportMedium) {
+    flex: 0 0 260px;
+    /* Keeps the panel in view while scrolling a long results grid, same as
+       Billo's filter rail. Only above mobile — sticky on a stacked mobile
+       layout would pin the panel over the grid instead of the page edge. */
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+}
+
+.sidebarTitle {
+  composes: h4 from global;
+  margin: 0;
+  color: var(--colorGrey900);
+}
+
+.sidebarClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--colorGrey500);
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    color: var(--colorGrey900);
+  }
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.filterGroupLabel {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--colorGrey500);
+}
+
+/* Vertical checkbox list (one option per line), matching Billo's sidebar
+   rather than the old horizontal wrapping row. */
+.filterCheckboxRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Explicit resets on every property that could otherwise be knocked over by
+   an inherited/global `label` rule (marketplaceDefaults.css sets a bare
+   `label { display: block }`) — pinned here rather than trusting class
+   specificity alone, since the checkbox + text must always sit side by side
+   on one line, never stack or center. */
+.filterCheckboxLabel {
+  composes: marketplaceSmallFontStyles from global;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  color: var(--colorGrey700);
+  cursor: pointer;
+
+  & input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+  }
+}
+
+.priceRangeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceInput,
+.filterSelect {
+  composes: marketplaceSmallFontStyles from global;
+  border: 1px solid var(--colorGrey100);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 0;
+  flex: 1 1 auto;
+}
+
+.filterSelect {
+  width: auto;
+  flex: none;
+}
+
+.priceRangeSeparator {
+  color: var(--colorGrey400);
+}
+
+.clearFiltersButton {
+  composes: marketplaceSmallFontStyles from global;
+  background: none;
+  border: none;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 /* ================ Grid & card ================ */
 
 .grid {
@@ -118,6 +335,7 @@
 }
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background-image: linear-gradient(160deg, rgba(219, 228, 255, 0.4) 0%, rgba(219, 228, 255, 0) 70%);
@@ -129,6 +347,33 @@
   &:hover {
     background-color: #eef2ff;
   }
+}
+
+.cardInvited {
+  box-shadow: 0 0 0 2px var(--marketplaceColor);
+}
+
+/* In normal flow (not absolutely positioned) so it can never overlap the
+   profile row below it — a floating corner ribbon looked fine in isolation
+   but crowded straight into the avatar/brand name at this card's padding.
+   Always rendered by the JS (visibility toggles, not presence) so this
+   reserves the same height slot whether or not the card is invited — a
+   non-invited card's avatar row must start at the same Y as an invited
+   one's, not sit higher because the badge is simply missing. */
+.invitedBadge {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-block;
+  align-self: flex-start;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.invitedBadgeHidden {
+  visibility: hidden;
 }
 
 .cardHeader {
@@ -148,17 +393,30 @@
   composes: marketplaceSmallFontStyles from global;
   font-weight: var(--fontWeightSemiBold);
   color: var(--colorGrey700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Clamped to one line — an unusually long title used to wrap to two lines
+   and push every card zone below it down, throwing off alignment with
+   shorter-titled cards in the same row. */
 .projectTitle {
   composes: h4 from global;
   color: var(--colorGrey900);
   margin: 0 0 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Fixed 2-line height (min-height, not just line-clamp's max) and always
+   rendered by the JS — a missing or single-line description no longer lets
+   the chips/meta rows below it creep upward. */
 .description {
   composes: marketplaceSmallFontStyles from global;
   color: var(--colorGrey600);
+  min-height: 48px;
   margin: 0 0 12px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -166,15 +424,29 @@
   overflow: hidden;
 }
 
+/* Fixed single-line height, clipped rather than wrapping — always rendered
+   by the JS. A project with more tags than fit on one line simply doesn't
+   show the rest (MAX_VISIBLE_NICHE_TAGS keeps this the common case), instead
+   of wrapping to a second line and pushing everything below it down. */
 .chipRow {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 6px;
+  /* .chip's true rendered height: 18px line-height + 8px padding + 2px
+     border = 28px. Was 26px, clipping 2px off the bottom of every pill. */
+  height: 28px;
+  overflow: hidden;
   margin-bottom: 12px;
 }
 
 .chip {
   composes: marketplaceTinyFontStyles from global;
+  /* marketplaceTinyFontStyles bakes in a vertical margin meant for stacked
+     block text. As a flex item (chipRow), .chip gets blockified and that
+     margin starts actually applying, pushing the pill down inside its own
+     box until chipRow's fixed height clips it. Zero it out. */
+  margin: 0;
   background-color: var(--colorWhite);
   border: 1px solid var(--colorGrey100);
   color: var(--colorGrey700);
@@ -182,31 +454,55 @@
   padding: 4px 10px;
 }
 
-.metaRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+.chipProduct {
+  border-color: var(--marketplaceColor);
+  color: var(--marketplaceColor);
 }
 
-.budgetBadge {
+/* Platforms as one line of plain text ("Instagram Reels · YouTube · ...")
+   instead of individual pills — the same info as a chip row wraps into a
+   tall, uneven column of pills once a project lists several platforms. */
+.platformsLine {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey600);
+  min-height: 18px;
+  margin: 0 0 10px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Price, deadline, deliverable count, and posted date used to each be their
+   own block (own margin, own line) — consolidated into one wrapping row so
+   a project with little to say doesn't leave a card mostly empty, and one
+   with a lot doesn't stack four separate lines of secondary detail. */
+.metaRow {
+  composes: marketplaceTinyFontStyles from global;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--colorGrey500);
+  margin-bottom: 16px;
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+/* Not var(--marketplaceColorLight) — in this marketplace's default theme
+   it's actually darker than --marketplaceColor (#4f46e5 vs #6366f1), so
+   text in the latter on a background of the former was low-contrast and
+   hard to read. White (not --colorGrey50, same as the card's own background
+   — the badge would lose its pill outline against it) + --marketplaceColorDark
+   is a safe light-background/dark-text pairing regardless of the brand color. */
+.priceBadge {
   composes: marketplaceTinyFontStyles from global;
   font-weight: var(--fontWeightSemiBold);
-  background-color: var(--marketplaceColorLight, var(--colorGrey50));
-  color: var(--marketplaceColor);
+  background-color: var(--colorWhite);
+  color: var(--marketplaceColorDark);
   border-radius: 999px;
   padding: 4px 10px;
-}
-
-.deadline {
-  composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey500);
-}
-
-.postedOn {
-  composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey400);
-  margin: 0 0 16px 0;
 }
 
 .viewButton {

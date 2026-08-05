@@ -1,0 +1,101 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 32px 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  margin-bottom: 24px;
+}
+
+.fieldArrayLabel {
+  composes: label from global;
+  margin-bottom: 8px;
+}
+
+.fieldHint {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey500);
+  margin: 0 0 12px 0;
+}
+
+.handleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 16px;
+  margin-bottom: 12px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+.handleField {
+  flex: 1 1 0;
+  margin-bottom: 12px;
+}
+
+.handleFieldNarrow {
+  flex: 0 0 120px;
+  margin-bottom: 12px;
+}
+
+.handleRemove {
+  color: var(--colorFail);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+
+  @media (--viewportMedium) {
+    margin-top: 28px;
+  }
+}
+
+.handleRemoveIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.addHandle {
+  composes: buttonSecondary from global;
+  display: inline-block;
+  margin-bottom: 24px;
+}

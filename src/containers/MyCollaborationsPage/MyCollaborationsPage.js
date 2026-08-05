@@ -10,17 +10,17 @@ import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { fetchOwnCreatorProfileThunk } from '../../ducks/creatorProfile.duck';
 import { formatDateIntoPartials } from '../../util/dates';
 import { formatMoney } from '../../util/currency';
-import { types as sdkTypes } from '../../util/sdkLoader';
+import { isUserAuthorized } from '../../util/userHelpers';
 import { fetchCollaborationsThunk, fetchApplicationsThunk } from './MyCollaborationsPage.duck';
-import { BUCKETS, SUB_BUCKETS, deriveCollaboration, deriveApplication } from './collaborationData';
+import { deriveCollaboration, deriveApplication } from './collaborationData';
 
 import {
   Heading,
   Page,
   LayoutSingleColumn,
-  Avatar,
   UserDisplayName,
   NamedLink,
+  NamedRedirect,
   IconSpinner,
   ReviewRating,
 } from '../../components';
@@ -28,8 +28,6 @@ import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTop
 import CreatorSetupBanner from '../CreatorOnboardingPage/CreatorSetupBanner';
 
 import css from './MyCollaborationsPage.module.css';
-
-const { Money } = sdkTypes;
 
 const formatDate = (date, intl) => (date ? formatDateIntoPartials(date, intl).date : null);
 
@@ -43,7 +41,6 @@ const CollaborationRow = ({ collaboration, intl }) => {
     startedAt,
     dueAt,
     urgency,
-    revisionRound,
     isPaid,
     earnings,
     reviewRating,
@@ -51,16 +48,10 @@ const CollaborationRow = ({ collaboration, intl }) => {
 
   return (
     <NamedLink className={css.row} name="SaleDetailsPage" params={{ id: tx.id.uuid }}>
-      <Avatar user={customer} className={css.rowAvatar} disableProfileLink />
       <div className={css.rowInfo}>
         <div className={css.rowTitle}>{listing?.attributes?.title}</div>
         <div className={css.rowSubtitle}>
           <UserDisplayName user={customer} intl={intl} />
-          {revisionRound ? (
-            <span className={css.revisionTag}>
-              <FormattedMessage id="MyCollaborationsPage.revisionTag" values={{ round: revisionRound }} />
-            </span>
-          ) : null}
         </div>
       </div>
       <div className={css.rowStatus}>
@@ -110,7 +101,6 @@ const ApplicationRow = ({ application, intl }) => {
 
   return (
     <NamedLink className={css.applicationRow} name="OrderDetailsPage" params={{ id: tx.id.uuid }}>
-      <Avatar user={brand} className={css.rowAvatar} disableProfileLink />
       <div className={css.rowInfo}>
         <div className={css.rowTitle}>{listing?.attributes?.title}</div>
         <div className={css.rowSubtitle}>
@@ -118,7 +108,9 @@ const ApplicationRow = ({ application, intl }) => {
         </div>
       </div>
       <div className={css.rowStatus}>
-        <FormattedMessage id={`InboxPage.${processName}.${state}.status`} values={{ transactionRole: 'provider' }} />
+        {/* The creator is always `customer` in cgc-application (BLUEPRINT D1/D2 —
+            the inverse of cgc-ugc-approval's roles), unlike CollaborationRow above. */}
+        <FormattedMessage id={`InboxPage.${processName}.${state}.status`} values={{ transactionRole: 'customer' }} />
       </div>
       <div className={css.rowDate} data-label={intl.formatMessage({ id: 'MyCollaborationsPage.colApplied' })}>
         {formatDate(appliedAt, intl) || '—'}
@@ -167,8 +159,7 @@ export const MyCollaborationsPageComponent = props => {
     onLogout,
   } = props;
 
-  const [activeBucket, setActiveBucket] = useState('all');
-  const [activeSubBucket, setActiveSubBucket] = useState(null);
+  const [activeTab, setActiveTab] = useState('applications');
 
   useEffect(() => {
     onFetchCollaborations();
@@ -185,63 +176,22 @@ export const MyCollaborationsPageComponent = props => {
   ]);
   const derivedApplications = useMemo(() => applications.map(deriveApplication), [applications]);
 
-  const countByBucket = useMemo(() => {
-    return derivedCollaborations.reduce(
-      (acc, c) => ({ ...acc, [c.bucket]: (acc[c.bucket] || 0) + 1 }),
-      { all: derivedCollaborations.length }
-    );
-  }, [derivedCollaborations]);
-
-  const summary = useMemo(() => {
-    const active = derivedCollaborations.filter(c => c.bucket !== 'completed').length;
-    const actionNeeded = countByBucket['action-needed'] || 0;
-    const paidItems = derivedCollaborations.filter(c => c.isPaid && c.earnings);
-    const currencies = new Set(paidItems.map(c => c.earnings.currency));
-    const totalEarned =
-      paidItems.length === 0
-        ? null
-        : currencies.size > 1
-        ? null
-        : formatMoney(
-            intl,
-            new Money(
-              paidItems.reduce((sum, c) => sum + c.earnings.amount, 0),
-              paidItems[0].earnings.currency
-            )
-          );
-    return { active, actionNeeded, totalEarned };
-  }, [derivedCollaborations, countByBucket, intl]);
-
-  const collaborationsInActiveBucket = useMemo(() => {
-    return activeBucket === 'all'
-      ? derivedCollaborations
-      : derivedCollaborations.filter(c => c.bucket === activeBucket);
-  }, [derivedCollaborations, activeBucket]);
-
-  const subBucketOptions = SUB_BUCKETS[activeBucket] || [];
-  const presentSubBuckets = new Set(
-    collaborationsInActiveBucket.map(c => c.subBucket).filter(Boolean)
+  const actionNeededCount = useMemo(
+    () => derivedCollaborations.filter(c => c.bucket === 'action-needed').length,
+    [derivedCollaborations]
   );
-  const visibleSubBucketOptions = subBucketOptions.filter(sb => presentSubBuckets.has(sb.id));
-  const hasSubFilters = activeBucket !== 'applications' && visibleSubBucketOptions.length > 1;
 
-  const visibleCollaborations = (hasSubFilters && activeSubBucket
-    ? collaborationsInActiveBucket.filter(c => c.subBucket === activeSubBucket)
-    : collaborationsInActiveBucket
-  )
-    .slice()
-    .sort((a, b) => {
-      const aTime = a.dueAt ? a.dueAt.getTime() : Infinity;
-      const bTime = b.dueAt ? b.dueAt.getTime() : Infinity;
-      return aTime - bTime;
-    });
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
-  const handleBucketClick = bucketId => {
-    setActiveBucket(bucketId);
-    setActiveSubBucket(null);
-  };
+  const visibleCollaborations = derivedCollaborations.slice().sort((a, b) => {
+    const aTime = a.dueAt ? a.dueAt.getTime() : Infinity;
+    const bTime = b.dueAt ? b.dueAt.getTime() : Infinity;
+    return aTime - bTime;
+  });
 
-  const isApplicationsTab = activeBucket === 'applications';
+  const isApplicationsTab = activeTab === 'applications';
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
@@ -276,76 +226,30 @@ export const MyCollaborationsPageComponent = props => {
             className={css.setupBanner}
           />
 
-          <div className={css.summaryRow}>
-            <div className={css.summaryTile}>
-              <span className={css.summaryValue}>{summary.active}</span>
-              <span className={css.summaryLabel}>
-                <FormattedMessage id="MyCollaborationsPage.summaryActive" />
-              </span>
-            </div>
-            <div className={css.summaryTile}>
-              <span className={css.summaryValue}>{summary.actionNeeded}</span>
-              <span className={css.summaryLabel}>
-                <FormattedMessage id="MyCollaborationsPage.summaryActionNeeded" />
-              </span>
-            </div>
-            <div className={css.summaryTile}>
-              <span className={css.summaryValue}>{summary.totalEarned || '—'}</span>
-              <span className={css.summaryLabel}>
-                <FormattedMessage id="MyCollaborationsPage.summaryEarned" />
-              </span>
-            </div>
-          </div>
-
           <nav className={css.tabRow}>
-            {BUCKETS.map(bucket => (
-              <button
-                key={bucket.id}
-                type="button"
-                className={classNames(css.tab, {
-                  [css.tabActive]: activeBucket === bucket.id,
-                })}
-                onClick={() => handleBucketClick(bucket.id)}
-              >
-                <FormattedMessage id={bucket.labelId} />
-                <span className={css.tabCount}>{countByBucket[bucket.id] || 0}</span>
-              </button>
-            ))}
             <button
               type="button"
               className={classNames(css.tab, {
-                [css.tabActive]: activeBucket === 'applications',
+                [css.tabActive]: activeTab === 'applications',
               })}
-              onClick={() => handleBucketClick('applications')}
+              onClick={() => setActiveTab('applications')}
             >
               <FormattedMessage id="MyCollaborationsPage.tabApplications" />
               <span className={css.tabCount}>{derivedApplications.length}</span>
             </button>
+            <button
+              type="button"
+              className={classNames(css.tab, {
+                [css.tabActive]: activeTab === 'collaborations',
+              })}
+              onClick={() => setActiveTab('collaborations')}
+            >
+              <FormattedMessage id="MyCollaborationsPage.tabCollaborations" />
+              {actionNeededCount > 0 ? (
+                <span className={css.tabCount}>{actionNeededCount}</span>
+              ) : null}
+            </button>
           </nav>
-
-          {hasSubFilters ? (
-            <nav className={css.subTabRow}>
-              <button
-                type="button"
-                className={classNames(css.subTab, { [css.subTabActive]: !activeSubBucket })}
-                onClick={() => setActiveSubBucket(null)}
-              >
-                <FormattedMessage id="MyCollaborationsPage.subAll" />
-              </button>
-              {visibleSubBucketOptions.map(sb => (
-                <button
-                  key={sb.id}
-                  type="button"
-                  className={classNames(css.subTab, {
-                    [css.subTabActive]: activeSubBucket === sb.id,
-                  })}
-                  onClick={() => setActiveSubBucket(sb.id)}
-                >
-                  <FormattedMessage id={sb.labelId} />
-                </button>
-              ))}
-            </nav>
-          ) : null}
 
           {isApplicationsTab ? (
             applicationsError ? (
@@ -359,7 +263,6 @@ export const MyCollaborationsPageComponent = props => {
             ) : derivedApplications.length > 0 ? (
               <div className={css.list}>
                 <div className={css.applicationListHeader}>
-                  <span className={css.listHeaderSpacer} />
                   <span><FormattedMessage id="MyCollaborationsPage.colProject" /></span>
                   <span><FormattedMessage id="MyCollaborationsPage.colStatus" /></span>
                   <span><FormattedMessage id="MyCollaborationsPage.colApplied" /></span>
@@ -374,7 +277,15 @@ export const MyCollaborationsPageComponent = props => {
               </div>
             ) : (
               <div className={css.emptyState}>
-                <FormattedMessage id="MyCollaborationsPage.empty.applications" />
+                <Heading as="h2" rootClassName={css.emptyStateTitle}>
+                  <FormattedMessage id="MyCollaborationsPage.empty.applications.title" />
+                </Heading>
+                <p className={css.emptyStateBody}>
+                  <FormattedMessage id="MyCollaborationsPage.empty.applications.body" />
+                </p>
+                <NamedLink name="BrowseProjectsPage" className={css.emptyStateCta}>
+                  <FormattedMessage id="MyCollaborationsPage.emptyStateCta" />
+                </NamedLink>
               </div>
             )
           ) : fetchError ? (
@@ -388,7 +299,6 @@ export const MyCollaborationsPageComponent = props => {
           ) : visibleCollaborations.length > 0 ? (
             <div className={css.list}>
               <div className={css.listHeader}>
-                <span className={css.listHeaderSpacer} />
                 <span><FormattedMessage id="MyCollaborationsPage.colCollaboration" /></span>
                 <span><FormattedMessage id="MyCollaborationsPage.colStatus" /></span>
                 <span><FormattedMessage id="MyCollaborationsPage.colStarted" /></span>
@@ -406,7 +316,15 @@ export const MyCollaborationsPageComponent = props => {
             </div>
           ) : (
             <div className={css.emptyState}>
-              <FormattedMessage id={`MyCollaborationsPage.empty.${activeBucket}`} />
+              <Heading as="h2" rootClassName={css.emptyStateTitle}>
+                <FormattedMessage id="MyCollaborationsPage.empty.collaborations.title" />
+              </Heading>
+              <p className={css.emptyStateBody}>
+                <FormattedMessage id="MyCollaborationsPage.empty.collaborations.body" />
+              </p>
+              <NamedLink name="BrowseProjectsPage" className={css.emptyStateCta}>
+                <FormattedMessage id="MyCollaborationsPage.emptyStateCta" />
+              </NamedLink>
             </div>
           )}
         </div>

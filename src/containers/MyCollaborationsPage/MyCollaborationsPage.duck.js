@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { storableError } from '../../util/errors';
-import { CGC_UGC_PROCESS_NAME, INQUIRY_PROCESS_NAME } from '../../transactions/transaction';
+import { CGC_UGC_PROCESS_NAME, CGC_APPLICATION_PROCESS_NAME } from '../../transactions/transaction';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 
 const COLLABORATIONS_PAGE_SIZE = 50;
@@ -39,16 +39,16 @@ export const fetchCollaborationsThunk = createAsyncThunk(
   }
 );
 
-// A creator's pending applications — inquiry transactions the creator
-// initiated on a brand's project-brief listing (see ProjectDetailPage.js).
-// (protectedData still uses the historical `inviteBriefId` key.)
+// A creator's pending applications — cgc-application transactions the
+// creator initiated on a brand's project listing via transition/apply (see
+// ProjectDetailPage.js).
 export const fetchApplicationsThunk = createAsyncThunk(
   'MyCollaborationsPage/fetchApplications',
   (_, { dispatch, rejectWithValue, extra: sdk }) => {
     return sdk.transactions
       .query({
         only: 'order',
-        processNames: [INQUIRY_PROCESS_NAME],
+        processNames: [CGC_APPLICATION_PROCESS_NAME],
         include: ['listing', 'provider', 'provider.profileImage'],
         'fields.transaction': ['processName', 'lastTransition', 'lastTransitionedAt', 'createdAt'],
         'fields.listing': ['title', 'publicData'],

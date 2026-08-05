@@ -23,13 +23,6 @@ const APPROVED_STATES = [
   states.REVIEWED,
 ];
 
-export const BUCKETS = [
-  { id: 'all', labelId: 'MyCollaborationsPage.tabAll' },
-  { id: 'action-needed', labelId: 'MyCollaborationsPage.tabActionNeeded' },
-  { id: 'in-progress', labelId: 'MyCollaborationsPage.tabInProgress' },
-  { id: 'completed', labelId: 'MyCollaborationsPage.tabCompleted' },
-];
-
 // Sub-filters only shown when the parent tab actually has more than one kind
 // of row in it — see hasSubFilters in MyCollaborationsPage.js.
 export const SUB_BUCKETS = {
@@ -161,8 +154,8 @@ export const deriveCollaboration = tx => {
 
 /**
  * Derives the fields MyCollaborationsPage needs for a pending project
- * application: an inquiry transaction (default-inquiry process) the creator
- * initiated on a brand's project-brief listing.
+ * application: a cgc-application transaction the creator initiated on a
+ * brand's project listing via transition/apply.
  *
  * @param {Object} tx - transaction entity with listing/provider (the brand) included
  * @returns {Object}
