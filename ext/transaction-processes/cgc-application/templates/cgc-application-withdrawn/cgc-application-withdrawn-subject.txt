@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcApplicationWithdrawn.Subject" "{creatorName} withdrew their application for {listingTitle}" creatorName=customer.display-name listingTitle=listing.title}}{{/with}}

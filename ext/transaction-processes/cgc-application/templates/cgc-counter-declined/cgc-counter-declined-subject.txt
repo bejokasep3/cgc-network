@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcCounterDeclined.Subject" "{creatorName} declined your counter-offer for {listingTitle}" creatorName=customer.display-name listingTitle=listing.title}}{{/with}}

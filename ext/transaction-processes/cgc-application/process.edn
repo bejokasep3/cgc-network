@@ -1,0 +1,174 @@
+;; The CGC Network - project application & price negotiation process
+;;
+;; Roles:
+;;   customer = CREATOR (applies to a brand's project listing)
+;;   provider = BRAND   (owns the project listing being applied to)
+;;
+;; This process carries NO money. Sharetribe requires the customer to initiate
+;; a transaction and the provider to be the listing owner; since a creator
+;; must be the one applying, and brands own project listings, the roles here
+;; are the inverse of the paid collaboration process (cgc-ugc-approval), where
+;; the brand pays the creator. That inversion is intentional, not a bug — see
+;; BLUEPRINT.md D1/D2 and IMPLEMENTATION-PLAN.md 1.3.
+;;
+;; Price negotiation (max 2 rounds per the brief): the creator applies at the
+;; project's listed price or proposes a different one; the brand may accept,
+;; decline, or counter once; the creator then accepts or declines the counter.
+;; The actual offer AMOUNTS live in :scope/metadata (server-writable only),
+;; never in :scope/protected-data, because protectedData can be overwritten by
+;; either transacting party's own transition — see
+;; IMPLEMENTATION-PLAN.md 2.3b for why that matters here. protectedData only
+;; carries free-text notes/reasons.
+;;
+;; When the brand accepts (directly, or after the creator accepts a counter),
+;; the app's own server links this transaction to the real paid collaboration
+;; transaction (created in cgc-ugc-approval on the creator's own listing) via
+;; the self-transition below, once checkout succeeds.
+{:format :v3,
+ :transitions
+ [;; ---------------------------------------------------------------------------
+  ;; Apply, with either the listed price or a proposed price.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/apply,
+   :actor :actor.role/customer,
+   :privileged? true,
+   :actions [{:name :action/update-protected-data} {:name :action/privileged-update-metadata}],
+   :to :state/applied}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Brand's response to the initial application.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/brand-accept,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/applied,
+   :to :state/accepted}
+  {:name :transition/brand-decline,
+   :actor :actor.role/provider,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/applied,
+   :to :state/declined}
+  ;; The brand's one and only counter-offer.
+  {:name :transition/brand-counter,
+   :actor :actor.role/provider,
+   :privileged? true,
+   :actions [{:name :action/update-protected-data} {:name :action/privileged-update-metadata}],
+   :from :state/applied,
+   :to :state/countered}
+  ;; The creator can withdraw before the brand has responded at all.
+  {:name :transition/creator-withdraw,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/applied,
+   :to :state/withdrawn}
+  ;; The brand never responds: the application goes stale so the creator isn't
+  ;; left waiting indefinitely, and can apply elsewhere.
+  {:name :transition/expire-application,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/applied]}
+     {:fn/period ["P7D"]}]},
+   :actions [],
+   :from :state/applied,
+   :to :state/expired}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Creator's response to the brand's counter-offer. This is the last round —
+  ;; there is no second counter, per the brief's negotiation cap. Accepting
+  ;; does not add a new offer: the agreed price is already the brand's counter
+  ;; amount, last written to metadata by brand-counter. So this is a plain,
+  ;; non-privileged transition, same as brand-accept above.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/creator-accept-counter,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/countered,
+   :to :state/accepted}
+  {:name :transition/creator-decline-counter,
+   :actor :actor.role/customer,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/countered,
+   :to :state/declined}
+  ;; The creator never responds to the counter-offer.
+  {:name :transition/expire-counter,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/countered]}
+     {:fn/period ["P3D"]}]},
+   :actions [],
+   :from :state/countered,
+   :to :state/expired}
+
+  ;; ---------------------------------------------------------------------------
+  ;; Self-transition: records the id of the real paid collaboration transaction
+  ;; once the brand has completed checkout in cgc-ugc-approval. Does not change
+  ;; state, only protectedData. See CGC-SETUP self-transition precedent in
+  ;; cgc-ugc-approval/process.edn (provider-add-shipping-address). Kept
+  ;; privileged even though it only touches protectedData: this must only ever
+  ;; be written by our own server after it has verified the paid collaboration
+  ;; transaction really exists and belongs to this application, not by a
+  ;; direct client call with an arbitrary id.
+  ;; ---------------------------------------------------------------------------
+  {:name :transition/mark-collaborating,
+   :actor :actor.role/provider,
+   :privileged? true,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/accepted,
+   :to :state/accepted}],
+
+ ;; =============================================================================
+ ;; Notifications
+ ;; =============================================================================
+ :notifications
+ [{:name :notification/application-received,
+   :on :transition/apply,
+   :to :actor.role/provider,
+   :template :cgc-application-received}
+
+  {:name :notification/application-countered,
+   :on :transition/brand-counter,
+   :to :actor.role/customer,
+   :template :cgc-application-countered}
+
+  {:name :notification/application-accepted,
+   :on :transition/brand-accept,
+   :to :actor.role/customer,
+   :template :cgc-application-accepted}
+
+  {:name :notification/counter-accepted,
+   :on :transition/creator-accept-counter,
+   :to :actor.role/provider,
+   :template :cgc-counter-accepted}
+
+  {:name :notification/application-declined,
+   :on :transition/brand-decline,
+   :to :actor.role/customer,
+   :template :cgc-application-declined}
+
+  {:name :notification/counter-declined,
+   :on :transition/creator-decline-counter,
+   :to :actor.role/provider,
+   :template :cgc-counter-declined}
+
+  {:name :notification/application-withdrawn,
+   :on :transition/creator-withdraw,
+   :to :actor.role/provider,
+   :template :cgc-application-withdrawn}
+
+  {:name :notification/application-expired-creator,
+   :on :transition/expire-application,
+   :to :actor.role/customer,
+   :template :cgc-application-expired-creator}
+  {:name :notification/application-expired-brand,
+   :on :transition/expire-application,
+   :to :actor.role/provider,
+   :template :cgc-application-expired-brand}
+
+  {:name :notification/counter-expired-creator,
+   :on :transition/expire-counter,
+   :to :actor.role/customer,
+   :template :cgc-counter-expired-creator}
+  {:name :notification/counter-expired-brand,
+   :on :transition/expire-counter,
+   :to :actor.role/provider,
+   :template :cgc-counter-expired-brand}]}

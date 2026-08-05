@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcApplicationExpiredCreator.Subject" "Your application for {listingTitle} expired" listingTitle=listing.title}}{{/with}}

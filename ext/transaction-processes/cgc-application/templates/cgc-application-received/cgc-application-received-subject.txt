@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{#with transaction}}{{t "CgcApplicationReceived.Subject" "{creatorName} applied to {listingTitle}" creatorName=customer.display-name listingTitle=listing.title}}{{/with}}
