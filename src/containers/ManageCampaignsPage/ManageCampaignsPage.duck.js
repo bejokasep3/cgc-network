@@ -9,7 +9,7 @@ const APPLICATIONS_PAGE_SIZE = 100;
 
 const entityRefs = entities => entities.map(entity => ({ id: entity.id, type: entity.type }));
 
-// The brand's own project-brief listings — what "Projects" shows before any of
+// The brand's own project listings — what "Projects" shows before any of
 // them have turned into a collaboration. Separate from fetchCampaignsThunk,
 // which only sees transactions and is therefore blind to a freshly posted
 // project until a creator applies to it.
@@ -18,7 +18,7 @@ export const fetchOwnProjectsThunk = createAsyncThunk(
   (_, { dispatch, rejectWithValue, extra: sdk }) => {
     return sdk.ownListings
       .query({
-        pub_listingType: 'project-brief',
+        pub_listingType: 'project',
         'fields.listing': ['title', 'publicData', 'state', 'createdAt'],
         perPage: PROJECTS_PAGE_SIZE,
       })
@@ -30,16 +30,17 @@ export const fetchOwnProjectsThunk = createAsyncThunk(
   }
 );
 
-// Applications (default-inquiry transactions) received on the brand's own
+// Applications (cgc-application transactions) received on the brand's own
 // projects, so "Projects" can show a per-listing applicant count — the brand is
-// the provider on these, since the creator (customer) is the one inquiring.
+// the provider on these, since the creator (customer) is the one applying
+// (BLUEPRINT D1/D2: roles are inverted relative to cgc-ugc-approval).
 export const fetchProjectApplicationsThunk = createAsyncThunk(
   'ManageCampaignsPage/fetchProjectApplications',
   (_, { dispatch, rejectWithValue, extra: sdk }) => {
     return sdk.transactions
       .query({
         only: 'sale',
-        processNames: ['default-inquiry'],
+        processNames: ['cgc-application'],
         include: ['listing', 'customer', 'customer.profileImage'],
         'fields.transaction': ['processName', 'lastTransition', 'lastTransitionedAt'],
         'fields.listing': ['title'],

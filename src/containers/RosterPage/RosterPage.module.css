@@ -63,9 +63,26 @@
   gap: 8px;
 }
 
+.historyNote {
+  composes: marketplaceTinyFontStyles from global;
+  margin: 0;
+  color: var(--colorGrey500);
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.collabAgainButton {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorSuccess);
+}
+
 .removeButton {
   composes: marketplaceTinyFontStyles from global;
-  align-self: flex-start;
 
   border: none;
   background: none;

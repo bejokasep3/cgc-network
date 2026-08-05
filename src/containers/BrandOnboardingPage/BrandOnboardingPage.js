@@ -1,117 +1,136 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { logout } from '../../ducks/auth.duck';
+import { markWelcomeSeenThunk } from '../../ducks/user.duck';
+import { isUserAuthorized } from '../../util/userHelpers';
+import { getBrandSetupSteps } from './brandSetupSteps';
 
-import { Heading, Page, PrimaryButton, SecondaryButton } from '../../components';
+import { Heading, Page, LayoutSingleColumn, NamedLink, NamedRedirect, SetupChecklist } from '../../components';
+import DashboardTopbar from '../ExploreCreatorsPage/DashboardTopbar/DashboardTopbar';
 
 import css from './BrandOnboardingPage.module.css';
 
-// Each step is intentionally a plain object here rather than pulled from config,
-// since onboarding copy/order is expected to change often during rollout.
-const STEPS = [
-  {
-    id: 'company',
-    titleId: 'BrandOnboardingPage.step1Title',
-    bodyId: 'BrandOnboardingPage.step1Body',
-  },
-  {
-    id: 'preferences',
-    titleId: 'BrandOnboardingPage.step2Title',
-    bodyId: 'BrandOnboardingPage.step2Body',
-  },
-  {
-    id: 'payment',
-    titleId: 'BrandOnboardingPage.step3Title',
-    bodyId: 'BrandOnboardingPage.step3Body',
-  },
-];
-
 /**
- * Brand onboarding page. Code-only page (not managed through Console/PageBuilder) that
- * walks a new brand through a fixed set of setup steps before they land on the
- * marketplace proper. Step content is static for now; wire each step up to its
- * real form/action (company details, creator preferences, payment setup) as those
- * flows are built out.
+ * Brand's setup checklist: account approval (invite-only vetting), profile,
+ * subscription, and first project posted — linked from
+ * ExploreCreatorsPage/ManageCampaignsPage whenever setup is incomplete (see
+ * BrandSetupBanner.js). Mirrors CreatorOnboardingPage.js; each step reflects
+ * the brand's real account state (see brandSetupSteps.js) rather than a
+ * static, disconnected walkthrough.
  *
  * @param {Object} props
- * @param {boolean} props.scrollingDisabled - Whether scrolling is disabled
+ * @param {boolean} props.scrollingDisabled
+ * @param {propTypes.currentUser} props.currentUser
+ * @param {boolean} props.currentUserHasListings - state.user.currentUserHasListings
+ * @param {Object|null} props.subscriptionStatus - state.brandSubscription.status
+ * @param {Function} props.onMarkWelcomeSeen
+ * @param {Function} props.onLogout
  * @returns {JSX.Element}
  */
 export const BrandOnboardingPageComponent = props => {
   const intl = useIntl();
-  const { scrollingDisabled } = props;
+  const {
+    scrollingDisabled,
+    currentUser,
+    currentUserHasListings,
+    subscriptionStatus,
+    onMarkWelcomeSeen,
+    onLogout,
+  } = props;
 
-  const [stepIndex, setStepIndex] = useState(0);
-  const currentStep = STEPS[stepIndex];
-  const isLastStep = stepIndex === STEPS.length - 1;
+  // Captured once on mount rather than derived from currentUser on every
+  // render — otherwise the welcome heading would disappear mid-visit the
+  // moment onMarkWelcomeSeen's setCurrentUser lands.
+  const [isFirstVisit] = useState(
+    () => !currentUser?.attributes?.profile?.privateData?.welcomeSeenAt
+  );
 
-  const handleNext = () => {
-    setStepIndex(i => Math.min(i + 1, STEPS.length - 1));
-  };
+  useEffect(() => {
+    if (isFirstVisit && isUserAuthorized(currentUser)) {
+      onMarkWelcomeSeen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleBack = () => {
-    setStepIndex(i => Math.max(i - 1, 0));
-  };
+  if (!isUserAuthorized(currentUser)) {
+    return <NamedRedirect name="PendingPage" />;
+  }
 
-  const title = intl.formatMessage({ id: 'BrandOnboardingPage.title' });
+  const title = intl.formatMessage({ id: 'BrandOnboardingPage.schemaTitle' });
+  const displayName = currentUser?.attributes?.profile?.displayName;
+
+  const steps = getBrandSetupSteps({
+    currentUser,
+    subscriptionStatus,
+    hasPublishedListing: currentUserHasListings,
+  });
+  const allDone = steps.every(step => step.done);
 
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
-      <div className={css.root}>
-        <Heading as="h1" rootClassName={css.heading}>
-          <FormattedMessage id="BrandOnboardingPage.title" />
-        </Heading>
-
-        <ol className={css.progress}>
-          {STEPS.map((step, index) => (
-            <li
-              key={step.id}
-              className={classNames(css.progressStep, {
-                [css.progressStepActive]: index === stepIndex,
-                [css.progressStepDone]: index < stepIndex,
-              })}
-            >
-              {index + 1}
-            </li>
-          ))}
-        </ol>
-
-        <div className={css.stepCard}>
-          <Heading as="h2" rootClassName={css.stepTitle}>
-            <FormattedMessage id={currentStep.titleId} />
-          </Heading>
-          <p className={css.stepBody}>
-            <FormattedMessage id={currentStep.bodyId} />
-          </p>
-        </div>
-
-        <div className={css.actions}>
-          {stepIndex > 0 ? (
-            <SecondaryButton className={css.backButton} onClick={handleBack}>
-              <FormattedMessage id="BrandOnboardingPage.back" />
-            </SecondaryButton>
-          ) : null}
-          <PrimaryButton className={css.nextButton} onClick={handleNext} disabled={isLastStep}>
+      <LayoutSingleColumn
+        topbar={<DashboardTopbar displayName={displayName} role="brand" onLogout={onLogout} />}
+      >
+        <div className={css.root}>
+          <Heading as="h1" rootClassName={css.heading}>
             <FormattedMessage
-              id={isLastStep ? 'BrandOnboardingPage.done' : 'BrandOnboardingPage.next'}
+              id={isFirstVisit ? 'BrandOnboardingPage.welcomeHeading' : 'BrandOnboardingPage.heading'}
             />
-          </PrimaryButton>
+          </Heading>
+          <p className={css.subtitle}>
+            <FormattedMessage
+              id={isFirstVisit ? 'BrandOnboardingPage.welcomeSubtitle' : 'BrandOnboardingPage.subtitle'}
+            />
+          </p>
+
+          <SetupChecklist steps={steps} progressLabelId="BrandOnboardingPage.progressLabel" />
+
+          {!allDone ? (
+            <NamedLink name="ExploreCreatorsPage" className={css.skipLink}>
+              <FormattedMessage id="BrandOnboardingPage.skipLink" />
+            </NamedLink>
+          ) : null}
+
+          {allDone ? (
+            <div className={css.allDoneCard}>
+              <Heading as="h2" rootClassName={css.allDoneTitle}>
+                <FormattedMessage id="BrandOnboardingPage.allDoneTitle" />
+              </Heading>
+              <p className={css.allDoneBody}>
+                <FormattedMessage id="BrandOnboardingPage.allDoneBody" />
+              </p>
+              <NamedLink name="ExploreCreatorsPage" className={css.allDoneCta}>
+                <FormattedMessage id="BrandOnboardingPage.allDoneCta" />
+              </NamedLink>
+            </div>
+          ) : null}
         </div>
-      </div>
+      </LayoutSingleColumn>
     </Page>
   );
 };
 
 const mapStateToProps = state => {
+  const { currentUser, currentUserHasListings } = state.user;
   return {
     scrollingDisabled: isScrollingDisabled(state),
+    currentUser,
+    currentUserHasListings,
+    subscriptionStatus: state.brandSubscription?.status,
   };
 };
 
-const BrandOnboardingPage = compose(connect(mapStateToProps))(BrandOnboardingPageComponent);
+const mapDispatchToProps = dispatch => ({
+  onMarkWelcomeSeen: () => dispatch(markWelcomeSeenThunk()).unwrap().catch(() => {}),
+  onLogout: () => dispatch(logout()),
+});
+
+const BrandOnboardingPage = compose(connect(mapStateToProps, mapDispatchToProps))(
+  BrandOnboardingPageComponent
+);
 
 export default BrandOnboardingPage;

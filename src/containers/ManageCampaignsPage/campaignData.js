@@ -94,12 +94,17 @@ const urgencyForDueAt = dueAt => {
  * has to render, not re-derive this logic.
  *
  * @param {Object} tx - transaction entity with listing/provider included
+ * @param {Object} [projectListing] - the project listing this collaboration
+ *   came from (looked up by the caller via tx.attributes.protectedData.projectId
+ *   — see TransactionPage.stateDataCGCUGC.js's comment on why this can't be
+ *   read off tx.listing, which is the creator-profile listing and never
+ *   carries requiresProduct)
  * @returns {Object}
  */
-export const deriveCampaign = tx => {
+export const deriveCampaign = (tx, projectListing) => {
   const processName = tx.attributes.processName;
   const state = getProcess(processName).getState(tx);
-  const isShippable = !!tx.listing?.attributes?.publicData?.requiresProduct;
+  const isShippable = projectListing?.attributes?.publicData?.requiresProduct === true;
   const turnaroundDays = tx.listing?.attributes?.publicData?.turnaroundDays;
 
   const { bucket, subBucket } = bucketAndSubBucketForState(state, isShippable);
@@ -143,6 +148,7 @@ export const deriveCampaign = tx => {
     state,
     bucket,
     subBucket,
+    isShippable,
     startedAt,
     targetAt,
     dueAt,
@@ -153,5 +159,10 @@ export const deriveCampaign = tx => {
     trackingNumber,
     shippingCarrier,
     reviewRating,
+    // Whether the product was ever marked shipped, regardless of the current
+    // state — unlike `state === states.SHIPPED`, this stays true once the
+    // creator moves on to `product-received` and beyond, so the "shipped"
+    // shipping-status badge doesn't drop back to nothing after receipt.
+    hasBeenShipped: Boolean(stateEnteredAt[states.SHIPPED]),
   };
 };

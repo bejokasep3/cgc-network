@@ -61,6 +61,10 @@
   }
 }
 
+.setupBanner {
+  margin-bottom: 24px;
+}
+
 /* ================ Tabs ================ */
 
 .tabRow {
@@ -125,103 +129,6 @@
   cursor: pointer;
 }
 
-/* ================ Shipment pills / info box ================ */
-
-.pillRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.pill {
-  composes: marketplaceSmallFontStyles from global;
-  border: 1px solid var(--colorGrey100);
-  background-color: var(--colorWhite);
-  color: var(--colorGrey700);
-  font-weight: var(--fontWeightSemiBold);
-  border-radius: 999px;
-  padding: 8px 18px;
-  cursor: pointer;
-  transition: border-color var(--transitionStyleButton), color var(--transitionStyleButton);
-
-  &:hover {
-    border-color: var(--marketplaceColor);
-    color: var(--marketplaceColor);
-  }
-}
-
-.pillActive {
-  border-color: var(--marketplaceColor);
-  background-color: var(--colorGrey50);
-  color: var(--marketplaceColor);
-}
-
-.infoBox {
-  composes: marketplaceSmallFontStyles from global;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--colorGrey100);
-  border-radius: var(--borderRadiusMedium);
-  padding: 24px;
-  color: var(--colorGrey700);
-
-  & svg {
-    flex: 0 0 auto;
-    color: var(--colorGrey700);
-  }
-}
-
-.shipmentListHeader {
-  composes: marketplaceTinyFontStyles from global;
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) 1fr 1fr 0.8fr;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 20px;
-  color: var(--colorGrey600);
-  font-weight: var(--fontWeightSemiBold);
-  border-bottom: 1px solid var(--colorGrey100);
-
-  @media (max-width: 767px) {
-    display: none;
-  }
-}
-
-.shipmentRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) 1fr 1fr 0.8fr;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--colorGrey100);
-  transition: background-color var(--transitionStyleButton);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: var(--colorGrey50);
-  }
-
-  @media (max-width: 767px) {
-    grid-template-columns: 1fr;
-    row-gap: 8px;
-
-    & .rowDate {
-      text-align: left;
-    }
-
-    & .rowDate::before {
-      content: attr(data-label) ': ';
-      color: var(--colorGrey500);
-      font-weight: var(--fontWeightRegular);
-    }
-  }
-}
-
 /* ================ List ================ */
 
 .loading {
@@ -251,11 +158,21 @@
 
 .rowTitle {
   composes: marketplaceSmallFontStyles from global;
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey900);
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+}
+
+.rowSubtitle {
+  composes: marketplaceTinyFontStyles from global;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--colorGrey500);
 }
 
 .rowHighlight {
@@ -273,6 +190,22 @@
   white-space: nowrap;
 }
 
+.taskStatus {
+  font-weight: var(--fontWeightSemiBold);
+}
+
+.taskStatusNeedsReview {
+  color: var(--colorFail);
+}
+
+.taskStatusInProgress {
+  color: var(--marketplaceColor);
+}
+
+.taskStatusCompleted {
+  color: var(--colorGrey500);
+}
+
 .dueBadge {
   composes: marketplaceTinyFontStyles from global;
   background-color: var(--colorFail);
@@ -280,43 +213,6 @@
   border-radius: 999px;
   padding: 2px 8px;
   font-weight: var(--fontWeightSemiBold);
-}
-
-.toggle {
-  position: relative;
-  flex: 0 0 auto;
-  width: 38px;
-  height: 22px;
-  border: none;
-  border-radius: 999px;
-  background-color: var(--colorGrey100);
-  cursor: pointer;
-  transition: background-color var(--transitionStyleButton);
-
-  &:disabled {
-    cursor: default;
-    opacity: 0.6;
-  }
-}
-
-.toggleOn {
-  background-color: var(--marketplaceColor);
-}
-
-.toggleKnob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background-color: var(--colorWhite);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform var(--transitionStyleButton);
-}
-
-.toggleOn .toggleKnob {
-  transform: translateX(16px);
 }
 
 .visibilityBadge {
@@ -330,7 +226,7 @@
   color: var(--colorGrey600);
 }
 
-/* One row per project-brief listing: project name, creators to approve,
+/* One row per project listing: project name, creators to approve,
    actions required, orders, posted date, visibility — laid out as a bordered
    card (.list) with the header and each row as flush, divided sections. */
 
@@ -357,6 +253,7 @@
   gap: 16px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--colorGrey100);
+  cursor: pointer;
   transition: background-color var(--transitionStyleButton);
 
   &:last-child {
@@ -365,6 +262,11 @@
 
   &:hover {
     background-color: var(--colorGrey50);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--marketplaceColor);
+    outline-offset: -2px;
   }
 
   @media (max-width: 767px) {
@@ -385,9 +287,101 @@
   }
 }
 
+/* "Ongoing" tab row: one project per row with its status, deliverable
+   progress, and shipping state — a narrower layout than .projectRow since
+   a project is matched to exactly one creator, so no creator-count column. */
+
+.taskListHeader {
+  composes: marketplaceTinyFontStyles from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) 1fr 0.9fr 0.9fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  color: var(--colorGrey600);
+  font-weight: var(--fontWeightSemiBold);
+  border-bottom: 1px solid var(--colorGrey100);
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.taskRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) 1fr 0.9fr 0.9fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--colorGrey100);
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--colorGrey50);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--marketplaceColor);
+    outline-offset: -2px;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+
+    & .rowDate {
+      text-align: left;
+    }
+
+    & .rowDate::before {
+      content: attr(data-label) ': ';
+      color: var(--colorGrey500);
+      font-weight: var(--fontWeightRegular);
+    }
+  }
+}
+
 .emptyState {
-  composes: marketplaceBodyFontStyles from global;
-  color: var(--colorGrey700);
-  padding: 32px 24px;
   text-align: center;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 48px 24px;
+}
+
+.emptyStateTitle {
+  composes: h3 from global;
+  margin: 0 0 8px 0;
+  color: var(--colorGrey900);
+}
+
+.emptyStateBody {
+  composes: p from global;
+  color: var(--colorGrey600);
+  margin: 0 0 20px 0;
+}
+
+.emptyStateCta {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--marketplaceColor);
+  color: var(--colorWhite);
+  font-weight: var(--fontWeightSemiBold);
+  padding: 14px 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+    color: var(--colorWhite);
+  }
 }

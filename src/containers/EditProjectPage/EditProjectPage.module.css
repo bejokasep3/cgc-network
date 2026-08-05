@@ -1,0 +1,54 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 96px 24px;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+
+  @media (--viewportMedium) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 32px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: marketplaceDefaultFontStyles from global;
+  color: var(--colorFail);
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.activityBanner {
+  composes: marketplaceSmallFontStyles from global;
+  background-color: var(--colorAttentionSubtle);
+  color: var(--colorAttentionDark);
+  border-radius: var(--borderRadiusMedium);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}

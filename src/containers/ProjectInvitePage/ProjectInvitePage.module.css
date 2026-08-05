@@ -1,0 +1,195 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  max-width: 720px;
+  padding: 40px 24px 96px 24px;
+  margin: 0 auto;
+
+  @media (--viewportMedium) {
+    padding: 48px 40px 120px 40px;
+  }
+}
+
+.heading {
+  composes: h1 from global;
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: normal;
+  color: var(--colorGrey900);
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  composes: marketplaceBodyFontStyles from global;
+  color: var(--colorGrey600);
+  margin: 0 0 16px 0;
+}
+
+.browseAllLink {
+  composes: marketplaceSmallFontStyles from global;
+  display: inline-block;
+  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightSemiBold);
+  margin-bottom: 24px;
+
+  &:hover {
+    color: var(--marketplaceColorDark);
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: p from global;
+  color: var(--colorFail);
+  margin: 0 0 16px 0;
+}
+
+.empty {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey500);
+}
+
+/* ================ Shared invite message ================ */
+
+.messageField {
+  margin-bottom: 24px;
+}
+
+.messageLabel {
+  composes: label from global;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.messageTextarea {
+  composes: marketplaceDefaultFontStyles from global;
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 12px 16px;
+  resize: vertical;
+
+  &:focus {
+    border-color: var(--marketplaceColor);
+    outline: none;
+  }
+}
+
+/* ================ Creator list ================ */
+
+.creatorList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.creatorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--colorGrey50);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+}
+
+.creatorInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.creatorNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.creatorName {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorGrey900);
+
+  &:hover {
+    color: var(--marketplaceColor);
+  }
+}
+
+.matchBadge {
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--marketplaceColor);
+  background-color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.chip {
+  composes: marketplaceTinyFontStyles from global;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  color: var(--colorGrey700);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.invitedBadge {
+  composes: marketplaceTinyFontStyles from global;
+  flex: 0 0 auto;
+  color: var(--colorGrey500);
+  background-color: var(--colorWhite);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.inviteAction {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.expiredBadge {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey400);
+}
+
+.inviteButton {
+  composes: marketplaceSmallFontStyles from global;
+  flex: 0 0 auto;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorWhite);
+  background-color: var(--colorGrey900);
+  border-radius: 999px;
+  padding: 8px 16px;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--marketplaceColorDark);
+    text-decoration: none;
+  }
+}

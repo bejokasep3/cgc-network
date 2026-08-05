@@ -2,6 +2,7 @@
 
 .root {
   max-width: 640px;
+  margin: 0 auto;
   padding: 40px 24px 96px 24px;
 
   @media (--viewportMedium) {
@@ -30,6 +31,32 @@
   margin: 0 0 32px 0;
 }
 
+/* Wraps the form so it reads as a distinct content block, matching
+   ProjectDetailPage.module.css's .card (same white bg / border / radius). */
+.card {
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 20px;
+  padding: 24px;
+
+  @media (--viewportMedium) {
+    padding: 28px 32px;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error {
+  composes: marketplaceDefaultFontStyles from global;
+  color: var(--colorFail);
+  text-align: center;
+  padding: 48px 24px;
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -41,4 +68,61 @@
 
 .submitRow {
   margin-top: 8px;
+}
+
+.deliverablesLabel {
+  composes: label from global;
+  margin-bottom: 12px;
+}
+
+.deliverablesEmptyError {
+  composes: marketplaceDefaultFontStyles from global;
+  color: var(--colorFail);
+  margin-bottom: 12px;
+}
+
+.deliverableRow {
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadiusMedium);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.deliverableRowFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+.deliverableField {
+  flex: 1 1 0;
+  margin-bottom: 12px;
+}
+
+.deliverableFieldNarrow {
+  flex: 0 0 96px;
+  margin-bottom: 12px;
+}
+
+.deliverableRemove {
+  color: var(--colorFail);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deliverableRemoveIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.addDeliverable {
+  composes: buttonSecondary from global;
+  display: inline-block;
+  margin-bottom: 24px;
 }
