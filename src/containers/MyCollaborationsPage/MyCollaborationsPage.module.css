@@ -317,7 +317,7 @@
 }
 
 .dueSoon {
-  color: #b45309;
+  color: var(--colorAttentionDark);
 }
 
 .dueOverdue {

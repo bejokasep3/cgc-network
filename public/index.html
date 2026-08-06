@@ -16,6 +16,20 @@
     <!--!ssrStyles-->
     <!--!ssrLinks-->
 
+    <!--
+      Fraunces is the display face for --fontFamilyDisplay (see
+      src/styles/marketplaceDefaults.css). Only the weights actually used are
+      requested. `display=swap` means a slow font never blocks first paint.
+      server/csp.js already allows fonts.googleapis.com in styleSrc and
+      fonts.gstatic.com in fontSrc, so this needs no CSP change.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    >
+
     <style>
 
      /**

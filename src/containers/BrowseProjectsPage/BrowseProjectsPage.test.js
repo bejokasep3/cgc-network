@@ -136,7 +136,17 @@ describe('BrowseProjectsPage', () => {
   it('shows the invited badge only for invited projects, sorted first', () => {
     renderPage({ invitedProjectIds: [pricyProject.id.uuid] });
 
-    expect(screen.getByText('BrowseProjectsPage.invitedBadge')).toBeInTheDocument();
+    // Every card renders the badge so each one reserves the same badge-height
+    // slot (visibility toggles, not presence), so the assertion is about which
+    // badge is exposed rather than how many exist. parentElement because
+    // getAllByText returns FormattedMessage's own inner span; aria-hidden and
+    // the class live on the badge span wrapping it.
+    const badges = screen
+      .getAllByText('BrowseProjectsPage.invitedBadge')
+      .map(el => el.parentElement);
+    expect(badges).toHaveLength(2);
+    const shown = badges.filter(el => el.getAttribute('aria-hidden') === 'false');
+    expect(shown).toHaveLength(1);
 
     const titles = screen.getAllByRole('heading', { level: 3 }).map(el => el.textContent);
     expect(titles).toEqual(['Pricy project', 'Cheap project']);

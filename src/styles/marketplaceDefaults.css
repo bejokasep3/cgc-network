@@ -20,32 +20,50 @@
   * Colors used for different functions (like error texts)
   * Subtle color variants are used in Stripe verification status box
   */
-  --colorSuccess: #138041;
-  --colorSuccessDark: #0d542a;
-  --colorSuccessLight: #1aad57;
-  --colorSuccessSubtle: #f0fff6;
-  --colorFail: #e7000b;
-  --colorFailDark: #cc0000;
-  --colorFailSubtle: #fff0f0;
-  --colorAttention: #ffaa00;
-  --colorAttentionDark: #b25900;
-  --colorAttentionSubtle: #fff7f0;
+  /**
+   * Semantic colours, retuned for a terracotta brand.
+   *
+   * A red-orange accent creates a real hazard here: the stock amber (#ffaa00)
+   * and stock red (#e7000b) both sit close enough to --marketplaceColor that a
+   * warning badge can read as a brand element. So attention moves distinctly
+   * yellower and failure distinctly cooler/pinker, putting clear hue distance
+   * between all three. Colour still isn't carrying the meaning alone — these
+   * always ship with an icon or a word.
+   */
+  --colorSuccess: #1f7a46;
+  --colorSuccessDark: #14522f;
+  --colorSuccessLight: #2a9c59;
+  --colorSuccessSubtle: #f1faf3;
+  --colorFail: #be1e3c;
+  --colorFailDark: #94162e;
+  --colorFailSubtle: #fdf1f3;
+  --colorAttention: #c9950a;
+  --colorAttentionDark: #8f6a05;
+  --colorAttentionSubtle: #fdf8ea;
   --colorBannedLight: var(--marketplaceColorLight);
   --colorBannedDark: var(--marketplaceColor);
 
   /* B&W and Grey palette */
 
+  /**
+   * Warm neutrals (hue 32) rather than the stock cool ramp (hue 240).
+   *
+   * The greys are what the eye actually spends its time on — every surface,
+   * border, divider and secondary label. A blue-tinted ramp under a terracotta
+   * accent reads as two unrelated palettes bolted together, so the whole ramp
+   * moves warm. Saturation stays low (8-14%) so these still behave as neutrals.
+   */
   --colorWhite: hsl(0 0% 100%);
-  --colorGrey50: hsl(240 3% 98%);
-  --colorGrey100: hsl(240 3% 90%);
-  --colorGrey200: hsl(240 3% 80%);
-  --colorGrey300: hsl(240 3% 70%);
-  --colorGrey400: hsl(240 3% 60%);
-  --colorGrey500: hsl(240 3% 50%);
-  --colorGrey600: hsl(240 3% 40%);
-  --colorGrey700: hsl(240 3% 30%);
-  --colorGrey800: hsl(240 3% 20%);
-  --colorGrey900: hsl(240 3% 10%);
+  --colorGrey50: hsl(40 30% 97%);
+  --colorGrey100: hsl(35 22% 89%);
+  --colorGrey200: hsl(33 18% 80%);
+  --colorGrey300: hsl(32 14% 70%);
+  --colorGrey400: hsl(31 11% 58%);
+  --colorGrey500: hsl(31 10% 47%);
+  --colorGrey600: hsl(31 10% 38%);
+  --colorGrey700: hsl(30 11% 28%);
+  --colorGrey800: hsl(30 12% 18%);
+  --colorGrey900: hsl(30 13% 10%);
   --colorBlack: hsl(0 0% 0%);
 
   --colorLightTransparent: rgba(255, 255, 255, 0.65);
@@ -56,17 +74,47 @@
   * In the future, we are planning to bring more --marketplace* CSS Properties
   * from hosted assets, which means that they could be managed through Console.
   */
-  --marketplaceColor: #6366f1; /* Electric Violet Indigo */
-  --marketplaceColorLight: #4f46e5;
-  --marketplaceColorDark: #4338ca;
+  /**
+   * Direction A "Atelier" — burnt terracotta on warm paper.
+   *
+   * Deliberately outside the blue/indigo/violet family. Every marketplace
+   * template and every generated demo lands in that family, and people read it
+   * as "unfinished template" without being able to say why. Terracotta also
+   * suits the positioning that is locked in BLUEPRINT.md: an invite-only,
+   * vetted roster rather than an open directory.
+   *
+   * NOTE: at runtime these lose to Console. mergeBranding() in
+   * util/configHelpers.js reads marketplaceColors.mainColor from the hosted
+   * branding asset and src/util/style.js injects it as an inline custom
+   * property. Console must be set to the same values or the app renders the
+   * Console colour instead — see configBranding.js.
+   */
+  --marketplaceColor: #b4491f; /* Burnt terracotta */
+  --marketplaceColorLight: #d4622f;
+  --marketplaceColorDark: #8f3617;
 
-  /** 
+  /**
+   * Faint brand tints for hover states, selected rows and badge backgrounds.
+   *
+   * These exist because the pages kept reaching for a raw hex when they needed
+   * "a hint of the brand colour" — #eef2ff appeared in four separate CSS
+   * modules. Raw hexes survive a rebrand and leave patches of the old palette
+   * behind, which looks worse than not rebranding at all. Reach for these.
+   *
+   * Not derived from --marketplaceColor with colour-mix(): that variable can be
+   * overwritten at runtime by the hosted branding asset, and a tint computed
+   * from an unknown colour is not guaranteed to stay readable.
+   */
+  --colorMarketplaceSubtle: #fdf0e8;
+  --colorMarketplaceSubtleDark: #f7e2d6;
+
+  /**
    * The fill color used by <PrimaryButton>
    * These might be overwritten by values from hosted assets
    */
-  --colorPrimaryButton: #6366f1;
-  --colorPrimaryButtonDark: #4f46e5;
-  --colorPrimaryButtonLight: #818cf8;
+  --colorPrimaryButton: #b4491f;
+  --colorPrimaryButtonDark: #8f3617;
+  --colorPrimaryButtonLight: #d4622f;
 
   /** 
    * The fill color used by <SecondaryButton>
@@ -83,8 +131,26 @@
   --colorStatusFinalState: var(--colorGrey600);
 
   /* ================ Font ================ */
-  --fontFamily: -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif,
+
+  /**
+   * Inter now leads the stack instead of trailing it.
+   *
+   * Previously 'Inter' sat after -apple-system and BlinkMacSystemFont, so it
+   * never actually rendered: macOS fell back to SF Pro and Windows to Segoe UI.
+   * The product had no typographic identity — it looked like whichever OS the
+   * viewer happened to be on, which is exactly how "generic template" reads.
+   */
+  --fontFamily: 'Inter', -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  /**
+   * Display face, used sparingly — page titles, hero headlines and headline
+   * figures (a price, an earnings total). Never for UI chrome, labels, table
+   * headers or anything inside a dense dashboard, where it slows reading down.
+   * That restraint is what keeps an editorial serif from fighting the
+   * campaign and escrow screens.
+   */
+  --fontFamilyDisplay: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
 
   --fontWeightRegular: 400;
   --fontWeightMedium: 500;
@@ -113,13 +179,21 @@
    * softer, larger directional one. Every --boxShadow* variable below
    * is defined in terms of these three levels so elevation stays
    * consistent across components.
+   *
+   * Two changes for Atelier. The shadow colour moves from a cool blue-black
+   * (16, 24, 40) to a warm brown-black so shadows sit in the same palette as
+   * the warm neutrals rather than casting grey-blue onto cream. And every
+   * level drops in opacity: resting surfaces should be defined by a hairline
+   * --colorGrey100 border, with shadow reserved for things that genuinely
+   * float (popups, modals, dragged items). Uniform mid-strength shadow on
+   * every card is a large part of what makes a UI look machine-assembled.
    */
-  --boxShadowXs: 0 1px 2px 0 rgba(16, 24, 40, 0.06), 0 1px 3px 0 rgba(16, 24, 40, 0.04);
-  --boxShadowSm: 0 2px 4px -1px rgba(16, 24, 40, 0.08), 0 6px 12px -4px rgba(16, 24, 40, 0.06);
-  --boxShadowMd: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 16px 32px -8px rgba(16, 24, 40, 0.1);
+  --boxShadowXs: 0 1px 2px 0 rgba(40, 30, 20, 0.04);
+  --boxShadowSm: 0 1px 2px 0 rgba(40, 30, 20, 0.05), 0 4px 10px -6px rgba(40, 30, 20, 0.06);
+  --boxShadowMd: 0 4px 8px -4px rgba(40, 30, 20, 0.08), 0 16px 32px -12px rgba(40, 30, 20, 0.1);
 
   --boxShadow: var(--boxShadowSm);
-  --boxShadowTop: 0 -2px 4px -1px rgba(16, 24, 40, 0.08), 0 -6px 12px -4px rgba(16, 24, 40, 0.06);
+  --boxShadowTop: 0 -1px 2px 0 rgba(40, 30, 20, 0.05), 0 -4px 10px -6px rgba(40, 30, 20, 0.06);
   --boxShadowLight: var(--boxShadowXs);
   --boxShadowPopup: var(--boxShadowMd);
   --boxShadowPopupLight: var(--boxShadowSm);
@@ -129,7 +203,7 @@
   --boxShadowFeaturedListingCard: var(--boxShadowMd);
   --boxShadowNotFoundPageSearch: var(--boxShadowSm);
   --boxShadowSectionLocationHover: var(--boxShadowMd);
-  --boxShadowBottomForm: 0 -2px 4px -1px rgba(16, 24, 40, 0.06), 0 -1px 2px 0 rgba(16, 24, 40, 0.04);
+  --boxShadowBottomForm: 0 -1px 2px 0 rgba(40, 30, 20, 0.05), 0 -4px 10px -6px rgba(40, 30, 20, 0.06);
   --boxShadowFilterButton: var(--boxShadowSm);
 
   /* ================ Z-index base levels ================ */
@@ -145,9 +219,15 @@
 
   /* ================ Border radius ================ */
 
-  --borderRadius: 8px;
-  --borderRadiusMedium: 12px;
-  --borderRadiusLarge: 20px;
+  /**
+   * Tightened from 8/12/20. Generously rounded corners plus a uniform card
+   * shadow is the default "SaaS template" silhouette; sharper corners with
+   * hairline borders read as considered rather than generated. Cards lean on
+   * --colorGrey100 borders instead of shadows — see --boxShadow* below.
+   */
+  --borderRadius: 4px;
+  --borderRadiusMedium: 6px;
+  --borderRadiusLarge: 10px;
 
   /* ================ Transition styles ================ */
 

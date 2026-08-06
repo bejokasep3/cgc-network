@@ -345,7 +345,7 @@
   transition: background-color var(--transitionStyleButton);
 
   &:hover {
-    background-color: #eef2ff;
+    background-color: var(--colorMarketplaceSubtle);
   }
 }
 
@@ -490,12 +490,14 @@
   white-space: nowrap;
 }
 
-/* Not var(--marketplaceColorLight) — in this marketplace's default theme
-   it's actually darker than --marketplaceColor (#4f46e5 vs #6366f1), so
-   text in the latter on a background of the former was low-contrast and
-   hard to read. White (not --colorGrey50, same as the card's own background
-   — the badge would lose its pill outline against it) + --marketplaceColorDark
-   is a safe light-background/dark-text pairing regardless of the brand color. */
+/* Not var(--marketplaceColorLight): it is not reliably lighter than
+   --marketplaceColor. Both can be replaced at runtime by the hosted branding
+   asset, and Console derives the light/dark pair by shifting lightness ±10%,
+   so a "light" value can come back darker than the base. Brand-on-brand here
+   was low-contrast for that reason. White (not --colorGrey50 — the same colour
+   as the card behind it, which would cost the badge its pill outline) plus
+   --marketplaceColorDark is a safe light-background/dark-text pairing whatever
+   the brand colour turns out to be. */
 .priceBadge {
   composes: marketplaceTinyFontStyles from global;
   font-weight: var(--fontWeightSemiBold);

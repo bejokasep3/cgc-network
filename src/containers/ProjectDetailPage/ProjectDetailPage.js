@@ -2,13 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import classNames from 'classnames';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  ArrowLeft01Icon,
-  PencilEdit02Icon,
-  Copy01Icon,
-  Delete01Icon,
-} from '@hugeicons/core-free-icons';
+import { ChevronLeft, Pencil, Copy, Trash2 } from 'lucide-react';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { useConfiguration } from '../../context/configurationContext';
@@ -64,7 +58,7 @@ import css from './ProjectDetailPage.module.css';
 const { UUID, Money } = sdkTypes;
 
 // sanitize.css sets a global `svg { fill: currentColor }` rule that overrides
-// Hugeicons' own `fill="none"` attribute, so it's forced back via inline
+// the icon's own `fill="none"` attribute, so it's forced back via inline
 // style (which beats stylesheet rules) to keep these as outlines, not solid
 // shapes — same fix as DashboardTopbar/accountMenuIcons.js.
 const ICON_FILL_NONE = { fill: 'none' };
@@ -434,13 +428,14 @@ const OwnerHeader = ({
           className={css.iconButton}
           title={intl.formatMessage({ id: 'ProjectDetailPage.backToProjects' })}
         >
-          {/* Not IconArrowHead — its own CSS hardcodes fill to a solid
-              color instead of "none", so it renders as a filled blob
-              instead of a clean outline stroke like the other icon
-              buttons here. Hugeicons' outline set stays a stroke-only
-              chevron, matching the other icon buttons. */}
-          <HugeiconsIcon
-            icon={ArrowLeft01Icon}
+          {/* Not IconArrowHead — its own CSS hardcodes fill to a solid colour
+              instead of "none", so it renders as a filled blob rather than the
+              clean outline stroke the other icon buttons here use. Going
+              straight to the lucide icon with ICON_FILL_NONE keeps it a stroke
+              (sanitize.css sets a global `svg { fill: currentColor }` that
+              beats the SVG's own fill="none" attribute; an inline style wins
+              over both). */}
+          <ChevronLeft
             className={css.iconButtonIcon}
             strokeWidth={2}
             style={ICON_FILL_NONE}
@@ -479,8 +474,7 @@ const OwnerHeader = ({
         params={{ id: projectId }}
         title={intl.formatMessage({ id: 'ProjectDetailPage.editProject' })}
       >
-        <HugeiconsIcon
-          icon={PencilEdit02Icon}
+        <Pencil
           className={css.iconButtonIcon}
           strokeWidth={1.8}
           style={ICON_FILL_NONE}
@@ -494,8 +488,7 @@ const OwnerHeader = ({
         onClick={onDuplicate}
         title={intl.formatMessage({ id: 'ProjectDetailPage.duplicateProject' })}
       >
-        <HugeiconsIcon
-          icon={Copy01Icon}
+        <Copy
           className={css.iconButtonIcon}
           strokeWidth={1.8}
           style={ICON_FILL_NONE}
@@ -510,8 +503,7 @@ const OwnerHeader = ({
           onClick={onOpenCloseModal}
           title={intl.formatMessage({ id: 'ProjectDetailPage.closeProject' })}
         >
-          <HugeiconsIcon
-            icon={Delete01Icon}
+          <Trash2
             className={css.iconButtonIcon}
             strokeWidth={1.8}
             style={ICON_FILL_NONE}

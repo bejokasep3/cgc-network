@@ -254,7 +254,7 @@
   transition: background-color var(--transitionStyleButton);
 
   &:hover {
-    background-color: #eef2ff;
+    background-color: var(--colorMarketplaceSubtle);
   }
 
   &:hover .pipelineCardBody {

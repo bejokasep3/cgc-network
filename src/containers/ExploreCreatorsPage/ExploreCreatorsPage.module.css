@@ -283,7 +283,7 @@
   transition: background-color var(--transitionStyleButton);
 
   &:hover {
-    background-color: #eef2ff;
+    background-color: var(--colorMarketplaceSubtle);
   }
 }
 
@@ -360,7 +360,7 @@
   border-radius: 20px;
   margin-bottom: 16px;
   overflow: hidden;
-  background: linear-gradient(160deg, #dbe4ff 0%, #eef2ff 100%);
+  background: linear-gradient(160deg, var(--colorMarketplaceSubtleDark) 0%, var(--colorMarketplaceSubtle) 100%);
 }
 
 .thumbnailImage {

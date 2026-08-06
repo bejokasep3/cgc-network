@@ -21,7 +21,7 @@ import twitterImage from '../assets/biketribe-twitter-sharing-600x314.jpg';
 // NOTE: this is only the fallback. If a main colour is set in Console
 // (Build > Branding), that value wins — see mergeBranding in util/configHelpers.js.
 // Set it in Console for the real marketplace; this keeps local dev sensible.
-export const marketplaceColor = '#2c5cf0';
+export const marketplaceColor = '#b4491f';
 
 // Logo is used in Topbar on mobile and desktop, where height is the limiting factor.
 // Therefore, we strongly suggest that your image file for desktop logo is in landscape!

@@ -151,13 +151,13 @@
 }
 
 .decision-rejected {
-  background-color: #fbeae9;
+  background-color: var(--colorFailSubtle);
   color: var(--colorFail);
 }
 
 .decision-moreInfoRequested {
-  background-color: #fff4dd;
-  color: #8a6116;
+  background-color: var(--colorAttentionSubtle);
+  color: var(--colorAttentionDark);
 }
 
 .decisionNote {

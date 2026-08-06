@@ -8,16 +8,20 @@ exports[`PaginationLinks should match snapshot with both links disabled 1`] = `
     class="prev"
   >
     <svg
-      class="arrowIcon disabled"
+      class="lucide lucide-chevron-left arrowIcon disabled"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M9.4 1c.17 0 .34.065.458.192.214.228.182.57-.07.764L2.528 7.5l7.26 5.545c.252.194.284.535.07.763-.214.23-.592.257-.846.064l-7.8-5.958C1.077 7.81 1 7.66 1 7.5c0-.16.077-.31.212-.414l7.8-5.958C9.125 1.042 9.262 1 9.4 1"
-        fill-rule="evenodd"
+        d="m15 18-6-6 6-6"
       />
     </svg>
   </div>
@@ -37,16 +41,20 @@ exports[`PaginationLinks should match snapshot with both links disabled 1`] = `
     class="next"
   >
     <svg
-      class="arrowIcon disabled"
+      class="lucide lucide-chevron-right arrowIcon disabled"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M1.6 14c-.17 0-.34-.065-.458-.192-.214-.228-.182-.57.07-.764L8.472 7.5 1.21 1.955c-.252-.194-.284-.535-.07-.763.214-.23.592-.257.846-.064l7.8 5.958c.135.104.212.255.212.414 0 .16-.077.31-.212.414l-7.8 5.958c-.113.086-.25.128-.388.128"
-        fill-rule="evenodd"
+        d="m9 18 6-6-6-6"
       />
     </svg>
   </div>
@@ -64,16 +72,20 @@ exports[`PaginationLinks should match snapshot with both links enabled 1`] = `
     title="PaginationLinks.previous"
   >
     <svg
-      class="arrowIcon"
+      class="lucide lucide-chevron-left arrowIcon"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M9.4 1c.17 0 .34.065.458.192.214.228.182.57-.07.764L2.528 7.5l7.26 5.545c.252.194.284.535.07.763-.214.23-.592.257-.846.064l-7.8-5.958C1.077 7.81 1 7.66 1 7.5c0-.16.077-.31.212-.414l7.8-5.958C9.125 1.042 9.262 1 9.4 1"
-        fill-rule="evenodd"
+        d="m15 18-6-6 6-6"
       />
     </svg>
   </a>
@@ -112,16 +124,20 @@ exports[`PaginationLinks should match snapshot with both links enabled 1`] = `
     title="PaginationLinks.next"
   >
     <svg
-      class="arrowIcon"
+      class="lucide lucide-chevron-right arrowIcon"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M1.6 14c-.17 0-.34-.065-.458-.192-.214-.228-.182-.57.07-.764L8.472 7.5 1.21 1.955c-.252-.194-.284-.535-.07-.763.214-.23.592-.257.846-.064l7.8 5.958c.135.104.212.255.212.414 0 .16-.077.31-.212.414l-7.8 5.958c-.113.086-.25.128-.388.128"
-        fill-rule="evenodd"
+        d="m9 18 6-6-6-6"
       />
     </svg>
   </a>
@@ -136,16 +152,20 @@ exports[`PaginationLinks should match snapshot with prev disabled and next enabl
     class="prev"
   >
     <svg
-      class="arrowIcon disabled"
+      class="lucide lucide-chevron-left arrowIcon disabled"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M9.4 1c.17 0 .34.065.458.192.214.228.182.57-.07.764L2.528 7.5l7.26 5.545c.252.194.284.535.07.763-.214.23-.592.257-.846.064l-7.8-5.958C1.077 7.81 1 7.66 1 7.5c0-.16.077-.31.212-.414l7.8-5.958C9.125 1.042 9.262 1 9.4 1"
-        fill-rule="evenodd"
+        d="m15 18-6-6 6-6"
       />
     </svg>
   </div>
@@ -184,16 +204,20 @@ exports[`PaginationLinks should match snapshot with prev disabled and next enabl
     title="PaginationLinks.next"
   >
     <svg
-      class="arrowIcon"
+      class="lucide lucide-chevron-right arrowIcon"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M1.6 14c-.17 0-.34-.065-.458-.192-.214-.228-.182-.57.07-.764L8.472 7.5 1.21 1.955c-.252-.194-.284-.535-.07-.763.214-.23.592-.257.846-.064l7.8 5.958c.135.104.212.255.212.414 0 .16-.077.31-.212.414l-7.8 5.958c-.113.086-.25.128-.388.128"
-        fill-rule="evenodd"
+        d="m9 18 6-6-6-6"
       />
     </svg>
   </a>
@@ -211,16 +235,20 @@ exports[`PaginationLinks should match snapshot with prev enabled and next disabl
     title="PaginationLinks.previous"
   >
     <svg
-      class="arrowIcon"
+      class="lucide lucide-chevron-left arrowIcon"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M9.4 1c.17 0 .34.065.458.192.214.228.182.57-.07.764L2.528 7.5l7.26 5.545c.252.194.284.535.07.763-.214.23-.592.257-.846.064l-7.8-5.958C1.077 7.81 1 7.66 1 7.5c0-.16.077-.31.212-.414l7.8-5.958C9.125 1.042 9.262 1 9.4 1"
-        fill-rule="evenodd"
+        d="m15 18-6-6 6-6"
       />
     </svg>
   </a>
@@ -256,16 +284,20 @@ exports[`PaginationLinks should match snapshot with prev enabled and next disabl
     class="next"
   >
     <svg
-      class="arrowIcon disabled"
+      class="lucide lucide-chevron-right arrowIcon disabled"
+      fill="currentColor"
       height="15"
       role="none"
-      viewBox="0 0 11 15"
-      width="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      width="15"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M1.6 14c-.17 0-.34-.065-.458-.192-.214-.228-.182-.57.07-.764L8.472 7.5 1.21 1.955c-.252-.194-.284-.535-.07-.763.214-.23.592-.257.846-.064l7.8 5.958c.135.104.212.255.212.414 0 .16-.077.31-.212.414l-7.8 5.958c-.113.086-.25.128-.388.128"
-        fill-rule="evenodd"
+        d="m9 18 6-6-6-6"
       />
     </svg>
   </div>
