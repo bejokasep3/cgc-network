@@ -77,7 +77,7 @@
   display: inline-flex;
   align-items: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--borderRadiusMedium);
   background-color: var(--marketplaceColor);
   color: var(--colorWhite);
   font-weight: var(--fontWeightSemiBold);

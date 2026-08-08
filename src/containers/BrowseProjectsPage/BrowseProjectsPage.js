@@ -261,19 +261,16 @@ const ProjectCard = ({ project, listingFieldsConfig, isInvited, intl }) => {
 
   return (
     <li className={classNames(css.card, { [css.cardInvited]: isInvited })}>
-      {/* Always rendered (visibility, not presence, toggles) so every card
-          reserves the same badge-height slot — otherwise a non-invited
-          card's avatar row sits higher than an invited one's. */}
-      <span
-        className={classNames(css.invitedBadge, { [css.invitedBadgeHidden]: !isInvited })}
-        aria-hidden={!isInvited}
-      >
-        <FormattedMessage id="BrowseProjectsPage.invitedBadge" />
-      </span>
-
       <div className={css.cardHeader}>
-        <Avatar user={author} className={css.avatar} disableProfileLink />
-        <span className={css.brandName}>{brandName}</span>
+        <div className={css.brandInfo}>
+          <Avatar user={author} className={css.avatar} disableProfileLink />
+          <span className={css.brandName}>{brandName}</span>
+        </div>
+        {isInvited ? (
+          <span className={css.invitedBadge}>
+            <FormattedMessage id="BrowseProjectsPage.invitedBadge" />
+          </span>
+        ) : null}
       </div>
 
       <h3 className={css.projectTitle}>{title}</h3>

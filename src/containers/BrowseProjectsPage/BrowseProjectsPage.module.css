@@ -69,7 +69,7 @@
   display: inline-flex;
   align-items: center;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--borderRadius);
   background-color: var(--marketplaceColor);
   color: var(--colorWhite);
   font-weight: var(--fontWeightSemiBold);
@@ -100,7 +100,7 @@
   font-weight: var(--fontWeightSemiBold);
   line-height: 20px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--borderRadius);
   padding: 8px 16px;
   cursor: pointer;
   transition: background-color var(--transitionStyleButton), color var(--transitionStyleButton);
@@ -147,7 +147,7 @@
   display: inline-block;
   margin-left: 6px;
   background-color: rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
+  border-radius: var(--borderRadius);
   padding: 1px 7px;
 }
 
@@ -186,7 +186,7 @@
      instead of relying on a background tint that doesn't read. */
   background-color: var(--colorWhite);
   border: 1px solid var(--colorGrey100);
-  border-radius: 16px;
+  border-radius: var(--borderRadius);
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
@@ -338,49 +338,45 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background-image: linear-gradient(160deg, rgba(219, 228, 255, 0.4) 0%, rgba(219, 228, 255, 0) 70%);
-  background-color: var(--colorGrey50);
-  border-radius: 28px;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadius);
   padding: 20px;
-  transition: background-color var(--transitionStyleButton);
+  transition: box-shadow var(--transitionStyleButton);
 
   &:hover {
-    background-color: var(--colorMarketplaceSubtle);
+    box-shadow: var(--boxShadowSm);
   }
 }
 
 .cardInvited {
-  box-shadow: 0 0 0 2px var(--marketplaceColor);
+  border-color: var(--marketplaceColor);
+  box-shadow: 0 0 0 1px var(--marketplaceColor);
 }
 
-/* In normal flow (not absolutely positioned) so it can never overlap the
-   profile row below it — a floating corner ribbon looked fine in isolation
-   but crowded straight into the avatar/brand name at this card's padding.
-   Always rendered by the JS (visibility toggles, not presence) so this
-   reserves the same height slot whether or not the card is invited — a
-   non-invited card's avatar row must start at the same Y as an invited
-   one's, not sit higher because the badge is simply missing. */
 .invitedBadge {
   composes: marketplaceTinyFontStyles from global;
-  display: inline-block;
-  align-self: flex-start;
+  flex-shrink: 0;
   background-color: var(--marketplaceColor);
   color: var(--colorWhite);
   font-weight: var(--fontWeightSemiBold);
-  border-radius: 999px;
-  padding: 4px 12px;
-  margin-bottom: 12px;
-}
-
-.invitedBadgeHidden {
-  visibility: hidden;
+  border-radius: var(--borderRadius);
+  padding: 4px 10px;
 }
 
 .cardHeader {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.brandInfo {
+  display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
+  min-width: 0;
 }
 
 .avatar {
@@ -442,15 +438,11 @@
 
 .chip {
   composes: marketplaceTinyFontStyles from global;
-  /* marketplaceTinyFontStyles bakes in a vertical margin meant for stacked
-     block text. As a flex item (chipRow), .chip gets blockified and that
-     margin starts actually applying, pushing the pill down inside its own
-     box until chipRow's fixed height clips it. Zero it out. */
   margin: 0;
   background-color: var(--colorWhite);
   border: 1px solid var(--colorGrey100);
   color: var(--colorGrey700);
-  border-radius: 999px;
+  border-radius: var(--borderRadius);
   padding: 4px 10px;
 }
 
@@ -490,51 +482,44 @@
   white-space: nowrap;
 }
 
-/* Not var(--marketplaceColorLight): it is not reliably lighter than
-   --marketplaceColor. Both can be replaced at runtime by the hosted branding
-   asset, and Console derives the light/dark pair by shifting lightness ±10%,
-   so a "light" value can come back darker than the base. Brand-on-brand here
-   was low-contrast for that reason. White (not --colorGrey50 — the same colour
-   as the card behind it, which would cost the badge its pill outline) plus
-   --marketplaceColorDark is a safe light-background/dark-text pairing whatever
-   the brand colour turns out to be. */
 .priceBadge {
-  composes: marketplaceTinyFontStyles from global;
+  font-family: var(--fontFamilyDisplay);
   font-weight: var(--fontWeightSemiBold);
-  background-color: var(--colorWhite);
-  color: var(--marketplaceColorDark);
-  border-radius: 999px;
-  padding: 4px 10px;
+  font-size: 18px;
+  line-height: 24px;
+  color: var(--colorGrey900);
 }
 
 .viewButton {
   composes: marketplaceSmallFontStyles from global;
   display: block;
-  border: none;
-  border-radius: 999px;
-  background-color: var(--colorGrey900);
-  color: var(--colorWhite);
-  font-weight: var(--fontWeightSemiBold);
-  padding: 12px 0;
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadius);
+  background-color: var(--colorWhite);
+  color: var(--colorGrey900);
+  font-weight: var(--fontWeightMedium);
+  padding: 8px 12px;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
   margin-top: auto;
-  transition: background-color var(--transitionStyleButton);
+  transition: all var(--transitionStyleButton);
 
   &:hover {
-    background-color: var(--marketplaceColorDark);
-    color: var(--colorWhite);
+    background-color: var(--colorGrey50);
+    border-color: var(--colorGrey100);
+    color: var(--colorGrey900);
     text-decoration: none;
   }
 }
 
 .viewButtonDisabled {
-  background-color: var(--colorGrey100);
+  background-color: var(--colorGrey50);
   color: var(--colorGrey500);
+  border-color: var(--colorGrey100);
   cursor: not-allowed;
 
   &:hover {
-    background-color: var(--colorGrey100);
+    background-color: var(--colorGrey50);
   }
 }

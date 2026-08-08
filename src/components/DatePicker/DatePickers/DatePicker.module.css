@@ -68,7 +68,7 @@
 
   .dateSelected:hover > * {
     color: var(--colorWhite);
-    background-color: #0000ff;
+    background-color: var(--marketplaceColor);
   }
 }
 

@@ -358,6 +358,7 @@ a:hover {
 }
 
 h1 {
+  font-family: var(--fontFamilyDisplay);
   font-size: 24px;
   line-height: 24px;
   font-weight: var(--fontWeightBlack);
@@ -378,6 +379,7 @@ h1 {
 }
 
 h2 {
+  font-family: var(--fontFamilyDisplay);
   font-size: 21px;
   line-height: 24px;
   font-weight: var(--fontWeightBold);
@@ -399,6 +401,7 @@ h2 {
 }
 
 h3 {
+  font-family: var(--fontFamilyDisplay);
   font-weight: var(--fontWeightBold);
   font-size: 18px;
   line-height: 24px;
@@ -417,6 +420,7 @@ h3 {
 }
 
 h4 {
+  font-family: var(--fontFamilyDisplay);
   font-weight: var(--fontWeightBold);
   font-size: 16px;
   line-height: 30px;
@@ -615,8 +619,8 @@ select:hover {
 }
 select:focus {
   background-color: #fff;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 25%);
+  border-color: var(--marketplaceColorLight);
+  box-shadow: 0 0 0 0.2rem rgba(180, 73, 31, 0.25);
   transition: all ease-in-out 100ms;
 }
 select:disabled {
@@ -667,8 +671,8 @@ textarea:hover {
 input:focus,
 textarea:focus {
   background-color: #fff;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 25%);
+  border-color: var(--marketplaceColorLight);
+  box-shadow: 0 0 0 0.2rem rgba(180, 73, 31, 0.25);
   transition: all ease-in-out 100ms;
 }
 input:disabled,
@@ -1018,8 +1022,8 @@ textarea {
 }
 .marketplaceInputStyles:focus {
   background-color: #fff;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 25%);
+  border-color: var(--marketplaceColorLight);
+  box-shadow: 0 0 0 0.2rem rgba(180, 73, 31, 0.25);
   transition: all ease-in-out 100ms;
 }
 .marketplaceInputStyles:disabled {

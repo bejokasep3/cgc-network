@@ -2,70 +2,41 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { useConfiguration } from '../../context/configurationContext';
-
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
-import { requireListingImage } from '../../util/configHelpers';
-import { lazyLoadWithDimensions } from '../../util/uiHelpers';
 import { createSlug } from '../../util/urlHelpers';
 
-import {
-  AspectRatioWrapper,
-  NamedLink,
-  ResponsiveImage,
-  ListingCardThumbnail,
-  IconCheckmark,
-} from '../../components';
+import { Avatar, NamedLink, AspectRatioWrapper } from '../../components';
+
+const CreatorThumbnail = () => {
+  return (
+    <AspectRatioWrapper className={css.thumbnail} width={4} height={5}>
+      <div className={css.videoPlaceholder}>
+        <div className={css.playButtonCircle}>
+          <svg
+            className={css.playIcon}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+    </AspectRatioWrapper>
+  );
+};
 
 import { getCreatorCardTranslations } from './CreatorCard.helpers';
 import { getCreatorFieldLabels } from '../../util/creatorFields';
 
 import css from './CreatorCard.module.css';
 
-const LazyImage = lazyLoadWithDimensions(ResponsiveImage, { loadAfterInitialRendering: 3000 });
-
-// Portrait aspect ratio: portfolio media should dominate the card, more so than
-// the near-square crop the generic ListingCard uses for product photos.
-const ASPECT_WIDTH = 4;
-const ASPECT_HEIGHT = 5;
-
-// How many niche tags to show before collapsing the rest into "+N".
-const MAX_VISIBLE_NICHE_TAGS = 3;
-
-const CreatorCardImage = props => {
-  const { listing, setActivePropsMaybe, title, renderSizes, variantPrefix, lazyLoadImage } = props;
-
-  const firstImage = listing?.images?.[0] || null;
-  const variants = firstImage
-    ? Object.keys(firstImage?.attributes?.variants).filter(k => k.startsWith(variantPrefix))
-    : [];
-
-  const ImageComponent = lazyLoadImage ? LazyImage : ResponsiveImage;
-
-  return (
-    <AspectRatioWrapper
-      className={css.aspectRatioWrapper}
-      width={ASPECT_WIDTH}
-      height={ASPECT_HEIGHT}
-      {...setActivePropsMaybe}
-    >
-      <ImageComponent
-        rootClassName={css.rootForImage}
-        alt={title}
-        image={firstImage}
-        variants={variants}
-        sizes={renderSizes}
-      />
-    </AspectRatioWrapper>
-  );
-};
-
 /**
- * CreatorCard
+ * CreatorCard – Atelier identity card
  *
- * Portfolio-first card for `creator-profile` listings: media dominant, creator
- * identity second, price tertiary. Rendered by SearchResultsPanel in place of
- * the generic ListingCard for that listing type only — ListingCard itself is
- * untouched since it still serves every other listing type.
+ * Compact card for `creator-profile` listings: avatar + name + subtitle +
+ * prominent Fraunces price. Matches the Direction A (Atelier) Figma mockup.
  *
  * @component
  * @param {Object} props
@@ -80,16 +51,14 @@ export const CreatorCard = props => {
   const config = useConfiguration();
   const intl = props.intl || useIntl();
 
-  const { className, rootClassName, listing, renderSizes, setActiveListing, lazyLoadImage = true } = props;
+  const { className, rootClassName, listing, renderSizes, setActiveListing } = props;
 
   const translations = getCreatorCardTranslations(listing, config, intl);
   const {
     titlePlain,
-    titleFormatted,
     cardAriaLabel,
     showPrice,
-    priceTooltip,
-    priceMessage,
+    formattedPriceRaw,
     authorDisplayName,
   } = translations;
 
@@ -99,18 +68,27 @@ export const CreatorCard = props => {
   const { title = '', publicData = {} } = listing?.attributes || {};
   const slug = createSlug(title);
 
-  const { listingType, cardStyle } = publicData;
-  const validListingTypes = config.listing.listingTypes || [];
-  const foundListingTypeConfig = validListingTypes.find(conf => conf.listingType === listingType);
-  const showListingImage = requireListingImage(foundListingTypeConfig);
-
-  const { variantPrefix = 'listing-card' } = config.layout.listingImage;
-
-  const { nicheLabels, platformLabels, usageRightsLabel, deliverableCount, turnaroundDays } =
+  const { nicheLabels, platformLabels, turnaroundDays } =
     getCreatorFieldLabels(publicData, config.listing.listingFields);
 
-  const visibleNicheTags = nicheLabels.slice(0, MAX_VISIBLE_NICHE_TAGS);
-  const hiddenNicheTagCount = nicheLabels.length - visibleNicheTags.length;
+  // Build subtitle: "Beauty · TikTok" (first niche + first platform)
+  const subtitleParts = [
+    ...(nicheLabels.length > 0 ? [nicheLabels[0]] : []),
+    ...(platformLabels.length > 0 ? [platformLabels[0]] : []),
+  ];
+  const subtitleText = subtitleParts.join(' · ');
+
+  // Build price meta: "per video · 5 day turnaround"
+  const priceMetaParts = [];
+  if (turnaroundDays != null) {
+    priceMetaParts.push(
+      intl.formatMessage(
+        { id: 'CreatorCard.turnaroundMeta' },
+        { days: turnaroundDays }
+      )
+    );
+  }
+  const priceMetaText = priceMetaParts.join(' · ');
 
   const setActivePropsMaybe = setActiveListing
     ? {
@@ -125,83 +103,35 @@ export const CreatorCard = props => {
       name="ListingPage"
       params={{ id, slug }}
       ariaLabel={cardAriaLabel}
+      {...setActivePropsMaybe}
     >
-      <div className={css.imageWrapper}>
-        {showListingImage ? (
-          <CreatorCardImage
-            renderSizes={renderSizes}
-            title={titlePlain}
-            listing={listing}
-            setActivePropsMaybe={setActivePropsMaybe}
-            variantPrefix={variantPrefix}
-            lazyLoadImage={lazyLoadImage}
-          />
-        ) : (
-          <ListingCardThumbnail
-            style={cardStyle}
-            listingTitle={title}
-            className={css.aspectRatioWrapper}
-            width={ASPECT_WIDTH}
-            height={ASPECT_HEIGHT}
-            setActivePropsMaybe={setActivePropsMaybe}
-          />
-        )}
-        <span className={css.vettedBadge}>
-          <IconCheckmark rootClassName={css.vettedBadgeIcon} size="small" />
-          <FormattedMessage id="CreatorCard.vetted" />
-        </span>
-      </div>
-      <div className={css.info}>
-        <div className={css.authorRow}>
+      {/* Identity row: avatar + name/subtitle */}
+      <div className={css.identityRow}>
+        <Avatar
+          className={css.avatar}
+          user={listing?.author}
+          disableProfileLink
+          renderSizes="44px"
+        />
+        <div className={css.nameCol}>
           <span className={css.authorName}>{authorDisplayName}</span>
-          {showPrice ? (
-            <span className={css.price} title={priceTooltip}>
-              {priceMessage}
-            </span>
+          {subtitleText ? (
+            <span className={css.subtitle}>{subtitleText}</span>
           ) : null}
         </div>
-        <div className={css.title}>{titleFormatted}</div>
-        {visibleNicheTags.length > 0 ? (
-          <div className={css.tagRow}>
-            {visibleNicheTags.map(tag => (
-              <span key={tag} className={css.tag}>
-                {tag}
-              </span>
-            ))}
-            {hiddenNicheTagCount > 0 ? (
-              <span className={css.tag}>
-                <FormattedMessage
-                  id="CreatorCard.moreTags"
-                  values={{ count: hiddenNicheTagCount }}
-                />
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        {platformLabels.length > 0 ? (
-          <div className={css.metaRow}>{platformLabels.join(' · ')}</div>
-        ) : null}
-        <div className={css.metaRow}>
-          {deliverableCount != null ? (
-            <span className={css.metaItem}>
-              <FormattedMessage id="CreatorCard.deliverables" values={{ count: deliverableCount }} />
-            </span>
-          ) : null}
-          {turnaroundDays != null ? (
-            <span className={css.metaItem}>
-              <FormattedMessage id="CreatorCard.turnaround" values={{ days: turnaroundDays }} />
-            </span>
-          ) : null}
-        </div>
-        {usageRightsLabel ? (
-          <div className={css.usageRights}>
-            <FormattedMessage
-              id="CreatorCard.usageRights"
-              values={{ usageRights: usageRightsLabel }}
-            />
-          </div>
-        ) : null}
       </div>
+
+      <CreatorThumbnail />
+
+      {/* Price row */}
+      {showPrice && formattedPriceRaw ? (
+        <div className={css.priceRow}>
+          <span className={css.priceValue}>{formattedPriceRaw}</span>
+          {priceMetaText ? (
+            <span className={css.priceMeta}>{priceMetaText}</span>
+          ) : null}
+        </div>
+      ) : null}
     </NamedLink>
   );
 };

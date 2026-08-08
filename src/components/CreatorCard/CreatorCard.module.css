@@ -3,125 +3,119 @@
 .root {
   display: flex;
   flex-direction: column;
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: var(--borderRadius);
+  padding: 16px;
+  transition: box-shadow 0.2s ease;
 
   &:hover {
     text-decoration: none;
+    box-shadow: var(--boxShadowMd);
   }
 }
 
-.imageWrapper {
-  position: relative;
-}
-
-.aspectRatioWrapper {
-  transition: var(--transitionStyleButton);
-  background: var(--colorGrey100);
-  border-radius: var(--borderRadiusMedium);
-
-  @media (--viewportMedium) {
-    &:hover {
-      transform: scale(1.02);
-      box-shadow: var(--boxShadowListingCard);
-    }
-  }
-}
-
-.rootForImage {
-  border: solid 1px var(--colorGrey100);
-  border-radius: var(--borderRadiusMedium);
-  width: 100%;
-  height: 100%;
-}
-
-.vettedBadge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1;
+/* Identity row: avatar + name column */
+.identityRow {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--borderRadiusLarge);
-  background-color: var(--colorWhite);
-  box-shadow: var(--boxShadowSm);
-  composes: marketplaceTinyFontStyles from global;
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey700);
+  gap: 12px;
 }
 
-.vettedBadgeIcon {
-  width: 9px;
-  height: 7px;
-  stroke: var(--marketplaceColor);
+.avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
 }
 
-.info {
+.nameCol {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 0 2px 0;
-}
-
-.authorRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .authorName {
-  composes: textSmall from global;
-  font-weight: var(--fontWeightBold);
-  color: var(--colorGrey700);
-}
-
-.price {
-  composes: textSmall from global;
-  flex-shrink: 0;
+  font-family: var(--fontFamily);
   font-weight: var(--fontWeightSemiBold);
-  color: var(--marketplaceColor);
-}
-
-.priceValue {
-  font-weight: var(--fontWeightSemiBold);
-}
-
-.title {
-  composes: marketplaceTinyFontStyles from global;
-  color: var(--colorGrey600);
-  margin: 0;
-}
-
-.tagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.tag {
-  composes: marketplaceTinyFontStyles from global;
-  padding: 2px 8px;
-  border-radius: var(--borderRadius);
-  background-color: var(--colorGrey100);
-  color: var(--colorGrey700);
-}
-
-.metaRow {
-  composes: marketplaceTinyFontStyles from global;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: var(--colorGrey500);
-}
-
-.metaItem {
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--colorGrey900);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.usageRights {
-  composes: marketplaceTinyFontStyles from global;
+.subtitle {
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--colorGrey500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnail {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--borderRadius);
+  margin-top: 16px;
+  overflow: hidden;
+  background-color: var(--colorGrey100);
+}
+
+.videoPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playButtonCircle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--boxShadowSm);
+  transition: transform var(--transitionStyleButton);
+}
+
+.root:hover .playButtonCircle {
+  transform: scale(1.05);
+}
+
+.playIcon {
+  width: 24px;
+  height: 24px;
+  color: var(--colorGrey900);
+  margin-left: 3px;
+}
+
+/* Price row */
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.priceValue {
+  font-family: var(--fontFamilyDisplay);
+  font-weight: var(--fontWeightSemiBold);
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--colorGrey900);
+}
+
+.priceMeta {
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: 16px;
   color: var(--colorGrey500);
 }
 

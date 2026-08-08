@@ -78,6 +78,9 @@ if (clientID) {
  * @param {Function} next Call the next middleware function in the stack
  */
 exports.authenticateFacebook = (req, res, next) => {
+  if (!clientID) {
+    return res.status(501).send('Facebook authentication not configured');
+  }
   const { from, defaultReturn, defaultConfirm, userType } = req.query || {};
   const params = {
     ...(from ? { from } : {}),
@@ -102,6 +105,9 @@ exports.authenticateFacebook = (req, res, next) => {
  * @param {Function} next Call the next middleware function in the stack
  */
 exports.authenticateFacebookCallback = (req, res, next) => {
+  if (!clientID) {
+    return res.status(501).send('Facebook authentication not configured');
+  }
   // We've already defined the `verifyCallback` function for the Passport Facebook authentication
   // strategy. That function is normally used to verify the user information obtained from identity
   // provider, or alternatively create a new use while an internal Passport function is used to

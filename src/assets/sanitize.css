@@ -233,13 +233,13 @@ sup {
   */
 
 ::-moz-selection {
-  background-color: #b3d4fc; /* 1 */
+  background-color: var(--colorMarketplaceSubtle, #fdf0e8); /* 1 */
   color: #000000; /* 1 */
   text-shadow: none;
 }
 
 ::selection {
-  background-color: #b3d4fc; /* 1 */
+  background-color: var(--colorMarketplaceSubtle, #fdf0e8); /* 1 */
   color: #000000; /* 1 */
   text-shadow: none;
 }

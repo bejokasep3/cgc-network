@@ -73,6 +73,7 @@ export const getCreatorCardTranslations = (listing, config, intl) => {
     showPrice,
     priceTooltip,
     priceMessage,
+    formattedPriceRaw: formattedPrice || null,
     cardAriaLabel,
   };
 };

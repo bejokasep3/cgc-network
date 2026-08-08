@@ -1,5 +1,5 @@
-import logoImageDesktop from '../assets/biketribe-logo-desktop.png';
-import logoImageMobile from '../assets/biketribe-logo-mobile.png';
+import logoImageDesktop from '../assets/cgc-logo-desktop.jpg';
+import logoImageMobile from '../assets/cgc-logo-mobile.jpg';
 import brandImage from '../assets/biketribe-brandImage-1500.jpg';
 import facebookImage from '../assets/biketribe-facebook-sharing-1200x630.jpg';
 import twitterImage from '../assets/biketribe-twitter-sharing-600x314.jpg';

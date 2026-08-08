@@ -594,6 +594,7 @@ export const listingTypes = [
     defaultListingFields: {
       shipping: false,
       pickup: false,
+      location: false,
       // Payout details are required: this is the listing a brand eventually
       // pays out against (BLUEPRINT Appendix A2 — "payout wajib").
       payoutDetails: true,

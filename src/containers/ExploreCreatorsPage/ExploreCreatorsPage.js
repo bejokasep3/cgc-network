@@ -141,32 +141,29 @@ const AdvancedFilters = ({ filters, onChange, nicheOptions, platformOptions, int
 // empty and silently fell back to the "no image" placeholder.
 const PROFILE_IMAGE_VARIANTS = ['square-small', 'square-small2x'];
 
-// Thumbnail shows the creator's real profile photo when they have one, or a
-// plain gradient placeholder box (no play icon — this isn't a video preview,
-// just reserved space for the photo) when they don't.
-const CreatorThumbnail = ({ profileImage, name }) => {
-  const variants = profileImage
-    ? Object.keys(profileImage?.attributes?.variants || {}).filter(k =>
-        PROFILE_IMAGE_VARIANTS.includes(k)
-      )
-    : [];
-
+// Thumbnail placeholder: shows a dummy "play video" overlay instead of the
+// profile photo. The area will eventually hold creator intro-video content.
+const CreatorThumbnail = () => {
   return (
     <AspectRatioWrapper className={css.thumbnail} width={4} height={5}>
-      {profileImage ? (
-        <ResponsiveImage
-          rootClassName={css.thumbnailImage}
-          alt={name}
-          image={profileImage}
-          variants={variants}
-          sizes="(max-width: 767px) 100vw, (max-width: 1400px) 33vw, 25vw"
-        />
-      ) : null}
+      <div className={css.videoPlaceholder}>
+        <div className={css.playButtonCircle}>
+          <svg
+            className={css.playIcon}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
     </AspectRatioWrapper>
   );
 };
 
-const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) => {
+const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl, config }) => {
   const name = creator.displayName || '';
   const initial = name.charAt(0) || '?';
   // F2.5: arriving here with ?project=<id> (from ProjectInvitePage's "browse
@@ -183,6 +180,27 @@ const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) =
       )
     : [];
 
+  const listingFields = config?.listing?.listingFields || [];
+  
+  const getFieldLabel = (key, value) => {
+    const field = listingFields.find(f => f.key === key);
+    if (!field || !field.enumOptions) return value;
+    const option = field.enumOptions.find(o => o.option === value);
+    return option ? option.label : value;
+  };
+
+  const niches = creator.contentNiche || [];
+  const platforms = creator.platforms || [];
+  
+  const firstNicheLabel = niches.length > 0 ? getFieldLabel('contentNiche', niches[0]) : null;
+  const firstPlatformLabel = platforms.length > 0 ? getFieldLabel('platforms', platforms[0]) : null;
+
+  const subtitleParts = [
+    ...(firstNicheLabel ? [firstNicheLabel] : []),
+    ...(firstPlatformLabel ? [firstPlatformLabel] : []),
+  ];
+  const subtitleText = subtitleParts.join(' · ');
+
   return (
     <li className={css.card}>
       <div className={css.cardHeader}>
@@ -193,7 +211,7 @@ const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) =
               alt={name}
               image={creator.profileImage}
               variants={avatarVariants}
-              sizes="40px"
+              sizes="44px"
             />
           </span>
         ) : (
@@ -201,7 +219,12 @@ const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) =
             {initial}
           </span>
         )}
-        <span className={css.name}>{name}</span>
+        <div className={css.nameCol}>
+          <span className={css.name}>{name}</span>
+          {subtitleText ? (
+            <span className={css.cardSubtitle}>{subtitleText}</span>
+          ) : null}
+        </div>
         <button
           type="button"
           className={classNames(css.likeButton, { [css.likeButtonActive]: isSaved })}
@@ -213,7 +236,7 @@ const CreatorCardReal = ({ creator, isSaved, onToggleSaved, projectId, intl }) =
         </button>
       </div>
 
-      <CreatorThumbnail profileImage={creator.profileImage} name={name} />
+      <CreatorThumbnail />
 
       {creator.listingId ? (
         <NamedLink
@@ -417,6 +440,7 @@ export const ExploreCreatorsPageComponent = props => {
                       onToggleSaved={onToggleSavedCreator}
                       projectId={projectId}
                       intl={intl}
+                      config={config}
                     />
                   ))}
                 </ul>

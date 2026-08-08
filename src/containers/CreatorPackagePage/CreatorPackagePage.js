@@ -116,10 +116,10 @@ export const CreatorPackagePageComponent = props => {
   // Opened from the onboarding checklist? A published listing is what
   // actually satisfies this step (creatorSetupSteps.js), so the return trip
   // happens once photos are saved (which is also what triggers the publish
-  // below) — not after the details save, which alone doesn't finish the step.
   const returnToOnboarding = cameFromOnboardingChecklist(location);
 
   const [detailsSubmitError, setDetailsSubmitError] = useState(null);
+  const [detailsUpdated, setDetailsUpdated] = useState(false);
 
   useEffect(() => {
     onFetchOwnListing();
@@ -136,8 +136,9 @@ export const CreatorPackagePageComponent = props => {
   const publicData = listing?.attributes?.publicData || {};
 
   const handleDetailsSubmit = values => {
-    const { title: packageTitle, description, ...customFieldValues } = values;
+    const { title: packageTitle, description, price, ...customFieldValues } = values;
     setDetailsSubmitError(null);
+    setDetailsUpdated(false);
 
     if (listing?.id) {
       onUpdateListing(
@@ -146,15 +147,19 @@ export const CreatorPackagePageComponent = props => {
           id: listing.id,
           title: packageTitle.trim(),
           description,
+          price,
           publicData: customFieldValues,
         },
         config
-      ).catch(e => setDetailsSubmitError(e));
+      )
+        .then(() => setDetailsUpdated(true))
+        .catch(e => setDetailsSubmitError(e));
     } else {
       onCreateListingDraft(
         {
           title: packageTitle.trim(),
           description,
+          price,
           publicData: {
             listingType: CREATOR_PROFILE_LISTING_TYPE,
             transactionProcessAlias: CREATOR_PROCESS_ALIAS,
@@ -164,7 +169,9 @@ export const CreatorPackagePageComponent = props => {
           stockUpdate: { oldTotal: null, newTotal: BILLIARD },
         },
         config
-      ).catch(e => setDetailsSubmitError(e));
+      )
+        .then(() => setDetailsUpdated(true))
+        .catch(e => setDetailsSubmitError(e));
     }
   };
 
@@ -185,6 +192,10 @@ export const CreatorPackagePageComponent = props => {
             createResourceLocatorString(onboardingRouteName, routeConfiguration, {}, {})
           );
         }
+      })
+      .catch(e => {
+        const errorMsg = e?.message || e?.statusText || e?.status || JSON.stringify(e);
+        alert(`Failed to publish Creator Package: ${errorMsg}. If this mentions 'payout details', please connect Stripe. Otherwise, please let me know what this error says!`);
       });
   };
 
@@ -198,6 +209,7 @@ export const CreatorPackagePageComponent = props => {
   const initialDetailsValues = {
     title: listing?.attributes?.title,
     description: listing?.attributes?.description,
+    price: listing?.attributes?.price,
     ...listingFieldsConfig
       .filter(fieldConfig => isFieldForListingType(CREATOR_PROFILE_LISTING_TYPE, fieldConfig))
       .reduce((values, fieldConfig) => {
@@ -226,6 +238,7 @@ export const CreatorPackagePageComponent = props => {
             <CreatorPackageDetailsForm
               initialValues={initialDetailsValues}
               listingFieldsConfig={listingFieldsConfig}
+              marketplaceCurrency={config.currency}
               onSubmit={handleDetailsSubmit}
               inProgress={
                 editListingPageState.createListingDraftInProgress ||
@@ -236,6 +249,7 @@ export const CreatorPackagePageComponent = props => {
                 editListingPageState.updateListingError ||
                 detailsSubmitError
               }
+              updated={detailsUpdated}
             />
           </section>
 

@@ -4,16 +4,23 @@ import arrayMutators from 'final-form-arrays';
 import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../util/reactIntl';
-import { required } from '../../util/validators';
+import { required, composeValidators, moneySubUnitAmountAtLeast } from '../../util/validators';
 import { isFieldForListingType } from '../../util/fieldHelpers';
 
+import appSettings from '../../config/settings';
+import { formatMoney } from '../../util/currency';
+import { types as sdkTypes } from '../../util/sdkLoader';
 import {
   Form,
   FieldTextInput,
+  FieldCurrencyInput,
   CustomExtendedDataField,
   ErrorMessage,
   PrimaryButton,
 } from '../../components';
+
+const { Money } = sdkTypes;
+const MIN_PRICE_SUBUNITS = 500;
 
 import css from './CreatorPackagePage.module.css';
 
@@ -68,9 +75,13 @@ const CreatorPackageDetailsForm = props => (
         formId = 'CreatorPackageDetailsForm',
         handleSubmit,
         inProgress = false,
+        updated = false,
+        saveActionMsg = null,
         apiSubmitError,
         listingFieldsConfig,
+        marketplaceCurrency,
         invalid,
+        pristine,
       } = fieldRenderProps;
 
       const intl = useIntl();
@@ -80,6 +91,17 @@ const CreatorPackageDetailsForm = props => (
       const titleRequiredMessage = intl.formatMessage({
         id: 'CreatorPackageDetailsForm.titleRequired',
       });
+
+      const priceRequiredMessage = intl.formatMessage({ id: 'CreatorPackageDetailsForm.priceRequired' });
+      const minPrice = marketplaceCurrency
+        ? formatMoney(intl, new Money(MIN_PRICE_SUBUNITS, marketplaceCurrency))
+        : '';
+      const priceTooLowMessage = intl.formatMessage(
+        { id: 'CreatorPackageDetailsForm.priceTooLow' },
+        { minPrice }
+      );
+
+      const submitReady = (updated && pristine) || false;
 
       return (
         <Form className={classes} onSubmit={handleSubmit}>
@@ -106,6 +128,18 @@ const CreatorPackageDetailsForm = props => (
               intl.formatMessage({ id: 'CreatorPackageDetailsForm.descriptionRequired' })
             )}
           />
+          <FieldCurrencyInput
+            id={formId ? `${formId}.price` : 'price'}
+            name="price"
+            className={css.field}
+            label={intl.formatMessage({ id: 'CreatorPackageDetailsForm.priceLabel' })}
+            placeholder={intl.formatMessage({ id: 'CreatorPackageDetailsForm.pricePlaceholder' })}
+            currencyConfig={appSettings.getCurrencyFormatting(marketplaceCurrency)}
+            validate={composeValidators(
+              required(priceRequiredMessage),
+              moneySubUnitAmountAtLeast(priceTooLowMessage, MIN_PRICE_SUBUNITS)
+            )}
+          />
           <CreatorPackageCustomFields
             listingFieldsConfig={listingFieldsConfig}
             formId={formId}
@@ -113,8 +147,15 @@ const CreatorPackageDetailsForm = props => (
           />
           <div className={css.submitRow}>
             <ErrorMessage error={apiSubmitError} />
-            <PrimaryButton type="submit" inProgress={inProgress} disabled={submitDisabled}>
-              <FormattedMessage id="CreatorPackageDetailsForm.submitButtonText" />
+            <PrimaryButton
+              type="submit"
+              inProgress={inProgress}
+              disabled={submitDisabled}
+              ready={submitReady}
+            >
+              {saveActionMsg || (
+                <FormattedMessage id="CreatorPackageDetailsForm.submitButtonText" />
+              )}
             </PrimaryButton>
           </div>
         </Form>

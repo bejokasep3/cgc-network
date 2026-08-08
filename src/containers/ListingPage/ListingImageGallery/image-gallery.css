@@ -19,7 +19,7 @@
  */
 
  :root {
-  --ig-primary-color: #337ab7;
+  --ig-primary-color: var(--marketplaceColor, #b4491f);
   --ig-white: #fff;
   --ig-black: #000;
   --ig-background-overlay: rgba(0, 0, 0, 0.4);
